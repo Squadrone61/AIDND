@@ -38,6 +38,17 @@ export const characterSpellSchema = z.object({
   name: z.string(),
   level: z.number(),
   prepared: z.boolean(),
+  alwaysPrepared: z.boolean(),
+  spellSource: z.enum(["class", "race", "feat", "item", "background"]),
+  knownByClass: z.boolean(),
+  school: z.string().optional(),
+  castingTime: z.string().optional(),
+  range: z.string().optional(),
+  components: z.string().optional(),
+  duration: z.string().optional(),
+  description: z.string().optional(),
+  ritual: z.boolean().optional(),
+  concentration: z.boolean().optional(),
 });
 
 export const spellSlotLevelSchema = z.object({
@@ -52,6 +63,17 @@ export const inventoryItemSchema = z.object({
   quantity: z.number(),
   type: z.string().optional(),
   armorClass: z.number().optional(),
+  description: z.string().optional(),
+  damage: z.string().optional(),
+  damageType: z.string().optional(),
+  range: z.string().optional(),
+  attackBonus: z.number().optional(),
+  properties: z.array(z.string()).optional(),
+  weight: z.number().optional(),
+  rarity: z.string().optional(),
+  attunement: z.boolean().optional(),
+  isAttuned: z.boolean().optional(),
+  isMagicItem: z.boolean().optional(),
 });
 
 export const currencySchema = z.object({
@@ -74,6 +96,56 @@ export const deathSavesSchema = z.object({
   failures: z.number(),
 });
 
+export const skillProficiencySchema = z.object({
+  name: z.string(),
+  ability: z.enum([
+    "strength",
+    "dexterity",
+    "constitution",
+    "intelligence",
+    "wisdom",
+    "charisma",
+  ]),
+  proficient: z.boolean(),
+  expertise: z.boolean(),
+  bonus: z.number().optional(),
+});
+
+export const savingThrowProficiencySchema = z.object({
+  ability: z.enum([
+    "strength",
+    "dexterity",
+    "constitution",
+    "intelligence",
+    "wisdom",
+    "charisma",
+  ]),
+  proficient: z.boolean(),
+  bonus: z.number().optional(),
+});
+
+export const characterFeatureSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  source: z.enum(["class", "race", "feat", "background"]),
+  sourceLabel: z.string(),
+  requiredLevel: z.number().optional(),
+});
+
+export const advantageEntrySchema = z.object({
+  type: z.enum(["advantage", "disadvantage"]),
+  subType: z.string(),
+  restriction: z.string().optional(),
+  source: z.string(),
+});
+
+export const proficiencyGroupSchema = z.object({
+  armor: z.array(z.string()),
+  weapons: z.array(z.string()),
+  tools: z.array(z.string()),
+  other: z.array(z.string()),
+});
+
 export const characterStaticDataSchema = z.object({
   name: z.string(),
   race: z.string(),
@@ -83,9 +155,26 @@ export const characterStaticDataSchema = z.object({
   armorClass: z.number(),
   proficiencyBonus: z.number(),
   speed: z.number(),
-  features: z.array(z.string()),
-  proficiencies: z.array(z.string()),
+  features: z.array(characterFeatureSchema),
+  proficiencies: proficiencyGroupSchema,
+  skills: z.array(skillProficiencySchema),
+  savingThrows: z.array(savingThrowProficiencySchema),
+  senses: z.array(z.string()),
+  languages: z.array(z.string()),
   spells: z.array(characterSpellSchema),
+  spellcastingAbility: z
+    .enum([
+      "strength",
+      "dexterity",
+      "constitution",
+      "intelligence",
+      "wisdom",
+      "charisma",
+    ])
+    .optional(),
+  spellSaveDC: z.number().optional(),
+  spellAttackBonus: z.number().optional(),
+  advantages: z.array(advantageEntrySchema),
   traits: characterTraitsSchema,
   importedAt: z.number(),
   sourceUrl: z.string().optional(),

@@ -1,0 +1,43 @@
+interface FilterChip {
+  id: string;
+  label: string;
+  count?: number;
+}
+
+interface FilterChipBarProps {
+  chips: FilterChip[];
+  activeChipId: string;
+  onSelect: (chipId: string) => void;
+}
+
+export function FilterChipBar({
+  chips,
+  activeChipId,
+  onSelect,
+}: FilterChipBarProps) {
+  return (
+    <div className="flex gap-1 overflow-x-auto pb-1.5 scrollbar-none">
+      {chips.map((chip) => {
+        const isActive = chip.id === activeChipId;
+        return (
+          <button
+            key={chip.id}
+            onClick={() => onSelect(chip.id)}
+            className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-medium transition-colors ${
+              isActive
+                ? "bg-purple-600 text-white"
+                : "bg-gray-700/50 text-gray-400 hover:text-gray-300 hover:bg-gray-700"
+            }`}
+          >
+            {chip.label}
+            {chip.count != null && (
+              <span className={isActive ? "text-purple-200 ml-0.5" : "text-gray-500 ml-0.5"}>
+                {chip.count}
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}

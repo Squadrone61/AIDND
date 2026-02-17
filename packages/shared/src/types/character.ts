@@ -20,6 +20,17 @@ export interface CharacterSpell {
   name: string;
   level: number; // 0 = cantrip
   prepared: boolean;
+  alwaysPrepared: boolean; // from class/subclass features (domain spells, etc.)
+  spellSource: "class" | "race" | "feat" | "item" | "background";
+  knownByClass: boolean; // in spellbook/known list (e.g. wizard spells in book)
+  school?: string; // "Evocation", "Abjuration", etc.
+  castingTime?: string; // "1 action", "1 bonus action", etc.
+  range?: string; // "120 feet", "Self", "Touch"
+  components?: string; // "V, S, M (a pinch of sulfur)"
+  duration?: string; // "Instantaneous", "Concentration, up to 1 minute"
+  description?: string; // Full text description (HTML stripped)
+  ritual?: boolean;
+  concentration?: boolean;
 }
 
 export interface SpellSlotLevel {
@@ -32,8 +43,19 @@ export interface InventoryItem {
   name: string;
   equipped: boolean;
   quantity: number;
-  type?: string; // "weapon", "armor", "shield", "gear", etc.
+  type?: string; // "Weapon", "Armor", "Shield", "Gear", etc.
   armorClass?: number; // for armor/shields
+  description?: string; // Full text description (HTML stripped)
+  damage?: string; // "1d8" or "2d6"
+  damageType?: string; // "slashing", "fire", etc.
+  range?: string; // "5 ft." or "20/60 ft." for weapons
+  attackBonus?: number; // computed: proficiency + ability mod
+  properties?: string[]; // ["Versatile", "Light", "Finesse"]
+  weight?: number;
+  rarity?: string; // "Common", "Uncommon", "Rare", etc.
+  attunement?: boolean;
+  isAttuned?: boolean;
+  isMagicItem?: boolean;
 }
 
 export interface Currency {
@@ -56,6 +78,47 @@ export interface DeathSaves {
   failures: number;
 }
 
+export interface CharacterFeature {
+  name: string;
+  description: string;
+  source: "class" | "race" | "feat" | "background";
+  sourceLabel: string; // "Wizard", "Half-Orc", "War Caster"
+  requiredLevel?: number; // class features only
+}
+
+export interface ProficiencyGroup {
+  armor: string[];
+  weapons: string[];
+  tools: string[];
+  other: string[];
+}
+
+/**
+ * An advantage or disadvantage modifier from DDB.
+ * subType identifies what it applies to (e.g. "saving-throws", "stealth", "initiative").
+ * restriction is optional text describing conditions (e.g. "Against Poison").
+ */
+export interface AdvantageEntry {
+  type: "advantage" | "disadvantage";
+  subType: string; // DDB subType slug: "saving-throws", "strength-saving-throws", "stealth", "initiative", "attack-rolls", etc.
+  restriction?: string; // conditional text: "Against being frightened", "Against Poison", etc.
+  source: string; // where it came from: "Brave" (feat), "Dwarven Resilience" (race), etc.
+}
+
+export interface SkillProficiency {
+  name: string; // slug: "athletics", "sleight-of-hand", etc.
+  ability: keyof AbilityScores; // governing ability
+  proficient: boolean;
+  expertise: boolean; // double proficiency
+  bonus?: number; // flat bonus from items/features
+}
+
+export interface SavingThrowProficiency {
+  ability: keyof AbilityScores;
+  proficient: boolean;
+  bonus?: number; // flat bonus from items/features
+}
+
 /**
  * Static data imported from D&D Beyond (or manual entry).
  * Only changes when the character is re-imported.
@@ -69,9 +132,17 @@ export interface CharacterStaticData {
   armorClass: number;
   proficiencyBonus: number;
   speed: number;
-  features: string[];
-  proficiencies: string[];
+  features: CharacterFeature[];
+  proficiencies: ProficiencyGroup;
+  skills: SkillProficiency[];
+  savingThrows: SavingThrowProficiency[];
+  senses: string[]; // "Darkvision 60 ft.", "Passive Perception 14"
+  languages: string[]; // "Common", "Elvish"
   spells: CharacterSpell[];
+  spellcastingAbility?: keyof AbilityScores;
+  spellSaveDC?: number;
+  spellAttackBonus?: number;
+  advantages: AdvantageEntry[];
   traits: CharacterTraits;
   importedAt: number; // timestamp
   sourceUrl?: string; // DDB URL if imported from URL

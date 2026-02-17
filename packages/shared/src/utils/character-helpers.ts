@@ -3,7 +3,10 @@ import type {
   CharacterClass,
   CharacterData,
   CharacterDynamicData,
+  CharacterSpell,
   CharacterStaticData,
+  SkillProficiency,
+  SavingThrowProficiency,
   SpellSlotLevel,
 } from "../types/character";
 
@@ -74,24 +77,78 @@ export function buildCharacterContextBlock(
     lines.push(`**Conditions:** ${d.conditions.join(", ")}`);
   }
 
-  const preparedSpells = s.spells.filter((sp) => sp.prepared);
-  if (preparedSpells.length > 0) {
-    const cantrips = preparedSpells
+  const activeSpells = s.spells.filter(
+    (sp) => getSpellAvailability(sp) === "active"
+  );
+  const ritualOnlySpells = s.spells.filter(
+    (sp) => getSpellAvailability(sp) === "ritual-only"
+  );
+  if (activeSpells.length > 0) {
+    const cantrips = activeSpells
       .filter((sp) => sp.level === 0)
       .map((sp) => sp.name);
-    const spells = preparedSpells
+    const spells = activeSpells
       .filter((sp) => sp.level > 0)
       .map((sp) => `${sp.name} (Lvl ${sp.level})`);
     if (cantrips.length > 0) {
       lines.push(`**Cantrips:** ${cantrips.join(", ")}`);
     }
     if (spells.length > 0) {
-      lines.push(`**Prepared Spells:** ${spells.join(", ")}`);
+      lines.push(`**Available Spells:** ${spells.join(", ")}`);
     }
+  }
+  if (ritualOnlySpells.length > 0) {
+    lines.push(
+      `**Ritual Only:** ${ritualOnlySpells.map((sp) => `${sp.name} (Lvl ${sp.level})`).join(", ")}`
+    );
+  }
+
+  // Proficient skills
+  const proficientSkills = s.skills
+    .filter((sk) => sk.proficient || sk.expertise)
+    .map((sk) => {
+      const mod = getSkillModifier(sk, s.abilities, s.proficiencyBonus);
+      const tag = sk.expertise ? " (E)" : "";
+      return `${SKILL_DISPLAY_NAMES[sk.name] || sk.name} ${formatBonus(mod)}${tag}`;
+    });
+  if (proficientSkills.length > 0) {
+    lines.push(`**Proficient Skills:** ${proficientSkills.join(", ")}`);
+  }
+
+  // Proficient saving throws
+  const proficientSaves = s.savingThrows
+    .filter((sv) => sv.proficient)
+    .map((sv) => {
+      const mod = getSavingThrowModifier(sv, s.abilities, s.proficiencyBonus);
+      return `${ABILITY_NAMES[sv.ability]} ${formatBonus(mod)}`;
+    });
+  if (proficientSaves.length > 0) {
+    lines.push(`**Saving Throw Proficiencies:** ${proficientSaves.join(", ")}`);
+  }
+
+  // Spellcasting stats
+  if (s.spellSaveDC) {
+    lines.push(`**Spell Save DC:** ${s.spellSaveDC} | **Spell Attack:** ${formatBonus(s.spellAttackBonus ?? 0)}`);
+  }
+
+  // Spell slot availability
+  const slotLines = d.spellSlotsUsed
+    .filter((sl) => sl.total > 0)
+    .map((sl) => `Lvl ${sl.level}: ${sl.total - sl.used}/${sl.total}`);
+  if (slotLines.length > 0) {
+    lines.push(`**Spell Slots:** ${slotLines.join(", ")}`);
   }
 
   if (s.features.length > 0) {
-    lines.push(`**Features:** ${s.features.join(", ")}`);
+    lines.push(`**Features:** ${s.features.map((f) => f.name).join(", ")}`);
+  }
+
+  // Languages & senses
+  if (s.languages.length > 0) {
+    lines.push(`**Languages:** ${s.languages.join(", ")}`);
+  }
+  if (s.senses.length > 0) {
+    lines.push(`**Senses:** ${s.senses.join(", ")}`);
   }
 
   const equippedItems = d.inventory.filter((item) => item.equipped);
@@ -164,7 +221,7 @@ export function mergeReimport(
 }
 
 /**
- * Mapping of ability score keys to display names.
+ * Mapping of ability score keys to short display names.
  */
 export const ABILITY_NAMES: Record<keyof AbilityScores, string> = {
   strength: "STR",
@@ -174,3 +231,118 @@ export const ABILITY_NAMES: Record<keyof AbilityScores, string> = {
   wisdom: "WIS",
   charisma: "CHA",
 };
+
+/**
+ * Mapping of ability score keys to full display names.
+ */
+export const ABILITY_FULL_NAMES: Record<keyof AbilityScores, string> = {
+  strength: "Strength",
+  dexterity: "Dexterity",
+  constitution: "Constitution",
+  intelligence: "Intelligence",
+  wisdom: "Wisdom",
+  charisma: "Charisma",
+};
+
+/**
+ * Mapping of skill slugs to human-readable display names.
+ */
+export const SKILL_DISPLAY_NAMES: Record<string, string> = {
+  acrobatics: "Acrobatics",
+  "animal-handling": "Animal Handling",
+  arcana: "Arcana",
+  athletics: "Athletics",
+  deception: "Deception",
+  history: "History",
+  insight: "Insight",
+  intimidation: "Intimidation",
+  investigation: "Investigation",
+  medicine: "Medicine",
+  nature: "Nature",
+  perception: "Perception",
+  performance: "Performance",
+  persuasion: "Persuasion",
+  religion: "Religion",
+  "sleight-of-hand": "Sleight of Hand",
+  stealth: "Stealth",
+  survival: "Survival",
+};
+
+/**
+ * Calculate the total modifier for a skill.
+ */
+export function getSkillModifier(
+  skill: SkillProficiency,
+  abilities: AbilityScores,
+  proficiencyBonus: number
+): number {
+  const abilityMod = getModifier(abilities[skill.ability]);
+  let total = abilityMod;
+  if (skill.expertise) {
+    total += proficiencyBonus * 2;
+  } else if (skill.proficient) {
+    total += proficiencyBonus;
+  }
+  if (skill.bonus) {
+    total += skill.bonus;
+  }
+  return total;
+}
+
+/**
+ * Calculate the total modifier for a saving throw.
+ */
+export function getSavingThrowModifier(
+  save: SavingThrowProficiency,
+  abilities: AbilityScores,
+  proficiencyBonus: number
+): number {
+  const abilityMod = getModifier(abilities[save.ability]);
+  let total = abilityMod;
+  if (save.proficient) {
+    total += proficiencyBonus;
+  }
+  if (save.bonus) {
+    total += save.bonus;
+  }
+  return total;
+}
+
+/**
+ * Format a number as a signed modifier string.
+ * e.g. 3 → "+3", -1 → "-1", 0 → "+0"
+ */
+export function formatBonus(value: number): string {
+  return value >= 0 ? `+${value}` : `${value}`;
+}
+
+/**
+ * Spell availability tier for display purposes.
+ * - "active": cantrips, prepared, always-prepared, racial/feat spells — fully usable
+ * - "ritual-only": known ritual spells not prepared (wizard spellbook) — castable as ritual
+ * - "known": in spellbook/known list but not prepared — cannot cast currently
+ */
+export type SpellAvailability = "active" | "ritual-only" | "known";
+
+/**
+ * Determine the availability tier of a spell for display.
+ */
+export function getSpellAvailability(spell: CharacterSpell): SpellAvailability {
+  // Cantrips are always active
+  if (spell.level === 0) return "active";
+  // Always-prepared from class/subclass features
+  if (spell.alwaysPrepared) return "active";
+  // Race/feat/item spells are always available
+  if (
+    spell.spellSource === "race" ||
+    spell.spellSource === "feat" ||
+    spell.spellSource === "item"
+  )
+    return "active";
+  // User-prepared spells
+  if (spell.prepared) return "active";
+  // Known ritual spells (e.g. wizard spellbook) — castable as ritual only
+  if (spell.knownByClass && spell.ritual) return "ritual-only";
+  // Known but not prepared
+  return "known";
+}

@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from "react";
 import type { CharacterData } from "@aidnd/shared/types";
+import { formatClassString, getTotalLevel } from "@aidnd/shared/utils";
 import { CharacterSheet } from "./CharacterSheet";
 import { CharacterImport } from "./CharacterImport";
+import { HPBar } from "./HPBar";
 import { useCharacterImport } from "@/hooks/useCharacterImport";
 
 interface LeftSidebarProps {
@@ -13,6 +15,7 @@ interface LeftSidebarProps {
 
 export function LeftSidebar({ character, onCharacterImported }: LeftSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
+  const [showReimport, setShowReimport] = useState(false);
 
   const {
     importState,
@@ -23,12 +26,14 @@ export function LeftSidebar({ character, onCharacterImported }: LeftSidebarProps
     importFromUrl,
     importFromJson,
     clearCharacter,
-  } = useCharacterImport();
+    resetForReimport,
+  } = useCharacterImport({ existingCharacter: character });
 
-  // When import succeeds, bubble up to GameContent
+  // When import succeeds, bubble up to GameContent and close re-import panel
   useEffect(() => {
     if (importedCharacter && importState === "success") {
       onCharacterImported(importedCharacter);
+      setShowReimport(false);
     }
   }, [importedCharacter, importState, onCharacterImported]);
 
@@ -59,37 +64,118 @@ export function LeftSidebar({ character, onCharacterImported }: LeftSidebarProps
   }
 
   return (
-    <div className="w-80 bg-gray-800 border-r border-gray-700 flex flex-col shrink-0">
+    <div className="w-80 bg-gray-800 border-r border-gray-700 flex flex-col shrink-0 relative">
       {/* Header */}
-      <div className="flex items-center justify-between p-3 border-b border-gray-700">
-        <h2 className="text-sm font-medium text-gray-300">Character</h2>
-        <button
-          onClick={() => setCollapsed(true)}
-          className="text-gray-500 hover:text-gray-300 transition-colors p-1"
-          title="Collapse"
-        >
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-        </button>
+      <div className="p-3 border-b border-gray-700 space-y-1.5 shrink-0">
+        {/* Row 1: Name (or "Character") + buttons */}
+        <div className="flex items-center justify-between">
+          {character ? (
+            <h2
+              className="text-sm font-bold text-purple-400 truncate mr-2"
+              title={character.static.name}
+            >
+              {character.static.name}
+            </h2>
+          ) : (
+            <h2 className="text-sm font-medium text-gray-300">Character</h2>
+          )}
+          <div className="flex items-center gap-1 shrink-0">
+            {character && (
+              <button
+                onClick={() => {
+                  const next = !showReimport;
+                  setShowReimport(next);
+                  if (next) resetForReimport();
+                }}
+                className={`text-xs px-2 py-0.5 rounded transition-colors ${
+                  showReimport
+                    ? "bg-purple-600/20 text-purple-400"
+                    : "text-gray-500 hover:text-gray-300"
+                }`}
+                title="Re-import character after leveling up or making changes on D&D Beyond"
+              >
+                Update
+              </button>
+            )}
+            <button
+              onClick={() => setCollapsed(true)}
+              className="text-gray-500 hover:text-gray-300 transition-colors p-1"
+              title="Collapse"
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+        {/* Row 2: Race · Class · Level */}
+        {character && (
+          <div className="text-[11px] text-gray-400 truncate">
+            {character.static.race} &middot;{" "}
+            {formatClassString(character.static.classes)} &middot; Lvl{" "}
+            {getTotalLevel(character.static.classes)}
+          </div>
+        )}
+        {/* Row 3: HP bar */}
+        {character && (
+          <HPBar
+            current={character.dynamic.currentHP}
+            max={character.static.maxHP}
+            temp={character.dynamic.tempHP}
+          />
+        )}
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-3">
+      <div className="flex-1 overflow-hidden flex flex-col">
         {character ? (
-          <CharacterSheet character={character} />
+          <div className="flex flex-col flex-1 min-h-0">
+            {/* Re-import panel (shown when Update is clicked) */}
+            {showReimport && (
+              <div className="bg-gray-900/50 border border-gray-700 rounded-lg p-3 mx-3 mt-3 space-y-2 shrink-0">
+                <div className="flex items-center justify-between">
+                  <div className="text-xs text-gray-400 font-medium">
+                    Re-import Character
+                  </div>
+                  <button
+                    onClick={() => setShowReimport(false)}
+                    className="text-gray-600 hover:text-gray-400 transition-colors text-xs"
+                  >
+                    Cancel
+                  </button>
+                </div>
+                <p className="text-[10px] text-gray-500">
+                  Leveled up or made changes on D&D Beyond? Re-import to update
+                  your stats. Your current HP, conditions, and spell slot usage
+                  will be preserved.
+                </p>
+                <CharacterImport
+                  importState={importState}
+                  character={importedCharacter}
+                  error={importError}
+                  fallbackHint={fallbackHint}
+                  warnings={warnings}
+                  onImportUrl={importFromUrl}
+                  onImportJson={importFromJson}
+                  onClear={clearCharacter}
+                />
+              </div>
+            )}
+
+            <CharacterSheet character={character} />
+          </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-4 overflow-y-auto p-3">
             <div className="text-center pt-4 pb-2">
               <div className="text-gray-400 text-sm font-medium mb-1">
                 Import Character

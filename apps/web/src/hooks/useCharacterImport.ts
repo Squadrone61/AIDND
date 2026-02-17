@@ -1,9 +1,15 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import type { CharacterData } from "@aidnd/shared/types";
+import { mergeReimport } from "@aidnd/shared/utils";
 
 type ImportState = "idle" | "importing" | "success" | "error";
+
+interface UseCharacterImportOptions {
+  /** When provided, re-imports will merge with this character to preserve dynamic state (HP, conditions, etc.) */
+  existingCharacter?: CharacterData | null;
+}
 
 interface UseCharacterImportResult {
   importState: ImportState;
@@ -14,6 +20,8 @@ interface UseCharacterImportResult {
   importFromUrl: (url: string) => Promise<void>;
   importFromJson: (jsonString: string) => Promise<void>;
   clearCharacter: () => void;
+  /** Reset import state to idle (shows the form) without clearing character from storage */
+  resetForReimport: () => void;
 }
 
 function getWorkerUrl(): string {
@@ -22,12 +30,18 @@ function getWorkerUrl(): string {
 
 const STORAGE_KEY = "imported_character";
 
-export function useCharacterImport(): UseCharacterImportResult {
+export function useCharacterImport(
+  options?: UseCharacterImportOptions
+): UseCharacterImportResult {
   const [importState, setImportState] = useState<ImportState>("idle");
   const [character, setCharacter] = useState<CharacterData | null>(null);
   const [warnings, setWarnings] = useState<string[]>([]);
   const [error, setError] = useState("");
   const [fallbackHint, setFallbackHint] = useState("");
+
+  // Keep a ref to the existing character so callbacks always see the latest value
+  const existingRef = useRef(options?.existingCharacter ?? null);
+  existingRef.current = options?.existingCharacter ?? null;
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -45,10 +59,17 @@ export function useCharacterImport(): UseCharacterImportResult {
     }
   }, []);
 
-  const saveCharacter = useCallback((char: CharacterData) => {
-    setCharacter(char);
+  const saveCharacter = useCallback((newChar: CharacterData) => {
+    // If we have an existing character, merge to preserve dynamic state
+    const existing = existingRef.current;
+    const finalChar =
+      existing
+        ? mergeReimport(existing, newChar.static, newChar.dynamic)
+        : newChar;
+
+    setCharacter(finalChar);
     setImportState("success");
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(char));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(finalChar));
   }, []);
 
   const importFromUrl = useCallback(async (url: string) => {
@@ -73,7 +94,11 @@ export function useCharacterImport(): UseCharacterImportResult {
         return;
       }
 
-      if (data.warnings) setWarnings(data.warnings);
+      const importWarnings = data.warnings ? [...data.warnings] : [];
+      if (existingRef.current) {
+        importWarnings.unshift("Re-imported: dynamic data (HP, conditions, etc.) preserved from previous version.");
+      }
+      setWarnings(importWarnings);
       saveCharacter(data.character);
     } catch {
       setError("Failed to reach the server. Is it running?");
@@ -111,7 +136,11 @@ export function useCharacterImport(): UseCharacterImportResult {
         return;
       }
 
-      if (data.warnings) setWarnings(data.warnings);
+      const importWarnings = data.warnings ? [...data.warnings] : [];
+      if (existingRef.current) {
+        importWarnings.unshift("Re-imported: dynamic data (HP, conditions, etc.) preserved from previous version.");
+      }
+      setWarnings(importWarnings);
       saveCharacter(data.character);
     } catch {
       setError("Failed to reach the server. Is it running?");
@@ -128,6 +157,13 @@ export function useCharacterImport(): UseCharacterImportResult {
     localStorage.removeItem(STORAGE_KEY);
   }, []);
 
+  const resetForReimport = useCallback(() => {
+    setImportState("idle");
+    setError("");
+    setFallbackHint("");
+    setWarnings([]);
+  }, []);
+
   return {
     importState,
     character,
@@ -137,5 +173,6 @@ export function useCharacterImport(): UseCharacterImportResult {
     importFromUrl,
     importFromJson,
     clearCharacter,
+    resetForReimport,
   };
 }
