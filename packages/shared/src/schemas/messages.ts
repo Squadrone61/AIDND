@@ -17,6 +17,103 @@ export const aiConfigSchema = z.object({
   model: z.string().optional(),
 });
 
+// === Character schemas ===
+
+export const abilityScoresSchema = z.object({
+  strength: z.number(),
+  dexterity: z.number(),
+  constitution: z.number(),
+  intelligence: z.number(),
+  wisdom: z.number(),
+  charisma: z.number(),
+});
+
+export const characterClassSchema = z.object({
+  name: z.string(),
+  level: z.number(),
+  subclass: z.string().optional(),
+});
+
+export const characterSpellSchema = z.object({
+  name: z.string(),
+  level: z.number(),
+  prepared: z.boolean(),
+});
+
+export const spellSlotLevelSchema = z.object({
+  level: z.number(),
+  total: z.number(),
+  used: z.number(),
+});
+
+export const inventoryItemSchema = z.object({
+  name: z.string(),
+  equipped: z.boolean(),
+  quantity: z.number(),
+  type: z.string().optional(),
+  armorClass: z.number().optional(),
+});
+
+export const currencySchema = z.object({
+  cp: z.number(),
+  sp: z.number(),
+  ep: z.number(),
+  gp: z.number(),
+  pp: z.number(),
+});
+
+export const characterTraitsSchema = z.object({
+  personalityTraits: z.string().optional(),
+  ideals: z.string().optional(),
+  bonds: z.string().optional(),
+  flaws: z.string().optional(),
+});
+
+export const deathSavesSchema = z.object({
+  successes: z.number(),
+  failures: z.number(),
+});
+
+export const characterStaticDataSchema = z.object({
+  name: z.string(),
+  race: z.string(),
+  classes: z.array(characterClassSchema),
+  abilities: abilityScoresSchema,
+  maxHP: z.number(),
+  armorClass: z.number(),
+  proficiencyBonus: z.number(),
+  speed: z.number(),
+  features: z.array(z.string()),
+  proficiencies: z.array(z.string()),
+  spells: z.array(characterSpellSchema),
+  traits: characterTraitsSchema,
+  importedAt: z.number(),
+  sourceUrl: z.string().optional(),
+  ddbId: z.number().optional(),
+});
+
+export const characterDynamicDataSchema = z.object({
+  currentHP: z.number(),
+  tempHP: z.number(),
+  spellSlotsUsed: z.array(spellSlotLevelSchema),
+  conditions: z.array(z.string()),
+  deathSaves: deathSavesSchema,
+  inventory: z.array(inventoryItemSchema),
+  currency: currencySchema,
+  xp: z.number(),
+});
+
+export const characterDataSchema = z.object({
+  static: characterStaticDataSchema,
+  dynamic: characterDynamicDataSchema,
+});
+
+export const playerInfoSchema = z.object({
+  name: z.string(),
+  online: z.boolean(),
+  isHost: z.boolean(),
+});
+
 // === Client → Server schemas ===
 
 export const clientChatSchema = z.object({
@@ -55,6 +152,15 @@ export const clientKickPlayerSchema = z.object({
   playerName: z.string().min(1).max(30),
 });
 
+export const clientSetCharacterSchema = z.object({
+  type: z.literal("client:set_character"),
+  character: characterDataSchema,
+});
+
+export const clientStartStorySchema = z.object({
+  type: z.literal("client:start_story"),
+});
+
 export const clientMessageSchema = z.discriminatedUnion("type", [
   clientChatSchema,
   clientJoinSchema,
@@ -62,6 +168,8 @@ export const clientMessageSchema = z.discriminatedUnion("type", [
   clientApproveJoinSchema,
   clientRejectJoinSchema,
   clientKickPlayerSchema,
+  clientSetCharacterSchema,
+  clientStartStorySchema,
 ]);
 
 // === Server → Client schemas ===
@@ -98,6 +206,9 @@ export const serverRoomJoinedSchema = z.object({
   isHost: z.boolean().optional(),
   isReconnect: z.boolean().optional(),
   user: authUserSchema.optional(),
+  characters: z.record(z.string(), characterDataSchema).optional(),
+  allPlayers: z.array(playerInfoSchema).optional(),
+  storyStarted: z.boolean().optional(),
 });
 
 export const serverPlayerJoinedSchema = z.object({
@@ -105,6 +216,7 @@ export const serverPlayerJoinedSchema = z.object({
   playerName: z.string(),
   players: z.array(z.string()),
   hostName: z.string(),
+  allPlayers: z.array(playerInfoSchema).optional(),
 });
 
 export const serverPlayerLeftSchema = z.object({
@@ -112,6 +224,13 @@ export const serverPlayerLeftSchema = z.object({
   playerName: z.string(),
   players: z.array(z.string()),
   hostName: z.string(),
+  allPlayers: z.array(playerInfoSchema).optional(),
+});
+
+export const serverCharacterUpdatedSchema = z.object({
+  type: z.literal("server:character_updated"),
+  playerName: z.string(),
+  character: characterDataSchema,
 });
 
 export const serverErrorSchema = z.object({
@@ -148,4 +267,5 @@ export const serverMessageSchema = z.discriminatedUnion("type", [
   serverJoinPendingSchema,
   serverJoinRequestSchema,
   serverKickedSchema,
+  serverCharacterUpdatedSchema,
 ]);

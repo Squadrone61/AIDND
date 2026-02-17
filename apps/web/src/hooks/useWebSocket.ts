@@ -17,6 +17,8 @@ interface UseWebSocketOptions {
   authToken?: string;
   guestId?: string;
   onMessage: (msg: ServerMessage) => void;
+  /** When false, the hook will not attempt to connect. Defaults to true. */
+  enabled?: boolean;
 }
 
 const MAX_RECONNECT_DELAY = 30000; // 30 seconds
@@ -29,6 +31,7 @@ export function useWebSocket({
   authToken,
   guestId,
   onMessage,
+  enabled = true,
 }: UseWebSocketOptions) {
   const wsRef = useRef<WebSocket | null>(null);
   const [connectionState, setConnectionState] =
@@ -44,6 +47,8 @@ export function useWebSocket({
   const aiConfigJson = aiConfig ? JSON.stringify(aiConfig) : undefined;
 
   useEffect(() => {
+    if (!enabled) return;
+
     intentionalCloseRef.current = false;
     reconnectAttemptRef.current = 0;
 
@@ -145,7 +150,7 @@ export function useWebSocket({
       }
       wsRef.current?.close(1000, "Component unmount");
     };
-  }, [roomCode, playerName, aiConfigJson, authToken, guestId]);
+  }, [roomCode, playerName, aiConfigJson, authToken, guestId, enabled]);
 
   const send = useCallback((msg: ClientMessage) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {

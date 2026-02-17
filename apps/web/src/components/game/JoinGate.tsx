@@ -2,10 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useCharacterImport } from "@/hooks/useCharacterImport";
+import { CharacterImport } from "@/components/character/CharacterImport";
+import type { CharacterData } from "@aidnd/shared/types";
 
 interface JoinGateProps {
   roomCode: string;
-  onReady: (name: string) => void;
+  onReady: (name: string, character?: CharacterData) => void;
 }
 
 export function JoinGate({ roomCode, onReady }: JoinGateProps) {
@@ -13,12 +16,30 @@ export function JoinGate({ roomCode, onReady }: JoinGateProps) {
   const [name, setName] = useState("");
   const [error, setError] = useState("");
 
+  const {
+    importState,
+    character,
+    warnings,
+    error: importError,
+    fallbackHint,
+    importFromUrl,
+    importFromJson,
+    clearCharacter,
+  } = useCharacterImport();
+
   // Pre-fill name from Google account
   useEffect(() => {
     if (user?.displayName && !name) {
       setName(user.displayName);
     }
   }, [user, name]);
+
+  // Pre-fill name from imported character
+  useEffect(() => {
+    if (character?.static?.name && !name) {
+      setName(character.static.name);
+    }
+  }, [character, name]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,7 +49,7 @@ export function JoinGate({ roomCode, onReady }: JoinGateProps) {
       return;
     }
     sessionStorage.setItem("playerName", trimmed);
-    onReady(trimmed);
+    onReady(trimmed, character ?? undefined);
   };
 
   return (
@@ -105,6 +126,24 @@ export function JoinGate({ roomCode, onReady }: JoinGateProps) {
               Sign in to skip re-approval on reconnect.
             </p>
           )}
+
+          {/* Character Import */}
+          <div>
+            <label className="block text-xs text-gray-400 mb-1.5">
+              Import Character{" "}
+              <span className="text-gray-600">(optional)</span>
+            </label>
+            <CharacterImport
+              importState={importState}
+              character={character}
+              error={importError}
+              fallbackHint={fallbackHint}
+              warnings={warnings}
+              onImportUrl={importFromUrl}
+              onImportJson={importFromJson}
+              onClear={clearCharacter}
+            />
+          </div>
 
           {/* Name Input */}
           <form onSubmit={handleSubmit} className="space-y-4">

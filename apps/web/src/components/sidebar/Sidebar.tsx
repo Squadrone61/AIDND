@@ -2,12 +2,20 @@
 
 import { useState, useEffect, useRef } from "react";
 import { AI_PROVIDERS, getProvider } from "@aidnd/shared";
-import type { AIConfig, ServerMessage } from "@aidnd/shared/types";
+import { formatClassString, getTotalLevel } from "@aidnd/shared/utils";
+import type {
+  AIConfig,
+  CharacterData,
+  PlayerInfo,
+  ServerMessage,
+} from "@aidnd/shared/types";
+import { CharacterPopover } from "@/components/character/CharacterPopover";
 import { useModels } from "@/hooks/useModels";
 
 interface SidebarProps {
   roomCode: string;
   players: string[];
+  allPlayers: PlayerInfo[];
   hostName: string;
   hasApiKey: boolean;
   aiProvider?: string;
@@ -15,15 +23,19 @@ interface SidebarProps {
   isHost: boolean;
   pendingPlayers: string[];
   logMessages: ServerMessage[];
+  partyCharacters: Record<string, CharacterData>;
+  storyStarted: boolean;
   onSetAIConfig: (config: AIConfig) => void;
   onApprove: (playerName: string) => void;
   onReject: (playerName: string) => void;
   onKick: (playerName: string) => void;
+  onStartStory: () => void;
 }
 
 export function Sidebar({
   roomCode,
   players,
+  allPlayers,
   hostName,
   hasApiKey,
   aiProvider,
@@ -31,10 +43,13 @@ export function Sidebar({
   isHost,
   pendingPlayers,
   logMessages,
+  partyCharacters,
+  storyStarted,
   onSetAIConfig,
   onApprove,
   onReject,
   onKick,
+  onStartStory,
 }: SidebarProps) {
   const [showConfigForm, setShowConfigForm] = useState(false);
   const [dmCollapsed, setDmCollapsed] = useState(false);
@@ -43,6 +58,7 @@ export function Sidebar({
   const [apiKeyInput, setApiKeyInput] = useState("");
   const [modelInput, setModelInput] = useState("");
   const [copied, setCopied] = useState(false);
+  const [hoveredPlayer, setHoveredPlayer] = useState<string | null>(null);
   const logEndRef = useRef<HTMLDivElement>(null);
 
   const currentFormProvider = getProvider(provider);
@@ -78,6 +94,16 @@ export function Sidebar({
     setApiKeyInput("");
     setModelInput("");
   };
+
+  // Use allPlayers if available, otherwise fall back to online-only players list
+  const displayPlayers: PlayerInfo[] =
+    allPlayers.length > 0
+      ? allPlayers
+      : players.map((name) => ({
+          name,
+          online: true,
+          isHost: name === hostName,
+        }));
 
   return (
     <div className="w-72 border-l border-gray-700 flex flex-col bg-gray-850 shrink-0">
@@ -140,38 +166,101 @@ export function Sidebar({
       {/* Players */}
       <div className="p-4 border-b border-gray-700">
         <div className="text-xs text-gray-500 uppercase tracking-wider mb-3">
-          Party ({players.length})
+          Party ({displayPlayers.length})
         </div>
-        {players.length === 0 ? (
+        {displayPlayers.length === 0 ? (
           <p className="text-sm text-gray-600">No players yet...</p>
         ) : (
           <ul className="space-y-2">
-            {players.map((name) => (
-              <li key={name} className="flex items-center gap-2 text-sm group">
-                <div className="w-2 h-2 rounded-full bg-green-500" />
-                <span className="text-gray-200 flex-1">
-                  {name}
-                  {name === hostName && (
-                    <span className="text-[10px] text-purple-400 ml-1.5">
-                      (host)
-                    </span>
+            {displayPlayers.map((player) => {
+              const charData = partyCharacters[player.name];
+              return (
+                <li
+                  key={player.name}
+                  className="relative flex items-center gap-2 text-sm group"
+                  onMouseEnter={() => setHoveredPlayer(player.name)}
+                  onMouseLeave={() => setHoveredPlayer(null)}
+                >
+                  <div
+                    className={`w-2 h-2 rounded-full shrink-0 ${
+                      player.online ? "bg-green-500" : "bg-gray-600"
+                    }`}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        className={`truncate ${
+                          player.online ? "text-gray-200" : "text-gray-500"
+                        }`}
+                      >
+                        {player.name}
+                      </span>
+                      {player.isHost && (
+                        <span className="text-[10px] text-purple-400 shrink-0">
+                          (host)
+                        </span>
+                      )}
+                      {!player.online && (
+                        <span className="text-[10px] text-gray-600 shrink-0">
+                          (offline)
+                        </span>
+                      )}
+                    </div>
+                    {charData && (
+                      <div
+                        className={`text-[10px] ${
+                          player.online ? "text-gray-500" : "text-gray-600"
+                        }`}
+                      >
+                        {formatClassString(charData.static.classes)} &middot;
+                        Lvl {getTotalLevel(charData.static.classes)}
+                      </div>
+                    )}
+                  </div>
+                  {isHost && !player.isHost && player.online && (
+                    <button
+                      onClick={() => onKick(player.name)}
+                      className="text-xs text-red-400/60 hover:text-red-400
+                                 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                      title="Kick player"
+                    >
+                      Kick
+                    </button>
                   )}
-                </span>
-                {isHost && name !== hostName && (
-                  <button
-                    onClick={() => onKick(name)}
-                    className="text-xs text-red-400/60 hover:text-red-400
-                               opacity-0 group-hover:opacity-100 transition-opacity"
-                    title="Kick player"
-                  >
-                    Kick
-                  </button>
-                )}
-              </li>
-            ))}
+
+                  {/* Character Popover */}
+                  {hoveredPlayer === player.name && charData && (
+                    <div className="absolute right-full top-0 mr-2 z-50">
+                      <CharacterPopover
+                        character={charData}
+                        playerName={player.name}
+                        online={player.online}
+                      />
+                    </div>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
+
+      {/* Start Story Button (Host only, before story starts) */}
+      {isHost && !storyStarted && hasApiKey && (
+        <div className="p-4 border-b border-gray-700">
+          <button
+            onClick={onStartStory}
+            className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2.5 rounded-lg
+                       font-medium transition-colors text-sm flex items-center justify-center gap-2"
+          >
+            <span className="text-lg">&#9876;</span>
+            Begin the Adventure
+          </button>
+          <p className="text-[10px] text-gray-600 mt-1.5 text-center">
+            This will introduce the party and start the story
+          </p>
+        </div>
+      )}
 
       {/* Activity Log */}
       <div className="border-b border-gray-700 flex flex-col min-h-0">
@@ -182,7 +271,7 @@ export function Sidebar({
           <span
             className={`text-[10px] text-gray-600 transition-transform ${logCollapsed ? "" : "rotate-90"}`}
           >
-            ▶
+            &#9654;
           </span>
           <span className="text-xs text-gray-500 uppercase tracking-wider">
             Activity Log
@@ -230,7 +319,7 @@ export function Sidebar({
             <span
               className={`text-[10px] text-gray-600 transition-transform ${dmCollapsed ? "" : "rotate-90"}`}
             >
-              ▶
+              &#9654;
             </span>
             <span className="text-xs text-gray-500 uppercase tracking-wider">
               AI Dungeon Master

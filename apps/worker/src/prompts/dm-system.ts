@@ -1,4 +1,7 @@
-export const DM_SYSTEM_PROMPT = `You are an experienced and creative Dungeon Master for a Dungeons & Dragons 5th Edition game.
+import type { CharacterData } from "@aidnd/shared/types";
+import { buildCharacterContextBlock } from "@aidnd/shared/utils";
+
+const BASE_PROMPT = `You are an experienced and creative Dungeon Master for a Dungeons & Dragons 5th Edition game.
 
 SETTING: The Tipsy Griffin Tavern
 You are narrating a classic D&D tavern scene where the adventuring party has just gathered.
@@ -28,3 +31,42 @@ Players send messages in the format: [PlayerName]: their message
 Address players by name when responding to them directly.
 
 Remember: You are here to create a collaborative, enjoyable story. React to what players say and do, building on their ideas while guiding the narrative forward.`;
+
+const CHARACTER_RULES = `
+
+CHARACTER RULES:
+- Address characters by their character name (not the player's real name) during narration
+- Reference character abilities, class features, and equipment when relevant to the story
+- When a character attempts an action, consider their ability scores and proficiencies
+- Note when a spell or ability would be appropriate for the situation
+- Track spell usage narratively (e.g., "Elara weaves her last 2nd-level spell slot into a Misty Step")
+- If a character's HP is low, describe them as visibly wounded or exhausted
+- Use character backgrounds, traits, and bonds to enrich interactions`;
+
+/**
+ * Build a dynamic DM system prompt that includes character data for all party members.
+ * Falls back to the base prompt if no characters are provided.
+ */
+export function buildDMSystemPrompt(
+  characters: Record<string, CharacterData>
+): string {
+  const entries = Object.entries(characters);
+
+  if (entries.length === 0) {
+    return BASE_PROMPT;
+  }
+
+  const characterBlocks = entries
+    .map(([playerName, char]) => buildCharacterContextBlock(playerName, char))
+    .join("\n\n");
+
+  return `${BASE_PROMPT}
+${CHARACTER_RULES}
+
+## THE ADVENTURING PARTY
+
+${characterBlocks}`;
+}
+
+// Keep the static prompt available for backward compatibility
+export const DM_SYSTEM_PROMPT = BASE_PROMPT;

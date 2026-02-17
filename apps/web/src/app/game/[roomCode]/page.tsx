@@ -1,16 +1,21 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useCallback, useState, useEffect, useRef } from "react";
 import { ChatPanel } from "@/components/chat/ChatPanel";
 import { Sidebar } from "@/components/sidebar/Sidebar";
 import { PendingOverlay } from "@/components/game/PendingOverlay";
 import { JoinGate } from "@/components/game/JoinGate";
+import { LeftSidebar } from "@/components/character/LeftSidebar";
 import { useWebSocket } from "@/hooks/useWebSocket";
-import type { AIConfig, ServerMessage } from "@aidnd/shared/types";
+import type {
+  AIConfig,
+  CharacterData,
+  PlayerInfo,
+  ServerMessage,
+} from "@aidnd/shared/types";
 
 function loadAIConfig(): AIConfig | undefined {
-  if (typeof window === "undefined") return undefined;
   try {
     const raw = localStorage.getItem("ai_config");
     if (!raw) return undefined;
@@ -32,40 +37,62 @@ function isLogMessage(msg: ServerMessage): boolean {
   return msg.type === "server:system" || msg.type === "server:error";
 }
 
-function getInitialPlayerName(): string | null {
-  if (typeof window === "undefined") return null;
-  return sessionStorage.getItem("playerName") || null;
-}
-
 export default function GamePage() {
   const { roomCode } = useParams<{ roomCode: string }>();
-  const initialName = getInitialPlayerName();
-  const [playerName, setPlayerName] = useState<string | null>(initialName);
+  // Start as undefined (matches server render), then read sessionStorage after mount
+  const [playerName, setPlayerName] = useState<string | null | undefined>(
+    undefined
+  );
+  const [initialCharacter, setInitialCharacter] =
+    useState<CharacterData | null>(null);
 
-  // If no name in sessionStorage, show the JoinGate
+  // Read player name from sessionStorage after hydration
+  useEffect(() => {
+    const stored = sessionStorage.getItem("playerName") || null;
+    setPlayerName(stored);
+  }, []);
+
+  // Still loading — render nothing (matches server render of undefined)
+  if (playerName === undefined) {
+    return null;
+  }
+
+  // No name in sessionStorage — show the JoinGate
   if (!playerName) {
     return (
       <JoinGate
         roomCode={roomCode}
-        onReady={(name) => setPlayerName(name)}
+        onReady={(name, character) => {
+          setPlayerName(name);
+          if (character) setInitialCharacter(character);
+        }}
       />
     );
   }
 
-  return <GameContent roomCode={roomCode} playerName={playerName} />;
+  return (
+    <GameContent
+      roomCode={roomCode}
+      playerName={playerName}
+      initialCharacter={initialCharacter}
+    />
+  );
 }
 
 function GameContent({
   roomCode,
   playerName,
+  initialCharacter,
 }: {
   roomCode: string;
   playerName: string;
+  initialCharacter: CharacterData | null;
 }) {
   const router = useRouter();
   const [storyMessages, setStoryMessages] = useState<ServerMessage[]>([]);
   const [logMessages, setLogMessages] = useState<ServerMessage[]>([]);
   const [players, setPlayers] = useState<string[]>([]);
+  const [allPlayers, setAllPlayers] = useState<PlayerInfo[]>([]);
   const [hasApiKey, setHasApiKey] = useState(false);
   const [aiProvider, setAiProvider] = useState<string | undefined>();
   const [aiModel, setAiModel] = useState<string | undefined>();
@@ -73,23 +100,37 @@ function GameContent({
   const [hostName, setHostName] = useState<string>("");
   const [joinPending, setJoinPending] = useState(false);
   const [pendingPlayers, setPendingPlayers] = useState<string[]>([]);
+  const [myCharacter, setMyCharacter] = useState<CharacterData | null>(
+    initialCharacter
+  );
+  const [partyCharacters, setPartyCharacters] = useState<
+    Record<string, CharacterData>
+  >({});
+  const [storyStarted, setStoryStarted] = useState(false);
 
-  const aiConfig = loadAIConfig();
-  const authToken =
-    typeof window !== "undefined"
-      ? localStorage.getItem("auth_token") || undefined
-      : undefined;
-  const guestId =
-    typeof window !== "undefined"
-      ? (() => {
-          let id = sessionStorage.getItem("guestId");
-          if (!id) {
-            id = `guest_${crypto.randomUUID().slice(0, 8)}`;
-            sessionStorage.setItem("guestId", id);
-          }
-          return id;
-        })()
-      : undefined;
+  // Client-only state: browser storage values loaded after mount
+  const [clientReady, setClientReady] = useState(false);
+  const [aiConfig, setAiConfig] = useState<AIConfig | undefined>(undefined);
+  const [authToken, setAuthToken] = useState<string | undefined>(undefined);
+  const [guestId, setGuestId] = useState<string | undefined>(undefined);
+
+  // Track whether we've sent the initial character
+  const sentCharacterRef = useRef(false);
+
+  // Load all browser storage values after mount (avoids hydration mismatch)
+  useEffect(() => {
+    setAiConfig(loadAIConfig());
+    setAuthToken(localStorage.getItem("auth_token") || undefined);
+
+    let id = sessionStorage.getItem("guestId");
+    if (!id) {
+      id = `guest_${crypto.randomUUID().slice(0, 8)}`;
+      sessionStorage.setItem("guestId", id);
+    }
+    setGuestId(id);
+
+    setClientReady(true);
+  }, []);
 
   const handleMessage = useCallback(
     (msg: ServerMessage) => {
@@ -102,12 +143,33 @@ function GameContent({
           setAiModel(msg.aiModel);
           setIsHost(msg.isHost ?? false);
           setJoinPending(false);
+          if (msg.allPlayers) setAllPlayers(msg.allPlayers);
+          if (msg.characters) {
+            setPartyCharacters(msg.characters);
+            // Restore own character from server (reconnect after days/weeks)
+            if (msg.characters[playerName]) {
+              setMyCharacter(msg.characters[playerName]);
+            }
+          }
+          if (msg.storyStarted !== undefined) setStoryStarted(msg.storyStarted);
           break;
 
         case "server:player_joined":
         case "server:player_left":
           setPlayers(msg.players);
           setHostName(msg.hostName);
+          if (msg.allPlayers) setAllPlayers(msg.allPlayers);
+          break;
+
+        case "server:character_updated":
+          setPartyCharacters((prev) => ({
+            ...prev,
+            [msg.playerName]: msg.character,
+          }));
+          // If it's our own character being echoed back, update local state
+          if (msg.playerName === playerName) {
+            setMyCharacter(msg.character);
+          }
           break;
 
         case "server:join_pending":
@@ -152,7 +214,7 @@ function GameContent({
           break;
       }
     },
-    [router]
+    [router, playerName]
   );
 
   const { send, connectionState } = useWebSocket({
@@ -162,7 +224,20 @@ function GameContent({
     authToken,
     guestId,
     onMessage: handleMessage,
+    enabled: clientReady,
   });
+
+  // Send initial character data after connection
+  useEffect(() => {
+    if (
+      connectionState === "connected" &&
+      myCharacter &&
+      !sentCharacterRef.current
+    ) {
+      send({ type: "client:set_character", character: myCharacter });
+      sentCharacterRef.current = true;
+    }
+  }, [connectionState, myCharacter, send]);
 
   const handleSend = (content: string) => {
     send({
@@ -194,12 +269,29 @@ function GameContent({
     send({ type: "client:kick_player", playerName: name });
   };
 
+  const handleStartStory = () => {
+    send({ type: "client:start_story" });
+    setStoryStarted(true);
+  };
+
+  const handleCharacterImported = useCallback(
+    (character: CharacterData) => {
+      setMyCharacter(character);
+      send({ type: "client:set_character", character });
+    },
+    [send]
+  );
+
   if (joinPending) {
     return <PendingOverlay roomCode={roomCode} />;
   }
 
   return (
     <div className="flex h-screen">
+      <LeftSidebar
+        character={myCharacter}
+        onCharacterImported={handleCharacterImported}
+      />
       <ChatPanel
         messages={storyMessages}
         onSend={handleSend}
@@ -208,6 +300,7 @@ function GameContent({
       <Sidebar
         roomCode={roomCode}
         players={players}
+        allPlayers={allPlayers}
         hostName={hostName}
         hasApiKey={hasApiKey}
         aiProvider={aiProvider}
@@ -215,10 +308,13 @@ function GameContent({
         isHost={isHost}
         pendingPlayers={pendingPlayers}
         logMessages={logMessages}
+        partyCharacters={partyCharacters}
+        storyStarted={storyStarted}
         onSetAIConfig={handleSetAIConfig}
         onApprove={handleApprove}
         onReject={handleReject}
         onKick={handleKick}
+        onStartStory={handleStartStory}
       />
     </div>
   );

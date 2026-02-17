@@ -7,6 +7,10 @@ export interface AuthUser {
   avatarUrl?: string;
 }
 
+// Re-export character types for convenience
+import type { CharacterData, PlayerInfo } from "./character";
+export type { CharacterData, PlayerInfo };
+
 // === AI Configuration ===
 
 export interface AIConfig {
@@ -54,13 +58,24 @@ export interface ClientKickPlayerMessage {
   playerName: string;
 }
 
+export interface ClientSetCharacterMessage {
+  type: "client:set_character";
+  character: CharacterData;
+}
+
+export interface ClientStartStoryMessage {
+  type: "client:start_story";
+}
+
 export type ClientMessage =
   | ClientChatMessage
   | ClientJoinMessage
   | ClientSetAIConfigMessage
   | ClientApproveJoinMessage
   | ClientRejectJoinMessage
-  | ClientKickPlayerMessage;
+  | ClientKickPlayerMessage
+  | ClientSetCharacterMessage
+  | ClientStartStoryMessage;
 
 // === Server → Client messages ===
 
@@ -96,6 +111,9 @@ export interface ServerRoomJoinedMessage {
   isHost?: boolean;
   isReconnect?: boolean;
   user?: AuthUser;
+  characters?: Record<string, CharacterData>;
+  allPlayers?: PlayerInfo[];
+  storyStarted?: boolean;
 }
 
 export interface ServerPlayerJoinedMessage {
@@ -103,6 +121,7 @@ export interface ServerPlayerJoinedMessage {
   playerName: string;
   players: string[];
   hostName: string;
+  allPlayers?: PlayerInfo[];
 }
 
 export interface ServerPlayerLeftMessage {
@@ -110,6 +129,13 @@ export interface ServerPlayerLeftMessage {
   playerName: string;
   players: string[];
   hostName: string;
+  allPlayers?: PlayerInfo[];
+}
+
+export interface ServerCharacterUpdatedMessage {
+  type: "server:character_updated";
+  playerName: string;
+  character: CharacterData;
 }
 
 export interface ServerErrorMessage {
@@ -145,4 +171,5 @@ export type ServerMessage =
   | ServerErrorMessage
   | ServerJoinPendingMessage
   | ServerJoinRequestMessage
-  | ServerKickedMessage;
+  | ServerKickedMessage
+  | ServerCharacterUpdatedMessage;

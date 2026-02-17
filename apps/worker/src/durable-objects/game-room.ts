@@ -3,13 +3,15 @@ import { clientMessageSchema } from "@aidnd/shared/schemas";
 import type {
   AIConfig,
   AuthUser,
+  CharacterData,
   ClientMessage,
+  PlayerInfo,
   ServerMessage,
 } from "@aidnd/shared/types";
 import { getProvider, MAX_PLAYERS_PER_ROOM } from "@aidnd/shared";
 import { callAI } from "../services/ai-service";
 import { verifyJWT } from "../auth/jwt";
-import { DM_SYSTEM_PROMPT } from "../prompts/dm-system";
+import { buildDMSystemPrompt } from "../prompts/dm-system";
 import type { Env } from "../types";
 
 type PlayerStatus = "host" | "approved" | "pending";
@@ -27,6 +29,11 @@ interface ConversationMessage {
   content: string;
 }
 
+interface PlayerRecord {
+  name: string;
+  isHost: boolean;
+}
+
 export class GameRoom extends DurableObject<Env> {
   private sessions: Map<WebSocket, SessionData> = new Map();
   private aiConfig: AIConfig | null = null;
@@ -37,6 +44,9 @@ export class GameRoom extends DurableObject<Env> {
   private chatLog: ServerMessage[] = [];
   private roomCode: string = "";
   private storageLoaded = false;
+  private characters: Map<string, CharacterData> = new Map(); // keyed by userId
+  private allPlayerRecords: Map<string, PlayerRecord> = new Map(); // keyed by userId
+  private storyStarted: boolean = false;
 
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
@@ -63,19 +73,27 @@ export class GameRoom extends DurableObject<Env> {
 
     // Load persisted state from storage
     this.ctx.blockConcurrencyWhile(async () => {
-      const [chatLog, conversationHistory, aiConfig, roomCode, hostPlayerName] =
-        await Promise.all([
-          this.ctx.storage.get<ServerMessage[]>("chatLog"),
-          this.ctx.storage.get<ConversationMessage[]>("conversationHistory"),
-          this.ctx.storage.get<AIConfig>("aiConfig"),
-          this.ctx.storage.get<string>("roomCode"),
-          this.ctx.storage.get<string>("hostPlayerName"),
-        ]);
+      const [
+        chatLog, conversationHistory, aiConfig, roomCode,
+        hostPlayerName, characters, allPlayerRecords, storyStarted,
+      ] = await Promise.all([
+        this.ctx.storage.get<ServerMessage[]>("chatLog"),
+        this.ctx.storage.get<ConversationMessage[]>("conversationHistory"),
+        this.ctx.storage.get<AIConfig>("aiConfig"),
+        this.ctx.storage.get<string>("roomCode"),
+        this.ctx.storage.get<string>("hostPlayerName"),
+        this.ctx.storage.get<Record<string, CharacterData>>("characters"),
+        this.ctx.storage.get<Record<string, PlayerRecord>>("allPlayerRecords"),
+        this.ctx.storage.get<boolean>("storyStarted"),
+      ]);
       if (chatLog) this.chatLog = chatLog;
       if (conversationHistory) this.conversationHistory = conversationHistory;
       if (aiConfig) this.aiConfig = aiConfig;
       if (roomCode) this.roomCode = roomCode;
       if (hostPlayerName) this.hostPlayerName = hostPlayerName;
+      if (characters) this.characters = new Map(Object.entries(characters));
+      if (allPlayerRecords) this.allPlayerRecords = new Map(Object.entries(allPlayerRecords));
+      if (storyStarted) this.storyStarted = storyStarted;
       this.storageLoaded = true;
     });
   }
@@ -168,6 +186,12 @@ export class GameRoom extends DurableObject<Env> {
       case "client:kick_player":
         await this.handleKickPlayer(ws, msg);
         break;
+      case "client:set_character":
+        await this.handleSetCharacter(ws, msg);
+        break;
+      case "client:start_story":
+        await this.handleStartStory(ws);
+        break;
     }
   }
 
@@ -181,15 +205,17 @@ export class GameRoom extends DurableObject<Env> {
     ws.close(code, "Connection closed");
 
     if (session?.playerName && session.status !== "pending") {
+      // Player stays in allPlayerRecords (visible as offline)
       this.broadcast({
         type: "server:player_left",
         playerName: session.playerName,
         players: this.getPlayerNames(),
         hostName: this.getHostName(),
+        allPlayers: this.getAllPlayersWithStatus(),
       });
       this.broadcast({
         type: "server:system",
-        content: `${session.playerName} has left the room.`,
+        content: `${session.playerName} has disconnected.`,
         timestamp: Date.now(),
       });
     }
@@ -365,6 +391,15 @@ export class GameRoom extends DurableObject<Env> {
     isReconnect: boolean,
     authUser?: AuthUser
   ): void {
+    // Track in allPlayerRecords (persists across disconnects)
+    if (!this.allPlayerRecords.has(session.userId)) {
+      this.allPlayerRecords.set(session.userId, {
+        name: session.playerName,
+        isHost: session.status === "host",
+      });
+      this.persistAllPlayerRecords();
+    }
+
     const provider = this.aiConfig
       ? getProvider(this.aiConfig.provider)
       : undefined;
@@ -380,6 +415,9 @@ export class GameRoom extends DurableObject<Env> {
       isHost: session.status === "host",
       isReconnect,
       user: authUser,
+      characters: this.getCharactersByPlayerName(),
+      allPlayers: this.getAllPlayersWithStatus(),
+      storyStarted: this.storyStarted,
     });
 
     // Replay full chat log so joining/reconnecting players see all history
@@ -395,6 +433,7 @@ export class GameRoom extends DurableObject<Env> {
         playerName: session.playerName,
         players: this.getPlayerNames(),
         hostName: this.getHostName(),
+        allPlayers: this.getAllPlayersWithStatus(),
       },
       ws
     );
@@ -413,9 +452,8 @@ export class GameRoom extends DurableObject<Env> {
       });
     }
 
-    if (this.aiConfig && this.conversationHistory.length === 0 && !isReconnect) {
-      this.sendAIGreeting();
-    }
+    // Story greeting is now host-triggered via client:start_story
+    // (no auto-greeting on join)
 
     // If the host just reconnected, notify them about any pending players
     if (session.status === "host") {
@@ -552,6 +590,17 @@ export class GameRoom extends DurableObject<Env> {
     });
 
     this.sessions.delete(targetWs);
+
+    // Remove from allPlayerRecords on kick (they are removed from the story)
+    this.allPlayerRecords.delete(targetSession.userId);
+    this.persistAllPlayerRecords();
+
+    // Remove their character too
+    if (this.characters.has(targetSession.userId)) {
+      this.characters.delete(targetSession.userId);
+      this.persistCharacters();
+    }
+
     try {
       targetWs.close(4002, "Kicked by host");
     } catch {
@@ -563,6 +612,7 @@ export class GameRoom extends DurableObject<Env> {
       playerName: msg.playerName,
       players: this.getPlayerNames(),
       hostName: this.getHostName(),
+      allPlayers: this.getAllPlayersWithStatus(),
     });
 
     this.broadcast({
@@ -623,12 +673,7 @@ export class GameRoom extends DurableObject<Env> {
       timestamp: Date.now(),
     });
 
-    if (
-      this.getPlayerNames().length > 0 &&
-      this.conversationHistory.length === 0
-    ) {
-      await this.sendAIGreeting();
-    }
+    // Story greeting is now host-triggered via client:start_story
   }
 
   // --- AI ---
@@ -638,19 +683,32 @@ export class GameRoom extends DurableObject<Env> {
 
     const provider = getProvider(this.aiConfig.provider);
     const providerName = provider?.name ?? this.aiConfig.provider;
+    const characterMap = this.getCharactersByPlayerName();
+    const systemPrompt = buildDMSystemPrompt(characterMap);
 
     try {
-      const playerNames = this.getPlayerNames().join(", ");
-      const userMsg = `The adventuring party has gathered: ${playerNames}. Set the scene!`;
+      const playerNames = this.getPlayerNames();
+      const partyDescriptions = playerNames.map((name) => {
+        const char = characterMap[name];
+        if (char) {
+          const classes = char.static.classes
+            .map((c) => `${c.name} ${c.level}`)
+            .join("/");
+          return `${name} (${char.static.name}, ${char.static.race} ${classes})`;
+        }
+        return name;
+      });
+
+      const userMsg = `The adventuring party has gathered: ${partyDescriptions.join(", ")}. Set the scene and introduce each character!`;
 
       const result = await callAI({
         aiConfig: this.aiConfig,
-        systemPrompt: DM_SYSTEM_PROMPT,
+        systemPrompt,
         messages: [{ role: "user", content: userMsg }],
       });
 
       await this.appendToConversation(
-        { role: "user", content: `[Party gathered: ${playerNames}]` },
+        { role: "user", content: `[Party gathered: ${playerNames.join(", ")}]` },
         { role: "assistant", content: result.text }
       );
 
@@ -693,9 +751,10 @@ export class GameRoom extends DurableObject<Env> {
     await this.appendToConversation({ role: "user", content: userMessage });
 
     try {
+      const systemPrompt = buildDMSystemPrompt(this.getCharactersByPlayerName());
       const result = await callAI({
         aiConfig: this.aiConfig,
-        systemPrompt: DM_SYSTEM_PROMPT,
+        systemPrompt,
         messages: this.conversationHistory,
       });
 
@@ -720,6 +779,74 @@ export class GameRoom extends DurableObject<Env> {
         code: "AI_ERROR",
       });
     }
+  }
+
+  // --- Character & Story Handlers ---
+
+  private async handleSetCharacter(
+    ws: WebSocket,
+    msg: Extract<ClientMessage, { type: "client:set_character" }>
+  ): Promise<void> {
+    const session = this.sessions.get(ws);
+    if (!session?.playerName || session.status === "pending") {
+      this.sendTo(ws, {
+        type: "server:error",
+        message: "Must join room first",
+        code: "NOT_JOINED",
+      });
+      return;
+    }
+
+    this.characters.set(session.userId, msg.character);
+    this.persistCharacters();
+
+    // Broadcast character update to all approved players
+    this.broadcast({
+      type: "server:character_updated",
+      playerName: session.playerName,
+      character: msg.character,
+    });
+  }
+
+  private async handleStartStory(ws: WebSocket): Promise<void> {
+    const session = this.sessions.get(ws);
+    if (!session || session.status !== "host") {
+      this.sendTo(ws, {
+        type: "server:error",
+        message: "Only the host can start the story",
+        code: "NOT_HOST",
+      });
+      return;
+    }
+
+    if (this.storyStarted) {
+      this.sendTo(ws, {
+        type: "server:error",
+        message: "Story has already started",
+        code: "ALREADY_STARTED",
+      });
+      return;
+    }
+
+    if (!this.aiConfig) {
+      this.sendTo(ws, {
+        type: "server:error",
+        message: "Configure an AI provider first",
+        code: "NO_AI_CONFIG",
+      });
+      return;
+    }
+
+    this.storyStarted = true;
+    this.ctx.storage.put("storyStarted", true);
+
+    this.broadcast({
+      type: "server:system",
+      content: "The adventure begins...",
+      timestamp: Date.now(),
+    });
+
+    await this.sendAIGreeting();
   }
 
   // --- Helpers ---
@@ -814,5 +941,53 @@ export class GameRoom extends DurableObject<Env> {
         // ignore
       }
     }
+  }
+
+  /** Get all players (online + offline) with their current status */
+  private getAllPlayersWithStatus(): PlayerInfo[] {
+    // Build set of currently online userIds
+    const onlineUserIds = new Set<string>();
+    for (const session of this.sessions.values()) {
+      if (session.status !== "pending") {
+        onlineUserIds.add(session.userId);
+      }
+    }
+
+    return Array.from(this.allPlayerRecords.entries()).map(([userId, record]) => ({
+      name: record.name,
+      online: onlineUserIds.has(userId),
+      isHost: record.isHost,
+    }));
+  }
+
+  /** Get characters mapped by player name instead of userId */
+  private getCharactersByPlayerName(): Record<string, CharacterData> {
+    const result: Record<string, CharacterData> = {};
+
+    // Build userId → playerName map from allPlayerRecords
+    for (const [userId, record] of this.allPlayerRecords.entries()) {
+      const char = this.characters.get(userId);
+      if (char) {
+        result[record.name] = char;
+      }
+    }
+
+    return result;
+  }
+
+  /** Persist characters to DO storage */
+  private persistCharacters(): void {
+    this.ctx.storage.put(
+      "characters",
+      Object.fromEntries(this.characters.entries())
+    );
+  }
+
+  /** Persist allPlayerRecords to DO storage */
+  private persistAllPlayerRecords(): void {
+    this.ctx.storage.put(
+      "allPlayerRecords",
+      Object.fromEntries(this.allPlayerRecords.entries())
+    );
   }
 }
