@@ -98,7 +98,7 @@ export default {
 
     // GET /api/auth/google — redirect to Google OAuth consent screen
     if (url.pathname === "/api/auth/google" && request.method === "GET") {
-      const authUrl = getGoogleAuthURL(env);
+      const authUrl = getGoogleAuthURL(env, request);
       return Response.redirect(authUrl, 302);
     }
 

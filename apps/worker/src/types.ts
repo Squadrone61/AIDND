@@ -9,9 +9,6 @@ export interface Env {
   GOOGLE_CLIENT_SECRET: string;
   JWT_SECRET: string;
   FRONTEND_URL: string;
-
-  // Optional: used to construct worker callback URL in production
-  CF_ACCOUNT_SUBDOMAIN?: string;
 }
 
 export type { GameRoom };

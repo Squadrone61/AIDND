@@ -20,10 +20,10 @@ interface GoogleUserInfo {
 /**
  * Build the Google OAuth consent URL.
  */
-export function getGoogleAuthURL(env: Env): string {
+export function getGoogleAuthURL(env: Env, request: Request): string {
   const params = new URLSearchParams({
     client_id: env.GOOGLE_CLIENT_ID,
-    redirect_uri: getCallbackURL(env),
+    redirect_uri: getCallbackURL(request),
     response_type: "code",
     scope: "openid email profile",
     access_type: "offline",
@@ -61,7 +61,7 @@ export async function handleGoogleCallback(
         code,
         client_id: env.GOOGLE_CLIENT_ID,
         client_secret: env.GOOGLE_CLIENT_SECRET,
-        redirect_uri: getCallbackURL(env),
+        redirect_uri: getCallbackURL(request),
         grant_type: "authorization_code",
       }),
     });
@@ -107,13 +107,9 @@ export async function handleGoogleCallback(
   }
 }
 
-function getCallbackURL(env: Env): string {
-  // Use the worker's own URL for the callback
-  const workerBase =
-    env.ENVIRONMENT === "production"
-      ? `https://aidnd-worker.${env.CF_ACCOUNT_SUBDOMAIN || "workers"}.dev`
-      : "http://localhost:8787";
-  return `${workerBase}/api/auth/google/callback`;
+function getCallbackURL(request: Request): string {
+  const url = new URL(request.url);
+  return `${url.origin}/api/auth/google/callback`;
 }
 
 function redirectToFrontend(env: Env, queryString: string): Response {
