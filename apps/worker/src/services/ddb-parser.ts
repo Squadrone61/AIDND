@@ -122,6 +122,12 @@ const CASTER_LEVEL_MULTIPLIER: Record<string, number> = {
   // Warlock uses Pact Magic (handled separately)
 };
 
+// Known/spontaneous casters: all learned spells are always available (no daily preparation).
+// Prepared casters (cleric, druid, paladin, wizard, artificer) select spells daily.
+const KNOWN_CASTER_CLASSES = new Set([
+  "bard", "sorcerer", "ranger", "warlock",
+]);
+
 // DDB activation type IDs → human-readable
 const ACTIVATION_TYPES: Record<number, string> = {
   1: "1 action",
@@ -1096,16 +1102,28 @@ function extractSpells(char: any): CharacterSpell[] {
     };
   }
 
+  // Build class ID → name lookup for known-caster detection
+  const classNameById = new Map<number, string>();
+  for (const cls of char.classes || []) {
+    if (cls.id != null && cls.definition?.name) {
+      classNameById.set(cls.id, cls.definition.name.toLowerCase());
+    }
+  }
+
   // Class spells
-  for (const classSpells of char.classSpells || []) {
-    for (const spell of classSpells.spells || []) {
+  for (const classSpellBlock of char.classSpells || []) {
+    // Resolve class name to detect known casters (bard, sorcerer, ranger, warlock)
+    const className = classNameById.get(classSpellBlock.characterClassId) || "";
+    const isKnownCaster = KNOWN_CASTER_CLASSES.has(className);
+
+    for (const spell of classSpellBlock.spells || []) {
       const def = spell.definition;
       if (!def?.name || seen.has(def.name)) continue;
       seen.add(def.name);
 
       const isAlwaysPrepared = spell.alwaysPrepared || false;
       const isPrepared =
-        spell.prepared || isAlwaysPrepared || def.level === 0 || false;
+        spell.prepared || isAlwaysPrepared || def.level === 0 || isKnownCaster;
       spells.push(
         parseSpellDef(def, isPrepared, {
           alwaysPrepared: isAlwaysPrepared,
