@@ -146,8 +146,8 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
 
   return (
     <div className="flex flex-col h-full text-sm">
-      {/* ═══ UPPER SECTION (scrollable, constrained) ═══ */}
-      <div className="overflow-y-auto shrink-0 max-h-[50%] p-3 space-y-3">
+      {/* ═══ UPPER SECTION (not constrained) ═══ */}
+      <div className="shrink-0 p-3 space-y-3">
         {/* Stat Boxes — compact row */}
         <div
           className={`grid ${isCaster ? "grid-cols-5" : "grid-cols-3"} gap-1.5 text-center`}
