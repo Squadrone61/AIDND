@@ -1,0 +1,389 @@
+import { z } from "zod";
+
+// ─── Dice schemas ───
+
+export const dieSizeSchema = z.union([
+  z.literal(4),
+  z.literal(6),
+  z.literal(8),
+  z.literal(10),
+  z.literal(12),
+  z.literal(20),
+  z.literal(100),
+]);
+
+export const dieRollSchema = z.object({
+  die: dieSizeSchema,
+  result: z.number().int().positive(),
+});
+
+export const rollResultSchema = z.object({
+  id: z.string(),
+  rolls: z.array(dieRollSchema),
+  modifier: z.number(),
+  total: z.number(),
+  advantage: z.boolean().optional(),
+  disadvantage: z.boolean().optional(),
+  criticalHit: z.boolean().optional(),
+  criticalFail: z.boolean().optional(),
+  label: z.string(),
+});
+
+// ─── Check schemas ───
+
+export const checkTypeSchema = z.enum([
+  "ability",
+  "skill",
+  "saving_throw",
+  "attack",
+  "custom",
+]);
+
+export const checkRequestSchema = z.object({
+  id: z.string(),
+  type: checkTypeSchema,
+  ability: z.string().optional(),
+  skill: z.string().optional(),
+  dc: z.number().optional(),
+  targetCharacter: z.string(),
+  advantage: z.boolean().optional(),
+  disadvantage: z.boolean().optional(),
+  reason: z.string(),
+});
+
+export const checkResultSchema = z.object({
+  requestId: z.string(),
+  roll: rollResultSchema,
+  dc: z.number().optional(),
+  success: z.boolean(),
+  characterName: z.string(),
+});
+
+// ─── Grid ───
+
+export const gridPositionSchema = z.object({
+  x: z.number().int(),
+  y: z.number().int(),
+});
+
+export const creatureSizeSchema = z.enum([
+  "tiny",
+  "small",
+  "medium",
+  "large",
+  "huge",
+  "gargantuan",
+]);
+
+// ─── Combatant ───
+
+export const combatantSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  type: z.enum(["player", "npc", "enemy"]),
+  playerId: z.string().optional(),
+  initiative: z.number(),
+  initiativeModifier: z.number(),
+  speed: z.number(),
+  movementUsed: z.number(),
+  position: gridPositionSchema.optional(),
+  size: creatureSizeSchema,
+  tokenColor: z.string().optional(),
+  // Enemy/NPC only fields
+  maxHP: z.number().optional(),
+  currentHP: z.number().optional(),
+  tempHP: z.number().optional(),
+  armorClass: z.number().optional(),
+  conditions: z.array(z.string()).optional(),
+});
+
+// ─── Combat ───
+
+export const combatPhaseSchema = z.enum(["initiative", "active", "ended"]);
+
+export const combatStateSchema = z.object({
+  phase: combatPhaseSchema,
+  round: z.number().int().positive(),
+  turnIndex: z.number().int().min(0),
+  turnOrder: z.array(z.string()),
+  combatants: z.record(z.string(), combatantSchema),
+  pendingCheck: checkRequestSchema.optional(),
+});
+
+// ─── Battle Map ───
+
+export const tileTypeSchema = z.enum([
+  "floor",
+  "wall",
+  "difficult_terrain",
+  "water",
+  "pit",
+  "door",
+  "stairs",
+]);
+
+export const mapTileSchema = z.object({
+  type: tileTypeSchema,
+});
+
+export const battleMapStateSchema = z.object({
+  id: z.string(),
+  width: z.number().int().positive(),
+  height: z.number().int().positive(),
+  tiles: z.array(z.array(mapTileSchema)),
+  name: z.string().optional(),
+});
+
+// ─── Encounter ───
+
+export const encounterPhaseSchema = z.enum([
+  "exploration",
+  "combat",
+  "social",
+  "rest",
+]);
+
+export const encounterStateSchema = z.object({
+  id: z.string(),
+  phase: encounterPhaseSchema,
+  combat: combatStateSchema.optional(),
+  map: battleMapStateSchema.optional(),
+});
+
+// ─── Pacing ───
+
+export const pacingProfileSchema = z.enum([
+  "story-heavy",
+  "balanced",
+  "combat-heavy",
+]);
+
+export const encounterLengthSchema = z.enum(["quick", "standard", "epic"]);
+
+// ─── State Changes ───
+
+export const stateChangeSchema = z.union([
+  z.object({ type: z.literal("damage"), target: z.string(), amount: z.number(), damageType: z.string().optional() }),
+  z.object({ type: z.literal("healing"), target: z.string(), amount: z.number() }),
+  z.object({ type: z.literal("temp_hp"), target: z.string(), amount: z.number() }),
+  z.object({ type: z.literal("hp_set"), target: z.string(), value: z.number() }),
+  z.object({ type: z.literal("condition_add"), target: z.string(), condition: z.string() }),
+  z.object({ type: z.literal("condition_remove"), target: z.string(), condition: z.string() }),
+  z.object({ type: z.literal("spell_slot_use"), target: z.string(), level: z.number() }),
+  z.object({ type: z.literal("spell_slot_restore"), target: z.string(), level: z.number() }),
+  z.object({ type: z.literal("death_save"), target: z.string(), success: z.boolean() }),
+  z.object({ type: z.literal("xp_gain"), target: z.string(), amount: z.number() }),
+  z.object({ type: z.literal("item_add"), target: z.string(), item: z.string(), quantity: z.number() }),
+  z.object({ type: z.literal("item_remove"), target: z.string(), item: z.string(), quantity: z.number() }),
+  z.object({ type: z.literal("combatant_add"), combatant: combatantSchema }),
+  z.object({ type: z.literal("combatant_remove"), combatantId: z.string() }),
+  z.object({ type: z.literal("initiative_set"), combatantId: z.string(), value: z.number() }),
+  z.object({ type: z.literal("move"), combatantId: z.string(), from: gridPositionSchema, to: gridPositionSchema }),
+  z.object({ type: z.literal("combat_phase"), phase: combatPhaseSchema }),
+  z.object({ type: z.literal("encounter_phase"), phase: encounterPhaseSchema }),
+]);
+
+// ─── Event Log ───
+
+export const gameEventTypeSchema = z.enum([
+  "damage", "healing", "condition_added", "condition_removed",
+  "spell_slot_used", "spell_slot_restored", "hp_set", "temp_hp_set",
+  "death_save", "combat_start", "combat_end", "turn_start", "turn_end",
+  "check_requested", "check_resolved", "initiative_rolled",
+  "rest_short", "rest_long", "item_added", "item_removed",
+  "xp_gained", "ai_response", "custom",
+]);
+
+// Note: We use z.any() for the stateBefore snapshot since it contains
+// CharacterDynamicData records which are defined in messages.ts schemas.
+// Full validation happens at the application layer.
+export const gameEventSchema = z.object({
+  id: z.string(),
+  type: gameEventTypeSchema,
+  timestamp: z.number(),
+  description: z.string(),
+  stateBefore: z.object({
+    characters: z.record(z.string(), z.any()),
+    combatants: z.record(z.string(), combatantSchema).optional(),
+  }),
+  conversationIndex: z.number(),
+  changes: z.array(stateChangeSchema),
+});
+
+// ─── Game State ───
+
+export const gameStateSchema = z.object({
+  encounter: encounterStateSchema.nullable(),
+  eventLog: z.array(gameEventSchema),
+  pacingProfile: pacingProfileSchema,
+  encounterLength: encounterLengthSchema,
+  customSystemPrompt: z.string().optional(),
+  pendingCheck: checkRequestSchema.optional(),
+});
+
+// ─── AI Actions ───
+
+const aiCheckRequestSchema = z.object({
+  type: z.literal("check_request"),
+  check: z.object({
+    type: checkTypeSchema,
+    ability: z.string().optional(),
+    skill: z.string().optional(),
+    dc: z.number().optional(),
+    targetCharacter: z.string(),
+    advantage: z.boolean().optional(),
+    disadvantage: z.boolean().optional(),
+    reason: z.string(),
+  }),
+});
+
+const aiDamageSchema = z.object({
+  type: z.literal("damage"),
+  target: z.string(),
+  amount: z.number(),
+  damageType: z.string().optional(),
+  description: z.string().optional(),
+});
+
+const aiHealingSchema = z.object({
+  type: z.literal("healing"),
+  target: z.string(),
+  amount: z.number(),
+});
+
+const aiSetHPSchema = z.object({
+  type: z.literal("set_hp"),
+  target: z.string(),
+  value: z.number(),
+});
+
+const aiSetTempHPSchema = z.object({
+  type: z.literal("set_temp_hp"),
+  target: z.string(),
+  value: z.number(),
+});
+
+const aiConditionAddSchema = z.object({
+  type: z.literal("condition_add"),
+  target: z.string(),
+  condition: z.string(),
+});
+
+const aiConditionRemoveSchema = z.object({
+  type: z.literal("condition_remove"),
+  target: z.string(),
+  condition: z.string(),
+});
+
+const aiSpellSlotUseSchema = z.object({
+  type: z.literal("spell_slot_use"),
+  target: z.string(),
+  level: z.number().int().min(1).max(9),
+});
+
+const aiSpellSlotRestoreSchema = z.object({
+  type: z.literal("spell_slot_restore"),
+  target: z.string(),
+  level: z.number().int().min(1).max(9),
+});
+
+const aiCombatStartSchema = z.object({
+  type: z.literal("combat_start"),
+  enemies: z.array(
+    z.object({
+      name: z.string(),
+      maxHP: z.number().positive(),
+      armorClass: z.number(),
+      initiativeModifier: z.number(),
+      speed: z.number(),
+      size: creatureSizeSchema.optional(),
+      position: gridPositionSchema.optional(),
+      tokenColor: z.string().optional(),
+    })
+  ),
+  mapLayout: z
+    .object({
+      width: z.number().int().positive(),
+      height: z.number().int().positive(),
+      tiles: z.array(z.string()),
+    })
+    .optional(),
+  description: z.string().optional(),
+});
+
+const aiCombatEndSchema = z.object({
+  type: z.literal("combat_end"),
+  description: z.string().optional(),
+});
+
+const aiTurnEndSchema = z.object({
+  type: z.literal("turn_end"),
+});
+
+const aiDeathSaveSchema = z.object({
+  type: z.literal("death_save"),
+  target: z.string(),
+});
+
+const aiXPAwardSchema = z.object({
+  type: z.literal("xp_award"),
+  targets: z.array(z.string()),
+  amount: z.number().positive(),
+});
+
+const aiAddCombatantsSchema = z.object({
+  type: z.literal("add_combatants"),
+  combatants: z.array(
+    z.object({
+      name: z.string(),
+      type: z.enum(["npc", "enemy"]),
+      maxHP: z.number().positive(),
+      armorClass: z.number(),
+      initiativeModifier: z.number(),
+      speed: z.number(),
+      size: creatureSizeSchema.optional(),
+      position: gridPositionSchema.optional(),
+    })
+  ),
+});
+
+const aiMoveCombatantSchema = z.object({
+  type: z.literal("move"),
+  combatantName: z.string(),
+  to: gridPositionSchema,
+});
+
+const aiShortRestSchema = z.object({
+  type: z.literal("short_rest"),
+  targets: z.array(z.string()).optional(),
+});
+
+const aiLongRestSchema = z.object({
+  type: z.literal("long_rest"),
+  targets: z.array(z.string()).optional(),
+});
+
+export const aiActionSchema = z.discriminatedUnion("type", [
+  aiCheckRequestSchema,
+  aiDamageSchema,
+  aiHealingSchema,
+  aiSetHPSchema,
+  aiSetTempHPSchema,
+  aiConditionAddSchema,
+  aiConditionRemoveSchema,
+  aiSpellSlotUseSchema,
+  aiSpellSlotRestoreSchema,
+  aiCombatStartSchema,
+  aiCombatEndSchema,
+  aiTurnEndSchema,
+  aiDeathSaveSchema,
+  aiXPAwardSchema,
+  aiAddCombatantsSchema,
+  aiMoveCombatantSchema,
+  aiShortRestSchema,
+  aiLongRestSchema,
+]);
+
+export const aiActionBlockSchema = z.object({
+  actions: z.array(aiActionSchema),
+});

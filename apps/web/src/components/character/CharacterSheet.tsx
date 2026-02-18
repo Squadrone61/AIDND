@@ -578,10 +578,10 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
         {activeTab === "actions" && (
           <ActionsTab
             character={character}
-            onSpellClick={(spell) =>
-              setPopup({ type: "spell", spell })
-            }
             onItemClick={(item) => setPopup({ type: "item", item })}
+            onFeatureClick={(feature) =>
+              setPopup({ type: "feature", feature })
+            }
           />
         )}
         {activeTab === "spells" && (

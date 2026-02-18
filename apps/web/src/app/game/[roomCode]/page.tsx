@@ -8,9 +8,13 @@ import { PendingOverlay } from "@/components/game/PendingOverlay";
 import { JoinGate } from "@/components/game/JoinGate";
 import { LeftSidebar } from "@/components/character/LeftSidebar";
 import { useWebSocket } from "@/hooks/useWebSocket";
+import { InitiativeTracker } from "@/components/game/InitiativeTracker";
 import type {
   AIConfig,
   CharacterData,
+  CombatState,
+  GameEvent,
+  GameState,
   PlayerInfo,
   ServerMessage,
 } from "@aidnd/shared/types";
@@ -29,7 +33,13 @@ function loadAIConfig(): AIConfig | undefined {
 
 /** Messages that belong in the main story chat */
 function isStoryMessage(msg: ServerMessage): boolean {
-  return msg.type === "server:chat" || msg.type === "server:ai";
+  return (
+    msg.type === "server:chat" ||
+    msg.type === "server:ai" ||
+    msg.type === "server:check_request" ||
+    msg.type === "server:check_result" ||
+    msg.type === "server:dice_roll"
+  );
 }
 
 /** Messages that belong in the sidebar activity log */
@@ -107,6 +117,8 @@ function GameContent({
     Record<string, CharacterData>
   >({});
   const [storyStarted, setStoryStarted] = useState(false);
+  const [combatState, setCombatState] = useState<CombatState | null>(null);
+  const [eventLog, setEventLog] = useState<GameEvent[]>([]);
 
   // Client-only state: browser storage values loaded after mount
   const [clientReady, setClientReady] = useState(false);
@@ -205,6 +217,37 @@ function GameContent({
           setLogMessages((prev) => [...prev, msg]);
           break;
 
+        case "server:combat_update":
+          setCombatState(msg.combat ?? null);
+          break;
+
+        case "server:game_state_sync":
+          if (msg.gameState.encounter?.combat) {
+            setCombatState(msg.gameState.encounter.combat);
+          }
+          setEventLog(msg.gameState.eventLog);
+          break;
+
+        case "server:rollback":
+          // Full state restoration
+          if (msg.characterUpdates) {
+            setPartyCharacters(msg.characterUpdates);
+            if (msg.characterUpdates[playerName]) {
+              setMyCharacter(msg.characterUpdates[playerName]);
+            }
+          }
+          if (msg.gameState.encounter?.combat) {
+            setCombatState(msg.gameState.encounter.combat);
+          } else {
+            setCombatState(null);
+          }
+          setEventLog(msg.gameState.eventLog);
+          break;
+
+        case "server:event_log":
+          setEventLog((prev) => [...prev, msg.event]);
+          break;
+
         default:
           if (isStoryMessage(msg)) {
             setStoryMessages((prev) => [...prev, msg]);
@@ -274,6 +317,14 @@ function GameContent({
     setStoryStarted(true);
   };
 
+  const handleRollDice = (checkRequestId: string) => {
+    send({ type: "client:roll_dice", checkRequestId });
+  };
+
+  const handleRollback = (eventId: string) => {
+    send({ type: "client:rollback", eventId });
+  };
+
   const handleCharacterImported = useCallback(
     (character: CharacterData) => {
       setMyCharacter(character);
@@ -292,11 +343,18 @@ function GameContent({
         character={myCharacter}
         onCharacterImported={handleCharacterImported}
       />
-      <ChatPanel
-        messages={storyMessages}
-        onSend={handleSend}
-        connectionState={connectionState}
-      />
+      <div className="flex-1 flex flex-col min-w-0">
+        {combatState && combatState.phase === "active" && (
+          <InitiativeTracker combat={combatState} />
+        )}
+        <ChatPanel
+          messages={storyMessages}
+          onSend={handleSend}
+          connectionState={connectionState}
+          onRollDice={handleRollDice}
+          myCharacterName={myCharacter?.static.name}
+        />
+      </div>
       <Sidebar
         roomCode={roomCode}
         players={players}
@@ -310,11 +368,14 @@ function GameContent({
         logMessages={logMessages}
         partyCharacters={partyCharacters}
         storyStarted={storyStarted}
+        combatState={combatState}
+        eventLog={eventLog}
         onSetAIConfig={handleSetAIConfig}
         onApprove={handleApprove}
         onReject={handleReject}
         onKick={handleKick}
         onStartStory={handleStartStory}
+        onRollback={handleRollback}
       />
     </div>
   );

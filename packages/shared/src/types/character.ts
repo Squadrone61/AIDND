@@ -23,6 +23,7 @@ export interface CharacterSpell {
   alwaysPrepared: boolean; // from class/subclass features (domain spells, etc.)
   spellSource: "class" | "race" | "feat" | "item" | "background";
   knownByClass: boolean; // in spellbook/known list (e.g. wizard spells in book)
+  sourceClass?: string; // which class this spell comes from (e.g. "Paladin", "Warlock")
   school?: string; // "Evocation", "Abjuration", etc.
   castingTime?: string; // "1 action", "1 bonus action", etc.
   range?: string; // "120 feet", "Self", "Touch"
@@ -84,6 +85,14 @@ export interface CharacterFeature {
   source: "class" | "race" | "feat" | "background";
   sourceLabel: string; // "Wizard", "Half-Orc", "War Caster"
   requiredLevel?: number; // class features only
+  activationType?: string; // "1 action", "1 bonus action", "1 reaction", etc.
+}
+
+export interface ClassResource {
+  name: string;
+  maxUses: number;
+  resetType: "short" | "long";
+  source: string; // class name: "Paladin", "Cleric", "Monk", etc.
 }
 
 export interface ProficiencyGroup {
@@ -133,6 +142,7 @@ export interface CharacterStaticData {
   proficiencyBonus: number;
   speed: number;
   features: CharacterFeature[];
+  classResources: ClassResource[];
   proficiencies: ProficiencyGroup;
   skills: SkillProficiency[];
   savingThrows: SavingThrowProficiency[];
@@ -157,6 +167,8 @@ export interface CharacterDynamicData {
   currentHP: number;
   tempHP: number;
   spellSlotsUsed: SpellSlotLevel[];
+  pactMagicSlots: SpellSlotLevel[]; // Warlock pact magic (tracked separately, recharges on short rest)
+  resourcesUsed: Record<string, number>; // class resource usage keyed by name
   conditions: string[]; // "poisoned", "stunned", etc.
   deathSaves: DeathSaves;
   inventory: InventoryItem[];

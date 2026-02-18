@@ -7,8 +7,21 @@ export interface AuthUser {
   avatarUrl?: string;
 }
 
-// Re-export character types for convenience
+// Re-export types for convenience
 import type { CharacterData, PlayerInfo } from "./character";
+import type { AIAction } from "./ai-actions";
+import type {
+  CheckRequest,
+  CheckResult,
+  CombatState,
+  GameEvent,
+  GameState,
+  GridPosition,
+  PacingProfile,
+  EncounterLength,
+  RollResult,
+  StateChange,
+} from "./game-state";
 export type { CharacterData, PlayerInfo };
 
 // === AI Configuration ===
@@ -67,6 +80,46 @@ export interface ClientStartStoryMessage {
   type: "client:start_story";
 }
 
+export interface ClientRollDiceMessage {
+  type: "client:roll_dice";
+  checkRequestId: string;
+}
+
+export interface ClientCombatActionMessage {
+  type: "client:combat_action";
+  action: string;
+}
+
+export interface ClientMoveTokenMessage {
+  type: "client:move_token";
+  to: GridPosition;
+}
+
+export interface ClientRollbackMessage {
+  type: "client:rollback";
+  eventId: string;
+}
+
+/** Host-only: set custom system prompt (undefined = reset to default) */
+export interface ClientSetSystemPromptMessage {
+  type: "client:set_system_prompt";
+  prompt?: string;
+}
+
+/** Host-only: set pacing profile and encounter length */
+export interface ClientSetPacingMessage {
+  type: "client:set_pacing";
+  profile: PacingProfile;
+  encounterLength: EncounterLength;
+}
+
+/** Host-only: manually adjust character dynamic state */
+export interface ClientDMOverrideMessage {
+  type: "client:dm_override";
+  characterName: string;
+  changes: StateChange[];
+}
+
 export type ClientMessage =
   | ClientChatMessage
   | ClientJoinMessage
@@ -75,7 +128,14 @@ export type ClientMessage =
   | ClientRejectJoinMessage
   | ClientKickPlayerMessage
   | ClientSetCharacterMessage
-  | ClientStartStoryMessage;
+  | ClientStartStoryMessage
+  | ClientRollDiceMessage
+  | ClientCombatActionMessage
+  | ClientMoveTokenMessage
+  | ClientRollbackMessage
+  | ClientSetSystemPromptMessage
+  | ClientSetPacingMessage
+  | ClientDMOverrideMessage;
 
 // === Server → Client messages ===
 
@@ -92,6 +152,8 @@ export interface ServerAIMessage {
   content: string;
   timestamp: number;
   id: string;
+  /** Structured game actions parsed from the AI response */
+  actions?: AIAction[];
 }
 
 export interface ServerSystemMessage {
@@ -161,6 +223,59 @@ export interface ServerKickedMessage {
   reason: string;
 }
 
+/** A check has been requested — shows "Roll" button to the target player */
+export interface ServerCheckRequestMessage {
+  type: "server:check_request";
+  check: CheckRequest;
+  timestamp: number;
+  id: string;
+}
+
+/** A check has been resolved — shows result to all */
+export interface ServerCheckResultMessage {
+  type: "server:check_result";
+  result: CheckResult;
+  timestamp: number;
+  id: string;
+}
+
+/** Dice roll visual — appears inline in chat */
+export interface ServerDiceRollMessage {
+  type: "server:dice_roll";
+  roll: RollResult;
+  playerName: string;
+  timestamp: number;
+  id: string;
+}
+
+/** Combat state changed */
+export interface ServerCombatUpdateMessage {
+  type: "server:combat_update";
+  combat: CombatState | null;
+  timestamp: number;
+}
+
+/** Full game state sync (on join/reconnect) */
+export interface ServerGameStateSyncMessage {
+  type: "server:game_state_sync";
+  gameState: GameState;
+}
+
+/** Rollback completed */
+export interface ServerRollbackMessage {
+  type: "server:rollback";
+  toEventId: string;
+  gameState: GameState;
+  characterUpdates: Record<string, CharacterData>;
+  timestamp: number;
+}
+
+/** Event log entry broadcast (for host rollback UI) */
+export interface ServerEventLogMessage {
+  type: "server:event_log";
+  event: GameEvent;
+}
+
 export type ServerMessage =
   | ServerChatMessage
   | ServerAIMessage
@@ -172,4 +287,11 @@ export type ServerMessage =
   | ServerJoinPendingMessage
   | ServerJoinRequestMessage
   | ServerKickedMessage
-  | ServerCharacterUpdatedMessage;
+  | ServerCharacterUpdatedMessage
+  | ServerCheckRequestMessage
+  | ServerCheckResultMessage
+  | ServerDiceRollMessage
+  | ServerCombatUpdateMessage
+  | ServerGameStateSyncMessage
+  | ServerRollbackMessage
+  | ServerEventLogMessage;

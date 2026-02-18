@@ -4,14 +4,24 @@ import type {
   AIConfig,
   AuthUser,
   CharacterData,
+  CharacterDynamicData,
   ClientMessage,
+  GameState,
   PlayerInfo,
   ServerMessage,
 } from "@aidnd/shared/types";
+import {
+  getModifier,
+  getSkillModifier,
+  getSavingThrowModifier,
+} from "@aidnd/shared/utils";
 import { getProvider, MAX_PLAYERS_PER_ROOM } from "@aidnd/shared";
 import { callAI } from "../services/ai-service";
 import { verifyJWT } from "../auth/jwt";
 import { buildDMSystemPrompt } from "../prompts/dm-system";
+import { parseAIResponse } from "../services/ai-parser";
+import { resolveActions } from "../services/state-resolver";
+import { rollCheck } from "../services/dice";
 import type { Env } from "../types";
 
 type PlayerStatus = "host" | "approved" | "pending";
@@ -34,6 +44,13 @@ interface PlayerRecord {
   isHost: boolean;
 }
 
+const DEFAULT_GAME_STATE: GameState = {
+  encounter: null,
+  eventLog: [],
+  pacingProfile: "balanced",
+  encounterLength: "standard",
+};
+
 export class GameRoom extends DurableObject<Env> {
   private sessions: Map<WebSocket, SessionData> = new Map();
   private aiConfig: AIConfig | null = null;
@@ -47,6 +64,7 @@ export class GameRoom extends DurableObject<Env> {
   private characters: Map<string, CharacterData> = new Map(); // keyed by userId
   private allPlayerRecords: Map<string, PlayerRecord> = new Map(); // keyed by userId
   private storyStarted: boolean = false;
+  private gameState: GameState = { ...DEFAULT_GAME_STATE, eventLog: [] };
 
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
@@ -76,6 +94,7 @@ export class GameRoom extends DurableObject<Env> {
       const [
         chatLog, conversationHistory, aiConfig, roomCode,
         hostPlayerName, characters, allPlayerRecords, storyStarted,
+        gameState,
       ] = await Promise.all([
         this.ctx.storage.get<ServerMessage[]>("chatLog"),
         this.ctx.storage.get<ConversationMessage[]>("conversationHistory"),
@@ -85,6 +104,7 @@ export class GameRoom extends DurableObject<Env> {
         this.ctx.storage.get<Record<string, CharacterData>>("characters"),
         this.ctx.storage.get<Record<string, PlayerRecord>>("allPlayerRecords"),
         this.ctx.storage.get<boolean>("storyStarted"),
+        this.ctx.storage.get<GameState>("gameState"),
       ]);
       if (chatLog) this.chatLog = chatLog;
       if (conversationHistory) this.conversationHistory = conversationHistory;
@@ -94,6 +114,7 @@ export class GameRoom extends DurableObject<Env> {
       if (characters) this.characters = new Map(Object.entries(characters));
       if (allPlayerRecords) this.allPlayerRecords = new Map(Object.entries(allPlayerRecords));
       if (storyStarted) this.storyStarted = storyStarted;
+      if (gameState) this.gameState = gameState;
       this.storageLoaded = true;
     });
   }
@@ -191,6 +212,27 @@ export class GameRoom extends DurableObject<Env> {
         break;
       case "client:start_story":
         await this.handleStartStory(ws);
+        break;
+      case "client:roll_dice":
+        await this.handleRollDice(ws, msg);
+        break;
+      case "client:combat_action":
+        await this.handleCombatAction(ws, msg);
+        break;
+      case "client:move_token":
+        await this.handleMoveToken(ws, msg);
+        break;
+      case "client:rollback":
+        await this.handleRollback(ws, msg);
+        break;
+      case "client:set_system_prompt":
+        await this.handleSetSystemPrompt(ws, msg);
+        break;
+      case "client:set_pacing":
+        await this.handleSetPacing(ws, msg);
+        break;
+      case "client:dm_override":
+        await this.handleDMOverride(ws, msg);
         break;
     }
   }
@@ -684,7 +726,7 @@ export class GameRoom extends DurableObject<Env> {
     const provider = getProvider(this.aiConfig.provider);
     const providerName = provider?.name ?? this.aiConfig.provider;
     const characterMap = this.getCharactersByPlayerName();
-    const systemPrompt = buildDMSystemPrompt(characterMap);
+    const systemPrompt = this.buildSystemPrompt(characterMap);
 
     try {
       const playerNames = this.getPlayerNames();
@@ -707,17 +749,16 @@ export class GameRoom extends DurableObject<Env> {
         messages: [{ role: "user", content: userMsg }],
       });
 
+      // Parse AI response for actions
+      const parsed = parseAIResponse(result.text);
+
       await this.appendToConversation(
         { role: "user", content: `[Party gathered: ${playerNames.join(", ")}]` },
         { role: "assistant", content: result.text }
       );
 
-      this.broadcast({
-        type: "server:ai",
-        content: result.text,
-        timestamp: Date.now(),
-        id: crypto.randomUUID(),
-      });
+      // Resolve any actions from the greeting
+      await this.processAIActions(parsed.narrative, parsed.actions);
     } catch (error) {
       this.broadcast({
         type: "server:error",
@@ -751,24 +792,24 @@ export class GameRoom extends DurableObject<Env> {
     await this.appendToConversation({ role: "user", content: userMessage });
 
     try {
-      const systemPrompt = buildDMSystemPrompt(this.getCharactersByPlayerName());
+      const systemPrompt = this.buildSystemPrompt(this.getCharactersByPlayerName());
       const result = await callAI({
         aiConfig: this.aiConfig,
         systemPrompt,
         messages: this.conversationHistory,
       });
 
+      // Parse AI response for structured actions
+      const parsed = parseAIResponse(result.text);
+
+      // Store the raw text in conversation history (including JSON blocks)
       await this.appendToConversation({
         role: "assistant",
         content: result.text,
       });
 
-      this.broadcast({
-        type: "server:ai",
-        content: result.text,
-        timestamp: Date.now(),
-        id: crypto.randomUUID(),
-      });
+      // Process narrative + actions
+      await this.processAIActions(parsed.narrative, parsed.actions);
     } catch (error) {
       this.broadcast({
         type: "server:error",
@@ -779,6 +820,117 @@ export class GameRoom extends DurableObject<Env> {
         code: "AI_ERROR",
       });
     }
+  }
+
+  /** Build system prompt with current game state context. */
+  private buildSystemPrompt(characters: Record<string, CharacterData>): string {
+    return buildDMSystemPrompt({
+      characters,
+      customPrompt: this.gameState.customSystemPrompt,
+      pacingProfile: this.gameState.pacingProfile,
+      encounterLength: this.gameState.encounterLength,
+      combatState: this.gameState.encounter?.combat ?? undefined,
+    });
+  }
+
+  /**
+   * Process parsed AI response: broadcast narrative, resolve actions,
+   * apply state changes, and broadcast updates.
+   */
+  private async processAIActions(
+    narrative: string,
+    actions: import("@aidnd/shared/types").AIAction[]
+  ): Promise<void> {
+    // Broadcast the AI narrative message (with actions metadata)
+    this.broadcast({
+      type: "server:ai",
+      content: narrative,
+      timestamp: Date.now(),
+      id: crypto.randomUUID(),
+      actions: actions.length > 0 ? actions : undefined,
+    });
+
+    if (actions.length === 0) return;
+
+    // Resolve actions against game state
+    const result = resolveActions(
+      actions,
+      this.gameState,
+      this.characters,
+      this.conversationHistory.length
+    );
+
+    // Apply character updates
+    for (const [userId, dynamicData] of result.characterUpdates) {
+      const char = this.characters.get(userId);
+      if (char) {
+        char.dynamic = dynamicData;
+        // Broadcast character update to all players
+        const playerName = this.getPlayerNameByUserId(userId);
+        if (playerName) {
+          this.broadcast({
+            type: "server:character_updated",
+            playerName,
+            character: char,
+          });
+        }
+      }
+    }
+
+    // Apply combat update
+    if (result.combatUpdate !== undefined) {
+      if (this.gameState.encounter) {
+        this.gameState.encounter.combat = result.combatUpdate;
+      }
+      this.broadcast({
+        type: "server:combat_update",
+        combat: result.combatUpdate ?? null,
+        timestamp: Date.now(),
+      });
+    }
+
+    // Broadcast check requests
+    for (const check of result.checkRequests) {
+      this.broadcast({
+        type: "server:check_request",
+        check,
+        timestamp: Date.now(),
+        id: crypto.randomUUID(),
+      });
+    }
+
+    // Append events to log, broadcast to host
+    for (const event of result.events) {
+      this.gameState.eventLog.push(event);
+      // Trim to last 100 events
+      if (this.gameState.eventLog.length > 100) {
+        this.gameState.eventLog = this.gameState.eventLog.slice(-100);
+      }
+      // Broadcast event to host for rollback UI
+      const hostWs = this.findHostWebSocket();
+      if (hostWs) {
+        this.sendTo(hostWs, {
+          type: "server:event_log",
+          event,
+        });
+      }
+    }
+
+    // Log warnings
+    for (const w of result.warnings) {
+      console.warn("[StateResolver]", w);
+    }
+
+    // Persist updated state
+    await this.persistGameState();
+    if (result.characterUpdates.size > 0) {
+      this.persistCharacters();
+    }
+  }
+
+  /** Persist game state to Durable Object storage. */
+  private async persistGameState(): Promise<void> {
+    await this.ctx.storage.put("gameState", this.gameState);
   }
 
   // --- Character & Story Handlers ---
@@ -847,6 +999,426 @@ export class GameRoom extends DurableObject<Env> {
     });
 
     await this.sendAIGreeting();
+  }
+
+  // --- Game Mechanic Handlers ---
+
+  private async handleRollDice(
+    ws: WebSocket,
+    msg: Extract<ClientMessage, { type: "client:roll_dice" }>
+  ): Promise<void> {
+    const session = this.sessions.get(ws);
+    if (!session?.playerName || session.status === "pending") {
+      this.sendTo(ws, { type: "server:error", message: "Must join room first", code: "NOT_JOINED" });
+      return;
+    }
+
+    // Find the pending check
+    const combat = this.gameState.encounter?.combat;
+    const pendingCheck = combat?.pendingCheck ?? this.gameState.pendingCheck;
+    if (!pendingCheck || pendingCheck.id !== msg.checkRequestId) {
+      this.sendTo(ws, { type: "server:error", message: "No matching pending check", code: "NO_PENDING_CHECK" });
+      return;
+    }
+
+    // Verify the rolling player owns the target character
+    const char = this.characters.get(session.userId);
+    if (!char || char.static.name.toLowerCase() !== pendingCheck.targetCharacter.toLowerCase()) {
+      this.sendTo(ws, { type: "server:error", message: "This check is not for your character", code: "WRONG_CHARACTER" });
+      return;
+    }
+
+    // Compute modifier from character data
+    const modifier = this.computeCheckModifier(char, pendingCheck);
+
+    // Roll the check
+    const roll = rollCheck({
+      modifier,
+      advantage: pendingCheck.advantage,
+      disadvantage: pendingCheck.disadvantage,
+      label: pendingCheck.reason,
+    });
+
+    // Determine success
+    const success = pendingCheck.dc !== undefined ? roll.total >= pendingCheck.dc : true;
+
+    // Broadcast dice roll (inline in chat)
+    this.broadcast({
+      type: "server:dice_roll",
+      roll,
+      playerName: session.playerName,
+      timestamp: Date.now(),
+      id: crypto.randomUUID(),
+    });
+
+    // Broadcast check result
+    this.broadcast({
+      type: "server:check_result",
+      result: {
+        requestId: pendingCheck.id,
+        roll,
+        dc: pendingCheck.dc,
+        success,
+        characterName: char.static.name,
+      },
+      timestamp: Date.now(),
+      id: crypto.randomUUID(),
+    });
+
+    // Clear pending check
+    if (combat?.pendingCheck?.id === pendingCheck.id) {
+      combat.pendingCheck = undefined;
+    }
+    if (this.gameState.pendingCheck?.id === pendingCheck.id) {
+      this.gameState.pendingCheck = undefined;
+    }
+
+    await this.persistGameState();
+
+    // Inject result into AI conversation and trigger follow-up
+    const resultLabel = success ? "Success" : "Failure";
+    const dcStr = pendingCheck.dc !== undefined ? ` (DC ${pendingCheck.dc})` : "";
+    const systemMsg = `[System: ${char.static.name} rolled ${roll.total} on ${pendingCheck.reason}${dcStr} — ${resultLabel}${roll.criticalHit ? " (Critical!)" : ""}${roll.criticalFail ? " (Critical Fail!)" : ""}]`;
+
+    await this.appendToConversation({ role: "user", content: systemMsg });
+
+    // Trigger AI to narrate the outcome
+    if (this.aiConfig) {
+      try {
+        const systemPrompt = this.buildSystemPrompt(this.getCharactersByPlayerName());
+        const result = await callAI({
+          aiConfig: this.aiConfig,
+          systemPrompt,
+          messages: this.conversationHistory,
+        });
+
+        const parsed = parseAIResponse(result.text);
+        await this.appendToConversation({ role: "assistant", content: result.text });
+        await this.processAIActions(parsed.narrative, parsed.actions);
+      } catch (error) {
+        this.broadcast({
+          type: "server:error",
+          message: error instanceof Error ? error.message : "AI follow-up failed",
+          code: "AI_ERROR",
+        });
+      }
+    }
+  }
+
+  private async handleCombatAction(
+    ws: WebSocket,
+    msg: Extract<ClientMessage, { type: "client:combat_action" }>
+  ): Promise<void> {
+    const session = this.sessions.get(ws);
+    if (!session?.playerName || session.status === "pending") {
+      this.sendTo(ws, { type: "server:error", message: "Must join room first", code: "NOT_JOINED" });
+      return;
+    }
+
+    const combat = this.gameState.encounter?.combat;
+    if (!combat || combat.phase !== "active") {
+      this.sendTo(ws, { type: "server:error", message: "Not in active combat", code: "NOT_IN_COMBAT" });
+      return;
+    }
+
+    // Enforce turn order — only the active combatant's player can act
+    const activeId = combat.turnOrder[combat.turnIndex];
+    const activeCombatant = combat.combatants[activeId];
+    if (activeCombatant?.type === "player" && activeCombatant.playerId !== session.userId) {
+      this.sendTo(ws, { type: "server:error", message: "It's not your turn", code: "NOT_YOUR_TURN" });
+      return;
+    }
+
+    // Treat as a chat message that triggers AI response
+    this.broadcast({
+      type: "server:chat",
+      content: msg.action,
+      playerName: session.playerName,
+      timestamp: Date.now(),
+      id: crypto.randomUUID(),
+    });
+
+    if (this.aiConfig) {
+      await this.getAIResponse(session.playerName, msg.action);
+    }
+  }
+
+  private async handleMoveToken(
+    ws: WebSocket,
+    msg: Extract<ClientMessage, { type: "client:move_token" }>
+  ): Promise<void> {
+    const session = this.sessions.get(ws);
+    if (!session?.playerName || session.status === "pending") {
+      this.sendTo(ws, { type: "server:error", message: "Must join room first", code: "NOT_JOINED" });
+      return;
+    }
+
+    const combat = this.gameState.encounter?.combat;
+    if (!combat || combat.phase !== "active") {
+      this.sendTo(ws, { type: "server:error", message: "Not in active combat", code: "NOT_IN_COMBAT" });
+      return;
+    }
+
+    // Find the player's combatant
+    const combatant = Object.values(combat.combatants).find(
+      (c) => c.type === "player" && c.playerId === session.userId
+    );
+    if (!combatant) {
+      this.sendTo(ws, { type: "server:error", message: "No combatant found for your character", code: "NO_COMBATANT" });
+      return;
+    }
+
+    // Verify it's their turn
+    const activeId = combat.turnOrder[combat.turnIndex];
+    if (activeId !== combatant.id) {
+      this.sendTo(ws, { type: "server:error", message: "It's not your turn", code: "NOT_YOUR_TURN" });
+      return;
+    }
+
+    // Calculate movement distance (simple Manhattan for now)
+    const from = combatant.position || { x: 0, y: 0 };
+    const dx = Math.abs(msg.to.x - from.x);
+    const dy = Math.abs(msg.to.y - from.y);
+    const distance = Math.max(dx, dy) * 5; // 5ft per tile
+
+    if (combatant.movementUsed + distance > combatant.speed) {
+      this.sendTo(ws, { type: "server:error", message: "Not enough movement remaining", code: "NO_MOVEMENT" });
+      return;
+    }
+
+    combatant.position = msg.to;
+    combatant.movementUsed += distance;
+
+    this.broadcast({
+      type: "server:combat_update",
+      combat,
+      timestamp: Date.now(),
+    });
+
+    await this.persistGameState();
+  }
+
+  private async handleRollback(
+    ws: WebSocket,
+    msg: Extract<ClientMessage, { type: "client:rollback" }>
+  ): Promise<void> {
+    const session = this.sessions.get(ws);
+    if (!session || session.status !== "host") {
+      this.sendTo(ws, { type: "server:error", message: "Only the host can rollback", code: "NOT_HOST" });
+      return;
+    }
+
+    const eventIdx = this.gameState.eventLog.findIndex((e) => e.id === msg.eventId);
+    if (eventIdx === -1) {
+      this.sendTo(ws, { type: "server:error", message: "Event not found", code: "EVENT_NOT_FOUND" });
+      return;
+    }
+
+    const event = this.gameState.eventLog[eventIdx];
+
+    // Restore character dynamic data from snapshot
+    for (const [userId, snapshot] of Object.entries(event.stateBefore.characters)) {
+      const char = this.characters.get(userId);
+      if (char) {
+        char.dynamic = snapshot as CharacterDynamicData;
+      }
+    }
+
+    // Restore combatant state if available
+    if (event.stateBefore.combatants && this.gameState.encounter?.combat) {
+      this.gameState.encounter.combat.combatants = event.stateBefore.combatants;
+    }
+
+    // Truncate conversation history
+    this.conversationHistory = this.conversationHistory.slice(0, event.conversationIndex);
+    await this.ctx.storage.put("conversationHistory", this.conversationHistory);
+
+    // Truncate event log (remove target event + everything after)
+    this.gameState.eventLog = this.gameState.eventLog.slice(0, eventIdx);
+
+    // Truncate chat log to messages before event timestamp
+    this.chatLog = this.chatLog.filter((msg) => {
+      if ("timestamp" in msg) {
+        return (msg as { timestamp: number }).timestamp < event.timestamp;
+      }
+      return true;
+    });
+    await this.ctx.storage.put("chatLog", this.chatLog);
+
+    // Persist everything
+    this.persistCharacters();
+    await this.persistGameState();
+
+    // Broadcast rollback with full restored state
+    const characterUpdates: Record<string, CharacterData> = {};
+    for (const [userId, char] of this.characters) {
+      const playerName = this.getPlayerNameByUserId(userId);
+      if (playerName) {
+        characterUpdates[playerName] = char;
+      }
+    }
+
+    this.broadcast({
+      type: "server:rollback",
+      toEventId: msg.eventId,
+      gameState: this.gameState,
+      characterUpdates,
+      timestamp: Date.now(),
+    });
+  }
+
+  private async handleSetSystemPrompt(
+    ws: WebSocket,
+    msg: Extract<ClientMessage, { type: "client:set_system_prompt" }>
+  ): Promise<void> {
+    const session = this.sessions.get(ws);
+    if (!session || session.status !== "host") {
+      this.sendTo(ws, { type: "server:error", message: "Only the host can change the system prompt", code: "NOT_HOST" });
+      return;
+    }
+
+    this.gameState.customSystemPrompt = msg.prompt;
+    await this.persistGameState();
+
+    this.broadcast({
+      type: "server:system",
+      content: msg.prompt ? "System prompt updated." : "System prompt reset to default.",
+      timestamp: Date.now(),
+    });
+  }
+
+  private async handleSetPacing(
+    ws: WebSocket,
+    msg: Extract<ClientMessage, { type: "client:set_pacing" }>
+  ): Promise<void> {
+    const session = this.sessions.get(ws);
+    if (!session || session.status !== "host") {
+      this.sendTo(ws, { type: "server:error", message: "Only the host can change pacing", code: "NOT_HOST" });
+      return;
+    }
+
+    this.gameState.pacingProfile = msg.profile;
+    this.gameState.encounterLength = msg.encounterLength;
+    await this.persistGameState();
+
+    this.broadcast({
+      type: "server:system",
+      content: `Pacing set to ${msg.profile}, encounter length: ${msg.encounterLength}.`,
+      timestamp: Date.now(),
+    });
+  }
+
+  private async handleDMOverride(
+    ws: WebSocket,
+    msg: Extract<ClientMessage, { type: "client:dm_override" }>
+  ): Promise<void> {
+    const session = this.sessions.get(ws);
+    if (!session || session.status !== "host") {
+      this.sendTo(ws, { type: "server:error", message: "Only the host can use DM overrides", code: "NOT_HOST" });
+      return;
+    }
+
+    // Find the character by name
+    for (const [userId, char] of this.characters) {
+      if (char.static.name.toLowerCase() === msg.characterName.toLowerCase()) {
+        // Apply changes manually (trusted from host)
+        for (const change of msg.changes) {
+          switch (change.type) {
+            case "damage": {
+              const amount = Math.max(0, change.amount);
+              let remaining = amount;
+              if (char.dynamic.tempHP > 0) {
+                const absorbed = Math.min(char.dynamic.tempHP, remaining);
+                char.dynamic.tempHP -= absorbed;
+                remaining -= absorbed;
+              }
+              char.dynamic.currentHP = Math.max(0, char.dynamic.currentHP - remaining);
+              break;
+            }
+            case "healing":
+              char.dynamic.currentHP = Math.min(char.static.maxHP, char.dynamic.currentHP + Math.max(0, change.amount));
+              break;
+            case "hp_set":
+              char.dynamic.currentHP = Math.max(0, Math.min(char.static.maxHP, change.value));
+              break;
+            case "temp_hp":
+              char.dynamic.tempHP = Math.max(char.dynamic.tempHP, change.amount);
+              break;
+            case "condition_add":
+              if (!char.dynamic.conditions.includes(change.condition)) {
+                char.dynamic.conditions.push(change.condition);
+              }
+              break;
+            case "condition_remove":
+              char.dynamic.conditions = char.dynamic.conditions.filter((c) => c !== change.condition);
+              break;
+          }
+        }
+
+        this.persistCharacters();
+
+        const playerName = this.getPlayerNameByUserId(userId);
+        if (playerName) {
+          this.broadcast({
+            type: "server:character_updated",
+            playerName,
+            character: char,
+          });
+        }
+        break;
+      }
+    }
+  }
+
+  /** Compute the modifier for a check based on character data. */
+  private computeCheckModifier(
+    char: CharacterData,
+    check: import("@aidnd/shared/types").CheckRequest
+  ): number {
+    const s = char.static;
+
+    if (check.type === "skill" && check.skill) {
+      const skill = s.skills.find(
+        (sk) => sk.name.toLowerCase() === check.skill!.toLowerCase()
+      );
+      if (skill) {
+        return getSkillModifier(skill, s.abilities, s.proficiencyBonus);
+      }
+    }
+
+    if (check.type === "saving_throw" && check.ability) {
+      const save = s.savingThrows.find(
+        (sv) => sv.ability === check.ability
+      );
+      if (save) {
+        return getSavingThrowModifier(save, s.abilities, s.proficiencyBonus);
+      }
+      // Fallback: raw ability modifier
+      const abilityKey = check.ability as keyof typeof s.abilities;
+      if (s.abilities[abilityKey] !== undefined) {
+        return getModifier(s.abilities[abilityKey]);
+      }
+    }
+
+    if (check.type === "ability" && check.ability) {
+      const abilityKey = check.ability as keyof typeof s.abilities;
+      if (s.abilities[abilityKey] !== undefined) {
+        return getModifier(s.abilities[abilityKey]);
+      }
+    }
+
+    if (check.type === "attack") {
+      // Use spell attack bonus or proficiency + STR/DEX
+      if (s.spellAttackBonus !== undefined) {
+        return s.spellAttackBonus;
+      }
+      // Melee: STR + prof, Ranged: DEX + prof
+      const strMod = getModifier(s.abilities.strength);
+      const dexMod = getModifier(s.abilities.dexterity);
+      return Math.max(strMod, dexMod) + s.proficiencyBonus;
+    }
+
+    return 0;
   }
 
   // --- Helpers ---
@@ -973,6 +1545,12 @@ export class GameRoom extends DurableObject<Env> {
     }
 
     return result;
+  }
+
+  /** Look up a player name from userId via allPlayerRecords. */
+  private getPlayerNameByUserId(userId: string): string | null {
+    const record = this.allPlayerRecords.get(userId);
+    return record?.name ?? null;
   }
 
   /** Persist characters to DO storage */

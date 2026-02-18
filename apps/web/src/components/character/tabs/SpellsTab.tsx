@@ -9,11 +9,30 @@ interface SpellsTabProps {
   onSpellClick: (spell: CharacterSpell) => void;
 }
 
+// Known/spontaneous casters — all learned spells are always available
+const KNOWN_CASTER_CLASSES = new Set([
+  "bard", "sorcerer", "ranger", "warlock",
+]);
+
 const AVAILABILITY_STYLES: Record<SpellAvailability, { dot: string; text: string }> = {
   active: { dot: "bg-green-500", text: "text-gray-200" },
   "ritual-only": { dot: "bg-blue-500", text: "text-blue-300/80" },
   known: { dot: "bg-gray-600 ring-1 ring-gray-500", text: "text-gray-500" },
 };
+
+function getClassBadge(spell: CharacterSpell): string | null {
+  if (spell.spellSource !== "class") return null;
+  if (!spell.alwaysPrepared) return null;
+
+  // Per-spell sourceClass: show "Prepared" for always-prepared spells from prepared casters
+  if (spell.sourceClass) {
+    const isKnown = KNOWN_CASTER_CLASSES.has(spell.sourceClass.toLowerCase());
+    return isKnown ? null : "Prepared";
+  }
+
+  // Fallback for old data without sourceClass
+  return "Always";
+}
 
 function SpellRow({
   spell,
@@ -24,6 +43,7 @@ function SpellRow({
 }) {
   const availability = getSpellAvailability(spell);
   const styles = AVAILABILITY_STYLES[availability];
+  const classBadge = getClassBadge(spell);
 
   return (
     <div
@@ -36,8 +56,8 @@ function SpellRow({
       <span className="truncate flex-1">{spell.name}</span>
 
       {/* Source badges */}
-      {spell.alwaysPrepared && spell.spellSource === "class" && (
-        <span className="text-[8px] text-purple-400/70 shrink-0">Always</span>
+      {classBadge && (
+        <span className="text-[8px] text-purple-400/70 shrink-0">{classBadge}</span>
       )}
       {spell.spellSource === "race" && (
         <span className="text-[8px] text-emerald-400/70 shrink-0">Race</span>
@@ -106,11 +126,59 @@ export function SpellsTab({ character, onSpellClick }: SpellsTabProps) {
   const filteredLevels =
     filter === "all" ? spellLevels : [Number(filter)];
 
+  const classResources = s.classResources || [];
+  const pactSlots = (d.pactMagicSlots || []).filter((sl) => sl.total > 0);
+
   return (
     <div className="space-y-2">
       <FilterChipBar chips={chips} activeChipId={filter} onSelect={setFilter} />
 
-      {s.spells.length === 0 && (
+      {/* Class Resources (Channel Divinity, Ki, Rage, etc.) */}
+      {classResources.length > 0 && (
+        <div className="space-y-1 pb-2 border-b border-gray-700/50">
+          <div className="text-[10px] text-gray-500 font-medium px-1.5">
+            Class Resources
+          </div>
+          {classResources.map((resource) => {
+            const used = (d.resourcesUsed || {})[resource.name] ?? 0;
+            const remaining = resource.maxUses - used;
+            return (
+              <div
+                key={resource.name}
+                className="flex items-center gap-1.5 text-xs px-1.5 py-0.5"
+              >
+                <span className="text-gray-300 truncate flex-1">
+                  {resource.name}
+                </span>
+                <span className="text-[9px] text-gray-500">
+                  {resource.resetType === "short" ? "SR" : "LR"}
+                </span>
+                <span className="text-purple-400/80 shrink-0">
+                  {remaining}/{resource.maxUses}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Pact Magic Slots (Warlock) */}
+      {pactSlots.length > 0 && (
+        <div className="flex items-center gap-2 text-xs px-1.5 py-1 bg-purple-900/20 border border-purple-800/30 rounded">
+          <span className="text-purple-400 font-medium text-[10px]">Pact Slots</span>
+          {pactSlots.map((sl) => (
+            <span key={sl.level} className="text-gray-300">
+              <span className="text-gray-500 text-[10px]">Lvl {sl.level}:</span>{" "}
+              <span className="text-purple-400/80">
+                {sl.total - sl.used}/{sl.total}
+              </span>
+            </span>
+          ))}
+          <span className="text-[9px] text-gray-600 ml-auto">short rest</span>
+        </div>
+      )}
+
+      {s.spells.length === 0 && classResources.length === 0 && (
         <div className="text-xs text-gray-600 text-center py-4">
           No spells known
         </div>

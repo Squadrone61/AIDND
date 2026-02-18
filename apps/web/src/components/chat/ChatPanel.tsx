@@ -9,9 +9,11 @@ interface ChatPanelProps {
   messages: ServerMessage[];
   onSend: (content: string) => void;
   connectionState: ConnectionState;
+  onRollDice?: (checkRequestId: string) => void;
+  myCharacterName?: string;
 }
 
-export function ChatPanel({ messages, onSend, connectionState }: ChatPanelProps) {
+export function ChatPanel({ messages, onSend, connectionState, onRollDice, myCharacterName }: ChatPanelProps) {
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -71,7 +73,7 @@ export function ChatPanel({ messages, onSend, connectionState }: ChatPanelProps)
           </div>
         )}
         {messages.map((msg, i) => (
-          <ChatMessage key={i} message={msg} />
+          <ChatMessage key={i} message={msg} onRollDice={onRollDice} myCharacterName={myCharacterName} />
         ))}
         <div ref={messagesEndRef} />
       </div>

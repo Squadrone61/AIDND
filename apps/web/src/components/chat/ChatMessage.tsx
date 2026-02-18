@@ -2,9 +2,11 @@ import type { ServerMessage } from "@aidnd/shared/types";
 
 interface ChatMessageProps {
   message: ServerMessage;
+  onRollDice?: (checkRequestId: string) => void;
+  myCharacterName?: string;
 }
 
-export function ChatMessage({ message }: ChatMessageProps) {
+export function ChatMessage({ message, onRollDice, myCharacterName }: ChatMessageProps) {
   switch (message.type) {
     case "server:chat":
       return (
@@ -41,6 +43,148 @@ export function ChatMessage({ message }: ChatMessageProps) {
           Error: {message.message}
         </div>
       );
+
+    case "server:check_request": {
+      const check = message.check;
+      const isMyCheck =
+        myCharacterName &&
+        check.targetCharacter.toLowerCase() === myCharacterName.toLowerCase();
+
+      return (
+        <div className="bg-amber-900/20 border-l-4 border-amber-500 p-3 rounded-r-lg">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-amber-400 text-lg">&#127922;</span>
+            <span className="text-xs text-amber-400 font-semibold uppercase">
+              {check.type.replace("_", " ")} Check
+            </span>
+            {check.dc !== undefined && (
+              <span className="text-xs text-gray-500 ml-auto">DC {check.dc}</span>
+            )}
+          </div>
+          <div className="text-sm text-gray-300 mb-2">
+            <span className="font-medium text-amber-300">{check.targetCharacter}</span>
+            {" — "}
+            {check.reason}
+            {check.skill && (
+              <span className="text-gray-500"> ({check.skill})</span>
+            )}
+            {check.ability && !check.skill && (
+              <span className="text-gray-500"> ({check.ability})</span>
+            )}
+          </div>
+          {check.advantage && (
+            <span className="text-xs text-green-400 mr-2">Advantage</span>
+          )}
+          {check.disadvantage && (
+            <span className="text-xs text-red-400 mr-2">Disadvantage</span>
+          )}
+          {isMyCheck && onRollDice && (
+            <button
+              onClick={() => onRollDice(check.id)}
+              className="mt-1 bg-amber-600 hover:bg-amber-700 text-white text-sm px-4 py-1.5
+                         rounded-lg font-medium transition-colors"
+            >
+              Roll d20
+            </button>
+          )}
+        </div>
+      );
+    }
+
+    case "server:dice_roll": {
+      const roll = message.roll;
+      const isCrit = roll.criticalHit;
+      const isFail = roll.criticalFail;
+
+      return (
+        <div
+          className={`border-l-4 p-3 rounded-r-lg ${
+            isCrit
+              ? "bg-yellow-900/20 border-yellow-400"
+              : isFail
+                ? "bg-red-900/20 border-red-500"
+                : "bg-blue-900/20 border-blue-500"
+          }`}
+        >
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-lg">&#127922;</span>
+            <span className="text-xs font-semibold uppercase text-gray-400">
+              {message.playerName} rolled
+            </span>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <span
+              className={`text-2xl font-bold ${
+                isCrit
+                  ? "text-yellow-400"
+                  : isFail
+                    ? "text-red-400"
+                    : "text-blue-300"
+              }`}
+            >
+              {roll.total}
+            </span>
+            <span className="text-xs text-gray-500">
+              [{roll.rolls.map((r) => `d${r.die}: ${r.result}`).join(", ")}
+              {roll.modifier !== 0 && (
+                <>{roll.modifier > 0 ? ` + ${roll.modifier}` : ` - ${Math.abs(roll.modifier)}`}</>
+              )}]
+            </span>
+          </div>
+          <div className="text-xs text-gray-400 mt-0.5">{roll.label}</div>
+          {isCrit && (
+            <div className="text-xs text-yellow-400 font-bold mt-1">
+              CRITICAL HIT!
+            </div>
+          )}
+          {isFail && (
+            <div className="text-xs text-red-400 font-bold mt-1">
+              CRITICAL FAIL!
+            </div>
+          )}
+          {roll.advantage && (
+            <span className="text-xs text-green-400">Advantage</span>
+          )}
+          {roll.disadvantage && (
+            <span className="text-xs text-red-400">Disadvantage</span>
+          )}
+        </div>
+      );
+    }
+
+    case "server:check_result": {
+      const res = message.result;
+      const success = res.success;
+
+      return (
+        <div
+          className={`border-l-4 p-3 rounded-r-lg ${
+            success
+              ? "bg-green-900/20 border-green-500"
+              : "bg-red-900/20 border-red-500"
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <span
+              className={`text-lg font-bold ${
+                success ? "text-green-400" : "text-red-400"
+              }`}
+            >
+              {success ? "Success!" : "Failure!"}
+            </span>
+            <span className="text-sm text-gray-400">
+              {res.characterName} rolled {res.roll.total}
+              {res.dc !== undefined && ` vs DC ${res.dc}`}
+            </span>
+          </div>
+        </div>
+      );
+    }
+
+    case "server:combat_update":
+      // Combat state updates are handled at the page level,
+      // not rendered inline in chat
+      return null;
 
     default:
       return null;

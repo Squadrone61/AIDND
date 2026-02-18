@@ -6,6 +6,8 @@ import { formatClassString, getTotalLevel } from "@aidnd/shared/utils";
 import type {
   AIConfig,
   CharacterData,
+  CombatState,
+  GameEvent,
   PlayerInfo,
   ServerMessage,
 } from "@aidnd/shared/types";
@@ -25,11 +27,14 @@ interface SidebarProps {
   logMessages: ServerMessage[];
   partyCharacters: Record<string, CharacterData>;
   storyStarted: boolean;
+  combatState?: CombatState | null;
+  eventLog?: GameEvent[];
   onSetAIConfig: (config: AIConfig) => void;
   onApprove: (playerName: string) => void;
   onReject: (playerName: string) => void;
   onKick: (playerName: string) => void;
   onStartStory: () => void;
+  onRollback?: (eventId: string) => void;
 }
 
 export function Sidebar({
@@ -45,15 +50,19 @@ export function Sidebar({
   logMessages,
   partyCharacters,
   storyStarted,
+  combatState,
+  eventLog,
   onSetAIConfig,
   onApprove,
   onReject,
   onKick,
   onStartStory,
+  onRollback,
 }: SidebarProps) {
   const [showConfigForm, setShowConfigForm] = useState(false);
   const [dmCollapsed, setDmCollapsed] = useState(false);
   const [logCollapsed, setLogCollapsed] = useState(false);
+  const [eventLogCollapsed, setEventLogCollapsed] = useState(true);
   const [provider, setProvider] = useState("anthropic");
   const [apiKeyInput, setApiKeyInput] = useState("");
   const [modelInput, setModelInput] = useState("");
@@ -308,6 +317,56 @@ export function Sidebar({
           </div>
         )}
       </div>
+
+      {/* Event Log (Host only) */}
+      {isHost && eventLog && eventLog.length > 0 && (
+        <div className="border-b border-gray-700 flex flex-col min-h-0">
+          <button
+            onClick={() => setEventLogCollapsed(!eventLogCollapsed)}
+            className="flex items-center gap-1 p-4 pb-2 w-full text-left"
+          >
+            <span
+              className={`text-[10px] text-gray-600 transition-transform ${eventLogCollapsed ? "" : "rotate-90"}`}
+            >
+              &#9654;
+            </span>
+            <span className="text-xs text-gray-500 uppercase tracking-wider">
+              Event Log
+            </span>
+            <span className="text-[10px] text-gray-600 ml-auto">
+              {eventLog.length}
+            </span>
+          </button>
+          {!eventLogCollapsed && (
+            <div className="px-4 pb-3 overflow-y-auto max-h-48 space-y-1.5">
+              {eventLog.slice(-20).map((event) => (
+                <div
+                  key={event.id}
+                  className="flex items-start gap-1.5 text-xs group"
+                >
+                  <div className="flex-1 text-gray-400 min-w-0">
+                    <span className="text-gray-600">
+                      {event.type.replace(/_/g, " ")}
+                    </span>
+                    {" — "}
+                    <span>{event.description}</span>
+                  </div>
+                  {onRollback && (
+                    <button
+                      onClick={() => onRollback(event.id)}
+                      className="text-[10px] text-red-400/60 hover:text-red-400
+                                 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                      title="Rollback to before this event"
+                    >
+                      Undo
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* AI Config (Host only) */}
       {isHost && (

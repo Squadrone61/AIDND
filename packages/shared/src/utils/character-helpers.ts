@@ -139,6 +139,23 @@ export function buildCharacterContextBlock(
     lines.push(`**Spell Slots:** ${slotLines.join(", ")}`);
   }
 
+  // Pact magic slots (Warlock)
+  const pactLines = (d.pactMagicSlots || [])
+    .filter((sl) => sl.total > 0)
+    .map((sl) => `Lvl ${sl.level}: ${sl.total - sl.used}/${sl.total}`);
+  if (pactLines.length > 0) {
+    lines.push(`**Pact Slots (short rest):** ${pactLines.join(", ")}`);
+  }
+
+  // Class resources (Channel Divinity, Ki, Rage, etc.)
+  if (s.classResources && s.classResources.length > 0) {
+    const resLines = s.classResources.map((r) => {
+      const used = (d.resourcesUsed || {})[r.name] ?? 0;
+      return `${r.name}: ${r.maxUses - used}/${r.maxUses} (${r.resetType} rest)`;
+    });
+    lines.push(`**Resources:** ${resLines.join(", ")}`);
+  }
+
   if (s.features.length > 0) {
     lines.push(`**Features:** ${s.features.map((f) => f.name).join(", ")}`);
   }
@@ -174,6 +191,8 @@ export function createInitialDynamicData(
     currentHP: staticData.maxHP,
     tempHP: 0,
     spellSlotsUsed,
+    pactMagicSlots: [],
+    resourcesUsed: {},
     conditions: [],
     deathSaves: { successes: 0, failures: 0 },
     inventory: [],
@@ -213,6 +232,22 @@ export function mergeReimport(
     ...slot,
     used: Math.min(oldSlotMap.get(slot.level) ?? 0, slot.total),
   }));
+
+  // Merge pact magic slots similarly
+  const oldPactMap = new Map(
+    (dynamic.pactMagicSlots || []).map((s) => [s.level, s.used])
+  );
+  dynamic.pactMagicSlots = (newDynamic.pactMagicSlots || []).map((slot) => ({
+    ...slot,
+    used: Math.min(oldPactMap.get(slot.level) ?? 0, slot.total),
+  }));
+
+  // Preserve resource usage, clamp to new maxUses
+  const oldResources = dynamic.resourcesUsed || {};
+  dynamic.resourcesUsed = {};
+  for (const r of newStaticData.classResources || []) {
+    dynamic.resourcesUsed[r.name] = Math.min(oldResources[r.name] ?? 0, r.maxUses);
+  }
 
   return {
     static: newStaticData,

@@ -1,4 +1,16 @@
 import { z } from "zod";
+import {
+  gridPositionSchema,
+  checkRequestSchema,
+  checkResultSchema,
+  rollResultSchema,
+  combatStateSchema,
+  gameStateSchema,
+  gameEventSchema,
+  pacingProfileSchema,
+  encounterLengthSchema,
+  aiActionSchema,
+} from "./game-state";
 
 // === Auth schemas ===
 
@@ -49,6 +61,7 @@ export const characterSpellSchema = z.object({
   description: z.string().optional(),
   ritual: z.boolean().optional(),
   concentration: z.boolean().optional(),
+  sourceClass: z.string().optional(),
 });
 
 export const spellSlotLevelSchema = z.object({
@@ -130,6 +143,7 @@ export const characterFeatureSchema = z.object({
   source: z.enum(["class", "race", "feat", "background"]),
   sourceLabel: z.string(),
   requiredLevel: z.number().optional(),
+  activationType: z.string().optional(),
 });
 
 export const advantageEntrySchema = z.object({
@@ -146,6 +160,13 @@ export const proficiencyGroupSchema = z.object({
   other: z.array(z.string()),
 });
 
+export const classResourceSchema = z.object({
+  name: z.string(),
+  maxUses: z.number(),
+  resetType: z.enum(["short", "long"]),
+  source: z.string(),
+});
+
 export const characterStaticDataSchema = z.object({
   name: z.string(),
   race: z.string(),
@@ -156,6 +177,7 @@ export const characterStaticDataSchema = z.object({
   proficiencyBonus: z.number(),
   speed: z.number(),
   features: z.array(characterFeatureSchema),
+  classResources: z.array(classResourceSchema).optional().default([]),
   proficiencies: proficiencyGroupSchema,
   skills: z.array(skillProficiencySchema),
   savingThrows: z.array(savingThrowProficiencySchema),
@@ -185,6 +207,8 @@ export const characterDynamicDataSchema = z.object({
   currentHP: z.number(),
   tempHP: z.number(),
   spellSlotsUsed: z.array(spellSlotLevelSchema),
+  pactMagicSlots: z.array(spellSlotLevelSchema).optional().default([]),
+  resourcesUsed: z.record(z.string(), z.number()).optional().default({}),
   conditions: z.array(z.string()),
   deathSaves: deathSavesSchema,
   inventory: z.array(inventoryItemSchema),
@@ -250,6 +274,43 @@ export const clientStartStorySchema = z.object({
   type: z.literal("client:start_story"),
 });
 
+export const clientRollDiceSchema = z.object({
+  type: z.literal("client:roll_dice"),
+  checkRequestId: z.string(),
+});
+
+export const clientCombatActionSchema = z.object({
+  type: z.literal("client:combat_action"),
+  action: z.string().min(1).max(2000),
+});
+
+export const clientMoveTokenSchema = z.object({
+  type: z.literal("client:move_token"),
+  to: gridPositionSchema,
+});
+
+export const clientRollbackSchema = z.object({
+  type: z.literal("client:rollback"),
+  eventId: z.string(),
+});
+
+export const clientSetSystemPromptSchema = z.object({
+  type: z.literal("client:set_system_prompt"),
+  prompt: z.string().optional(),
+});
+
+export const clientSetPacingSchema = z.object({
+  type: z.literal("client:set_pacing"),
+  profile: pacingProfileSchema,
+  encounterLength: encounterLengthSchema,
+});
+
+export const clientDMOverrideSchema = z.object({
+  type: z.literal("client:dm_override"),
+  characterName: z.string(),
+  changes: z.array(z.any()), // StateChange is a union, validated at runtime
+});
+
 export const clientMessageSchema = z.discriminatedUnion("type", [
   clientChatSchema,
   clientJoinSchema,
@@ -259,6 +320,13 @@ export const clientMessageSchema = z.discriminatedUnion("type", [
   clientKickPlayerSchema,
   clientSetCharacterSchema,
   clientStartStorySchema,
+  clientRollDiceSchema,
+  clientCombatActionSchema,
+  clientMoveTokenSchema,
+  clientRollbackSchema,
+  clientSetSystemPromptSchema,
+  clientSetPacingSchema,
+  clientDMOverrideSchema,
 ]);
 
 // === Server → Client schemas ===
@@ -276,6 +344,7 @@ export const serverAISchema = z.object({
   content: z.string(),
   timestamp: z.number(),
   id: z.string(),
+  actions: z.array(aiActionSchema).optional(),
 });
 
 export const serverSystemSchema = z.object({
@@ -345,6 +414,52 @@ export const serverKickedSchema = z.object({
   reason: z.string(),
 });
 
+export const serverCheckRequestSchema = z.object({
+  type: z.literal("server:check_request"),
+  check: checkRequestSchema,
+  timestamp: z.number(),
+  id: z.string(),
+});
+
+export const serverCheckResultSchema = z.object({
+  type: z.literal("server:check_result"),
+  result: checkResultSchema,
+  timestamp: z.number(),
+  id: z.string(),
+});
+
+export const serverDiceRollSchema = z.object({
+  type: z.literal("server:dice_roll"),
+  roll: rollResultSchema,
+  playerName: z.string(),
+  timestamp: z.number(),
+  id: z.string(),
+});
+
+export const serverCombatUpdateSchema = z.object({
+  type: z.literal("server:combat_update"),
+  combat: combatStateSchema.nullable(),
+  timestamp: z.number(),
+});
+
+export const serverGameStateSyncSchema = z.object({
+  type: z.literal("server:game_state_sync"),
+  gameState: gameStateSchema,
+});
+
+export const serverRollbackSchema = z.object({
+  type: z.literal("server:rollback"),
+  toEventId: z.string(),
+  gameState: gameStateSchema,
+  characterUpdates: z.record(z.string(), characterDataSchema),
+  timestamp: z.number(),
+});
+
+export const serverEventLogSchema = z.object({
+  type: z.literal("server:event_log"),
+  event: gameEventSchema,
+});
+
 export const serverMessageSchema = z.discriminatedUnion("type", [
   serverChatSchema,
   serverAISchema,
@@ -357,4 +472,11 @@ export const serverMessageSchema = z.discriminatedUnion("type", [
   serverJoinRequestSchema,
   serverKickedSchema,
   serverCharacterUpdatedSchema,
+  serverCheckRequestSchema,
+  serverCheckResultSchema,
+  serverDiceRollSchema,
+  serverCombatUpdateSchema,
+  serverGameStateSyncSchema,
+  serverRollbackSchema,
+  serverEventLogSchema,
 ]);

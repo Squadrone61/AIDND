@@ -13,6 +13,7 @@ import type {
   CharacterClass,
   CharacterSpell,
   CharacterFeature,
+  ClassResource,
   ProficiencyGroup,
   AdvantageEntry,
   SpellSlotLevel,
@@ -127,6 +128,16 @@ const CASTER_LEVEL_MULTIPLIER: Record<string, number> = {
 const KNOWN_CASTER_CLASSES = new Set([
   "bard", "sorcerer", "ranger", "warlock",
 ]);
+
+// DDB limitedUse resetType IDs → rest type
+const DDB_RESET_TYPES: Record<number, "short" | "long" | null> = {
+  1: null,    // other/special
+  2: "short", // short rest
+  3: "long",  // long rest
+  4: "long",  // dawn (effectively long rest)
+  5: null,    // day (treat as special)
+  6: null,    // unknown
+};
 
 // DDB activation type IDs → human-readable
 const ACTIVATION_TYPES: Record<number, string> = {
@@ -310,6 +321,19 @@ export function parseDDBCharacter(raw: unknown): {
   // === Features ===
   const features = extractFeatures(char, classes);
 
+  // === Actions (DDB stores activated abilities separately from class features) ===
+  const actionFeatures = extractActions(char);
+  const featureNames = new Set(features.map((f) => f.name));
+  for (const af of actionFeatures) {
+    if (!featureNames.has(af.name)) {
+      featureNames.add(af.name);
+      features.push(af);
+    }
+  }
+
+  // === Class Resources (Channel Divinity, Ki, Rage, etc.) ===
+  const classResources = extractClassResources(char);
+
   // === Proficiencies (ddb2alchemy entityTypeId approach) ===
   const proficiencies = extractProficiencies(char);
 
@@ -326,7 +350,7 @@ export function parseDDBCharacter(raw: unknown): {
   const spellcasting = computeSpellcasting(char, abilities, proficiencyBonus);
 
   // === Spell Slots (ddb2alchemy convertSpellSlots approach) ===
-  const spellSlots = extractSpellSlots(char);
+  const { regularSlots, pactSlots } = extractSpellSlots(char);
 
   // === Inventory ===
   const inventory = extractInventory(char, abilities, proficiencyBonus);
@@ -353,6 +377,7 @@ export function parseDDBCharacter(raw: unknown): {
     proficiencyBonus,
     speed,
     features,
+    classResources,
     proficiencies,
     skills,
     savingThrows,
@@ -368,10 +393,23 @@ export function parseDDBCharacter(raw: unknown): {
     ddbId: char.id || undefined,
   };
 
+  // Extract initial resource usage from DDB
+  const initialResourcesUsed: Record<string, number> = {};
+  for (const cls of char.classes || []) {
+    for (const feature of cls.classFeatures || []) {
+      const lu = feature.definition?.limitedUse ?? feature.limitedUse;
+      if (lu && (lu.numberUsed ?? 0) > 0 && feature.definition?.name) {
+        initialResourcesUsed[feature.definition.name] = lu.numberUsed;
+      }
+    }
+  }
+
   const dynamicData: CharacterDynamicData = {
     currentHP,
     tempHP,
-    spellSlotsUsed: spellSlots,
+    spellSlotsUsed: regularSlots,
+    pactMagicSlots: pactSlots,
+    resourcesUsed: initialResourcesUsed,
     conditions: [],
     deathSaves: {
       successes: char.deathSaves?.successCount ?? 0,
@@ -739,9 +777,13 @@ function computeSpellcasting(
 /**
  * Extract spell slots using ddb2alchemy's convertSpellSlots approach.
  * Handles single-class, multiclass, and Pact Magic.
+ * Returns regular slots and pact magic slots separately.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function extractSpellSlots(char: any): SpellSlotLevel[] {
+function extractSpellSlots(char: any): {
+  regularSlots: SpellSlotLevel[];
+  pactSlots: SpellSlotLevel[];
+} {
   const slots: SpellSlotLevel[] = [];
 
   // Build a map of used counts from char.spellSlots
@@ -807,8 +849,8 @@ function extractSpellSlots(char: any): SpellSlotLevel[] {
     }
   }
 
-  // Pact Magic (Warlock) — handled separately
-  // Check char.pactMagic for used slots, compute from warlock class spellRules
+  // Pact Magic (Warlock) — tracked separately from regular slots
+  const pactSlots: SpellSlotLevel[] = [];
   const warlockClass = rawClasses.find(
     (c) =>
       c.definition?.canCastSpells &&
@@ -827,25 +869,21 @@ function extractSpellSlots(char: any): SpellSlotLevel[] {
       if (pactRow) {
         for (let i = 0; i < pactRow.length; i++) {
           if (pactRow[i] > 0) {
-            const level = i + 1;
-            const existing = slots.find((s) => s.level === level);
-            if (existing) {
-              existing.total += pactRow[i];
-              existing.used += pactUsed.get(level) || 0;
-            } else {
-              slots.push({
-                level,
-                total: pactRow[i],
-                used: pactUsed.get(level) || 0,
-              });
-            }
+            pactSlots.push({
+              level: i + 1,
+              total: pactRow[i],
+              used: pactUsed.get(i + 1) || 0,
+            });
           }
         }
       }
     }
   }
 
-  return slots.sort((a, b) => a.level - b.level);
+  return {
+    regularSlots: slots.sort((a, b) => a.level - b.level),
+    pactSlots: pactSlots.sort((a, b) => a.level - b.level),
+  };
 }
 
 /**
@@ -991,6 +1029,7 @@ function extractFeatures(
         source: "class",
         sourceLabel: className,
         requiredLevel: requiredLevel ?? undefined,
+        activationType: formatCastingTime(feature.definition?.activation ?? feature.activation),
       });
     }
   }
@@ -1010,6 +1049,7 @@ function extractFeatures(
         : "",
       source: "race",
       sourceLabel: raceName,
+      activationType: formatCastingTime(trait.definition?.activation ?? trait.activation),
     });
   }
 
@@ -1023,10 +1063,93 @@ function extractFeatures(
         : "",
       source: "feat",
       sourceLabel: feat.definition.name,
+      activationType: formatCastingTime(feat.definition?.activation ?? feat.activation),
     });
   }
 
   return features;
+}
+
+/**
+ * Extract class resources with limited uses (Channel Divinity, Ki, Rage, etc.)
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function extractClassResources(char: any): ClassResource[] {
+  const resources: ClassResource[] = [];
+  const seen = new Set<string>();
+
+  for (const cls of char.classes || []) {
+    const className: string = cls.definition?.name || "Unknown";
+    const classLevel: number = cls.level || 1;
+
+    for (const feature of cls.classFeatures || []) {
+      if (!feature.definition?.name) continue;
+      const requiredLevel: number | undefined =
+        feature.requiredLevel ?? feature.definition?.requiredLevel;
+      if (requiredLevel != null && requiredLevel > classLevel) continue;
+
+      const limitedUse = feature.definition.limitedUse ?? feature.limitedUse;
+      if (!limitedUse) continue;
+
+      const maxUses: number = limitedUse.maxUses;
+      if (!maxUses || maxUses <= 0) continue;
+
+      const resetType = DDB_RESET_TYPES[limitedUse.resetType] ?? null;
+      if (!resetType) continue; // skip resources with special/unknown reset
+
+      const name: string = feature.definition.name;
+      if (seen.has(name)) continue;
+      seen.add(name);
+
+      resources.push({ name, maxUses, resetType, source: className });
+    }
+  }
+
+  return resources;
+}
+
+/**
+ * Extract actions from DDB's char.actions object.
+ * DDB stores activated abilities (Breath Weapon, Lay on Hands, etc.) separately
+ * from class features. The actions object is keyed by source (race, class, feat, etc.)
+ * and each entry has its own activation, description, and limitedUse data.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function extractActions(char: any): CharacterFeature[] {
+  const actions: CharacterFeature[] = [];
+  const charActions = char.actions;
+  if (!charActions || typeof charActions !== "object") return actions;
+
+  const sourceMap: Record<string, CharacterFeature["source"]> = {
+    race: "race",
+    class: "class",
+    feat: "feat",
+    background: "background",
+  };
+
+  for (const [key, value] of Object.entries(charActions)) {
+    if (!Array.isArray(value)) continue;
+    const source = sourceMap[key] || "class";
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    for (const action of value as any[]) {
+      if (!action.name) continue;
+      const activationType = formatCastingTime(action.activation);
+      if (!activationType) continue; // skip passive/no-activation entries
+      actions.push({
+        name: action.name,
+        description: action.description
+          ? stripHtml(action.description)
+          : action.snippet
+            ? stripHtml(action.snippet)
+            : "",
+        source,
+        sourceLabel: source.charAt(0).toUpperCase() + source.slice(1),
+        activationType,
+      });
+    }
+  }
+
+  return actions;
 }
 
 /**
@@ -1082,6 +1205,7 @@ function extractSpells(char: any): CharacterSpell[] {
       alwaysPrepared: boolean;
       spellSource: CharacterSpell["spellSource"];
       knownByClass: boolean;
+      sourceClass?: string;
     }
   ): CharacterSpell {
     return {
@@ -1091,6 +1215,7 @@ function extractSpells(char: any): CharacterSpell[] {
       alwaysPrepared: extra.alwaysPrepared,
       spellSource: extra.spellSource,
       knownByClass: extra.knownByClass,
+      sourceClass: extra.sourceClass,
       school: def.school || undefined,
       castingTime: formatCastingTime(def.activation),
       range: formatRange(def.range),
@@ -1102,19 +1227,21 @@ function extractSpells(char: any): CharacterSpell[] {
     };
   }
 
-  // Build class ID → name lookup for known-caster detection
+  // Build class ID → name lookup (original casing for sourceClass, lowercase for known-caster check)
+  // DDB uses different ID fields: cls.id (join-table ID) and cls.definition.id (class definition ID)
   const classNameById = new Map<number, string>();
   for (const cls of char.classes || []) {
-    if (cls.id != null && cls.definition?.name) {
-      classNameById.set(cls.id, cls.definition.name.toLowerCase());
-    }
+    const name = cls.definition?.name;
+    if (!name) continue;
+    if (cls.id != null) classNameById.set(cls.id, name);
+    if (cls.definition?.id != null) classNameById.set(cls.definition.id, name);
   }
 
   // Class spells
   for (const classSpellBlock of char.classSpells || []) {
     // Resolve class name to detect known casters (bard, sorcerer, ranger, warlock)
     const className = classNameById.get(classSpellBlock.characterClassId) || "";
-    const isKnownCaster = KNOWN_CASTER_CLASSES.has(className);
+    const isKnownCaster = KNOWN_CASTER_CLASSES.has(className.toLowerCase());
 
     for (const spell of classSpellBlock.spells || []) {
       const def = spell.definition;
@@ -1129,6 +1256,7 @@ function extractSpells(char: any): CharacterSpell[] {
           alwaysPrepared: isAlwaysPrepared,
           spellSource: "class",
           knownByClass: true,
+          sourceClass: className || undefined,
         })
       );
     }
