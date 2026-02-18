@@ -37,8 +37,8 @@ import { rollInitiative } from "./dice";
 export interface ResolveResult {
   /** Characters whose dynamic data was modified (keyed by userId) */
   characterUpdates: Map<string, CharacterDynamicData>;
-  /** Updated combat state (if changed) */
-  combatUpdate?: CombatState;
+  /** Updated combat state: CombatState=changed, null=ended, undefined=no change */
+  combatUpdate?: CombatState | null;
   /** Check requests that need player input */
   checkRequests: CheckRequest[];
   /** Events created for the event log */
@@ -49,29 +49,63 @@ export interface ResolveResult {
 
 // ─── Helpers ───
 
-/** Find a character by character name (case-insensitive). Returns [userId, CharacterData]. */
+/** Find a character by character name (case-insensitive, with fuzzy fallback). Returns [userId, CharacterData]. */
 function findCharacterByName(
   characters: Map<string, CharacterData>,
   name: string
 ): [string, CharacterData] | null {
-  const lower = name.toLowerCase();
+  const target = name.toLowerCase().trim();
+
+  // Exact match
   for (const [userId, char] of characters) {
-    if (char.static.name.toLowerCase() === lower) {
+    if (char.static.name.toLowerCase() === target) {
       return [userId, char];
     }
   }
+
+  // Fuzzy: first name match, or substring contains
+  for (const [userId, char] of characters) {
+    const charName = char.static.name.toLowerCase();
+    const targetFirst = target.split(" ")[0];
+    const charFirst = charName.split(" ")[0];
+    if (
+      charName.includes(target) ||
+      target.includes(charName) ||
+      (targetFirst.length > 2 && charFirst === targetFirst)
+    ) {
+      return [userId, char];
+    }
+  }
+
   return null;
 }
 
-/** Find a combatant by name in combat state (case-insensitive). */
+/** Find a combatant by name in combat state (case-insensitive, with fuzzy fallback). */
 function findCombatantByName(
   combat: CombatState,
   name: string
 ): Combatant | null {
-  const lower = name.toLowerCase();
+  const target = name.toLowerCase().trim();
+
+  // Exact match
   for (const c of Object.values(combat.combatants)) {
-    if (c.name.toLowerCase() === lower) return c;
+    if (c.name.toLowerCase() === target) return c;
   }
+
+  // Fuzzy: first name match, or substring contains
+  for (const c of Object.values(combat.combatants)) {
+    const cName = c.name.toLowerCase();
+    const targetFirst = target.split(" ")[0];
+    const cFirst = cName.split(" ")[0];
+    if (
+      cName.includes(target) ||
+      target.includes(cName) ||
+      (targetFirst.length > 2 && cFirst === targetFirst)
+    ) {
+      return c;
+    }
+  }
+
   return null;
 }
 
@@ -150,6 +184,7 @@ export function resolveActions(
   let combat = gameState.encounter?.combat
     ? { ...gameState.encounter.combat }
     : undefined;
+  let combatChanged = false;
 
   // Snapshot current state before any changes
   const snapshotCharacters: Record<string, CharacterDynamicData> = {};
@@ -328,6 +363,7 @@ export function resolveActions(
 
       case "combat_start": {
         combat = startCombat(action, characters, warnings);
+        combatChanged = true;
         // Set up encounter with map
         const map =
           parseMapLayout(action.mapLayout) ||
@@ -361,6 +397,7 @@ export function resolveActions(
           gameState.encounter.map = undefined;
         }
         combat = undefined;
+        combatChanged = true;
         break;
       }
 
@@ -379,6 +416,7 @@ export function resolveActions(
           if (active) {
             active.movementUsed = 0;
           }
+          combatChanged = true;
         }
         break;
       }
@@ -388,6 +426,7 @@ export function resolveActions(
           warnings.push("add_combatants: not in combat");
           break;
         }
+        combatChanged = true;
         for (const c of action.combatants) {
           const id = crypto.randomUUID();
           const initiative = rollInitiative(c.initiativeModifier);
@@ -505,7 +544,8 @@ export function resolveActions(
 
   return {
     characterUpdates,
-    combatUpdate: combat,
+    // undefined = no change, null = combat ended, CombatState = updated
+    combatUpdate: combatChanged ? (combat ?? null) : undefined,
     checkRequests,
     events,
     warnings,

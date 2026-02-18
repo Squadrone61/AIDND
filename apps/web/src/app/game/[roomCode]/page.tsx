@@ -343,7 +343,7 @@ function GameContent({
         character={myCharacter}
         onCharacterImported={handleCharacterImported}
       />
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {combatState && combatState.phase === "active" && (
           <InitiativeTracker combat={combatState} />
         )}

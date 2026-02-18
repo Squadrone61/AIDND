@@ -1,9 +1,104 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { ChatMessage } from "./ChatMessage";
-import type { ServerMessage } from "@aidnd/shared/types";
+import type { ServerMessage, CheckRequest, CheckResult, RollResult } from "@aidnd/shared/types";
 import type { ConnectionState } from "@/hooks/useWebSocket";
+
+// Merged check: replaces 3 messages (check_request, dice_roll, check_result) with one
+export interface MergedCheckMessage {
+  type: "merged_check";
+  request: CheckRequest;
+  roll: RollResult;
+  result: CheckResult;
+  playerName: string;
+  timestamp: number;
+}
+
+export type DisplayMessage = ServerMessage | MergedCheckMessage;
+
+/**
+ * Post-process messages to merge resolved check sequences.
+ * When a check_result is found, look backward for its matching dice_roll
+ * and check_request by requestId. Replace all three with a single merged_check.
+ * Unresolved check_requests are left as-is (still show "Roll d20" button).
+ */
+function mergeCheckMessages(messages: ServerMessage[]): DisplayMessage[] {
+  // Collect resolved requestIds first
+  const resolvedIds = new Set<string>();
+  for (const msg of messages) {
+    if (msg.type === "server:check_result") {
+      resolvedIds.add(msg.result.requestId);
+    }
+  }
+
+  if (resolvedIds.size === 0) return messages;
+
+  // Build index of check_requests and dice_rolls by requestId
+  const requestMap = new Map<string, ServerMessage>();
+  const rollMap = new Map<string, ServerMessage>();
+
+  for (const msg of messages) {
+    if (msg.type === "server:check_request" && resolvedIds.has(msg.check.id)) {
+      requestMap.set(msg.check.id, msg);
+    }
+    // dice_roll doesn't have requestId directly, but it appears right before check_result
+    // We match by looking at sequential order
+  }
+
+  // Walk messages, building merged output
+  const result: DisplayMessage[] = [];
+  const consumed = new Set<number>(); // indices to skip
+
+  for (let i = 0; i < messages.length; i++) {
+    if (consumed.has(i)) continue;
+    const msg = messages[i];
+
+    if (msg.type === "server:check_result") {
+      const requestId = msg.result.requestId;
+
+      // Find matching check_request (look backward)
+      let requestIdx = -1;
+      let rollIdx = -1;
+      for (let j = i - 1; j >= 0; j--) {
+        const prev = messages[j];
+        if (prev.type === "server:dice_roll" && rollIdx === -1) {
+          rollIdx = j;
+        }
+        if (prev.type === "server:check_request" && prev.check.id === requestId) {
+          requestIdx = j;
+          break;
+        }
+      }
+
+      if (requestIdx >= 0 && rollIdx >= 0) {
+        const reqMsg = messages[requestIdx] as Extract<ServerMessage, { type: "server:check_request" }>;
+        const rollMsg = messages[rollIdx] as Extract<ServerMessage, { type: "server:dice_roll" }>;
+
+        consumed.add(requestIdx);
+        consumed.add(rollIdx);
+        consumed.add(i);
+
+        result.push({
+          type: "merged_check",
+          request: reqMsg.check,
+          roll: rollMsg.roll,
+          result: msg.result,
+          playerName: rollMsg.playerName,
+          timestamp: msg.timestamp,
+        });
+        continue;
+      }
+    }
+
+    // Skip already-consumed messages (check_request/dice_roll that were merged)
+    if (consumed.has(i)) continue;
+
+    result.push(msg);
+  }
+
+  return result;
+}
 
 interface ChatPanelProps {
   messages: ServerMessage[];
@@ -16,6 +111,8 @@ interface ChatPanelProps {
 export function ChatPanel({ messages, onSend, connectionState, onRollDice, myCharacterName }: ChatPanelProps) {
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const displayMessages = useMemo(() => mergeCheckMessages(messages), [messages]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -32,9 +129,9 @@ export function ChatPanel({ messages, onSend, connectionState, onRollDice, myCha
   const isConnected = connectionState === "connected";
 
   return (
-    <div className="flex-1 flex flex-col h-full">
+    <div className="flex-1 flex flex-col min-h-0">
       {/* Header */}
-      <div className="border-b border-gray-700 p-4 flex items-center gap-3">
+      <div className="border-b border-gray-700 p-4 flex items-center gap-3 shrink-0">
         <h2 className="text-lg font-semibold text-purple-400">
           AI Dungeon Master
         </h2>
@@ -63,8 +160,8 @@ export function ChatPanel({ messages, onSend, connectionState, onRollDice, myCha
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        {messages.length === 0 && (
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
+        {displayMessages.length === 0 && (
           <div className="text-center text-gray-600 mt-8">
             <p className="text-lg mb-1">Waiting for the adventure to begin...</p>
             <p className="text-sm">
@@ -72,14 +169,14 @@ export function ChatPanel({ messages, onSend, connectionState, onRollDice, myCha
             </p>
           </div>
         )}
-        {messages.map((msg, i) => (
+        {displayMessages.map((msg, i) => (
           <ChatMessage key={i} message={msg} onRollDice={onRollDice} myCharacterName={myCharacterName} />
         ))}
         <div ref={messagesEndRef} />
       </div>
 
       {/* Input */}
-      <form onSubmit={handleSubmit} className="border-t border-gray-700 p-4">
+      <form onSubmit={handleSubmit} className="border-t border-gray-700 p-4 shrink-0">
         <div className="flex gap-2">
           <input
             type="text"

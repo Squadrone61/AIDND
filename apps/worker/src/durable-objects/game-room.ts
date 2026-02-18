@@ -5,6 +5,7 @@ import type {
   AuthUser,
   CharacterData,
   CharacterDynamicData,
+  CheckRequest,
   ClientMessage,
   GameState,
   PlayerInfo,
@@ -839,7 +840,8 @@ export class GameRoom extends DurableObject<Env> {
    */
   private async processAIActions(
     narrative: string,
-    actions: import("@aidnd/shared/types").AIAction[]
+    actions: import("@aidnd/shared/types").AIAction[],
+    npcTurnDepth: number = 0
   ): Promise<void> {
     // Broadcast the AI narrative message (with actions metadata)
     this.broadcast({
@@ -877,10 +879,10 @@ export class GameRoom extends DurableObject<Env> {
       }
     }
 
-    // Apply combat update
+    // Apply combat update (null = combat ended, CombatState = updated)
     if (result.combatUpdate !== undefined) {
       if (this.gameState.encounter) {
-        this.gameState.encounter.combat = result.combatUpdate;
+        this.gameState.encounter.combat = result.combatUpdate ?? undefined;
       }
       this.broadcast({
         type: "server:combat_update",
@@ -889,14 +891,25 @@ export class GameRoom extends DurableObject<Env> {
       });
     }
 
-    // Broadcast check requests
+    // Process check requests — auto-roll for NPCs, broadcast to players
     for (const check of result.checkRequests) {
-      this.broadcast({
-        type: "server:check_request",
-        check,
-        timestamp: Date.now(),
-        id: crypto.randomUUID(),
-      });
+      const combat = this.gameState.encounter?.combat;
+      const isNPC = combat && Object.values(combat.combatants).some(
+        (c) =>
+          c.name.toLowerCase() === check.targetCharacter.toLowerCase() &&
+          c.type !== "player"
+      );
+
+      if (isNPC) {
+        await this.autoRollForNPC(check);
+      } else {
+        this.broadcast({
+          type: "server:check_request",
+          check,
+          timestamp: Date.now(),
+          id: crypto.randomUUID(),
+        });
+      }
     }
 
     // Append events to log, broadcast to host
@@ -925,6 +938,125 @@ export class GameRoom extends DurableObject<Env> {
     await this.persistGameState();
     if (result.characterUpdates.size > 0) {
       this.persistCharacters();
+    }
+
+    // Auto-continue for NPC/enemy turns (up to 10 to prevent infinite loops)
+    if (
+      result.combatUpdate &&
+      result.combatUpdate.phase === "active" &&
+      npcTurnDepth < 10 &&
+      this.aiConfig
+    ) {
+      const nextId =
+        result.combatUpdate.turnOrder[result.combatUpdate.turnIndex];
+      const nextCombatant = result.combatUpdate.combatants[nextId];
+      if (nextCombatant && nextCombatant.type !== "player") {
+        const turnMsg = `[System: It is now ${nextCombatant.name}'s turn. Resolve their actions immediately.]`;
+        await this.appendToConversation({ role: "user", content: turnMsg });
+        try {
+          const systemPrompt = this.buildSystemPrompt(
+            this.getCharactersByPlayerName()
+          );
+          const aiResult = await callAI({
+            aiConfig: this.aiConfig,
+            systemPrompt,
+            messages: this.conversationHistory,
+          });
+          const parsed = parseAIResponse(aiResult.text);
+          await this.appendToConversation({
+            role: "assistant",
+            content: aiResult.text,
+          });
+          await this.processAIActions(
+            parsed.narrative,
+            parsed.actions,
+            npcTurnDepth + 1
+          );
+        } catch (error) {
+          console.error("[NPC Turn]", error);
+          this.broadcast({
+            type: "server:error",
+            message: "Failed to resolve NPC turn",
+            code: "AI_ERROR",
+          });
+        }
+      }
+    }
+  }
+
+  /**
+   * Auto-roll a check for an NPC/enemy combatant.
+   * Uses the same server-side rollCheck() as player rolls (crypto-random).
+   */
+  private async autoRollForNPC(check: CheckRequest): Promise<void> {
+    // Default modifier +0 for NPCs (they don't have full CharacterData)
+    const modifier = 0;
+
+    const roll = rollCheck({
+      modifier,
+      advantage: check.advantage,
+      disadvantage: check.disadvantage,
+      label: check.reason,
+    });
+
+    const success = check.dc !== undefined ? roll.total >= check.dc : true;
+
+    // Broadcast dice roll (NPC name as playerName)
+    this.broadcast({
+      type: "server:dice_roll",
+      roll,
+      playerName: check.targetCharacter,
+      timestamp: Date.now(),
+      id: crypto.randomUUID(),
+    });
+
+    // Broadcast check result
+    this.broadcast({
+      type: "server:check_result",
+      result: {
+        requestId: check.id,
+        roll,
+        dc: check.dc,
+        success,
+        characterName: check.targetCharacter,
+      },
+      timestamp: Date.now(),
+      id: crypto.randomUUID(),
+    });
+
+    // Inject result into AI conversation
+    const resultLabel = success ? "Success" : "Failure";
+    const dcStr = check.dc !== undefined ? ` (DC ${check.dc})` : "";
+    const systemMsg = `[System: ${check.targetCharacter} rolled ${roll.total} on ${check.reason}${dcStr} — ${resultLabel}${roll.criticalHit ? " (Critical!)" : ""}${roll.criticalFail ? " (Critical Fail!)" : ""}]`;
+    await this.appendToConversation({ role: "user", content: systemMsg });
+
+    // Trigger AI to narrate the outcome
+    if (this.aiConfig) {
+      try {
+        const systemPrompt = this.buildSystemPrompt(
+          this.getCharactersByPlayerName()
+        );
+        const aiResult = await callAI({
+          aiConfig: this.aiConfig,
+          systemPrompt,
+          messages: this.conversationHistory,
+        });
+        const parsed = parseAIResponse(aiResult.text);
+        await this.appendToConversation({
+          role: "assistant",
+          content: aiResult.text,
+        });
+        await this.processAIActions(parsed.narrative, parsed.actions);
+      } catch (error) {
+        this.broadcast({
+          type: "server:error",
+          message:
+            error instanceof Error
+              ? error.message
+              : "AI follow-up failed after NPC roll",
+          code: "AI_ERROR",
+        });
+      }
     }
   }
 
