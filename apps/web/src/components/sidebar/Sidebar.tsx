@@ -299,7 +299,7 @@ export function Sidebar({
       )}
 
       {/* Activity Log */}
-      <div className="border-b border-gray-700 flex flex-col min-h-0">
+      <div className="border-b border-gray-700 flex flex-col min-h-0 flex-1">
         <button
           onClick={() => setLogCollapsed(!logCollapsed)}
           className="flex items-center gap-1 p-4 pb-2 w-full text-left"
@@ -319,7 +319,7 @@ export function Sidebar({
           )}
         </button>
         {!logCollapsed && (
-          <div className="px-4 pb-3 overflow-y-auto max-h-40 space-y-1">
+          <div className="px-4 pb-3 overflow-y-auto flex-1 space-y-1">
             {logMessages.length === 0 ? (
               <p className="text-xs text-gray-600 italic">No activity yet</p>
             ) : (
