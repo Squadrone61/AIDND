@@ -37,7 +37,21 @@
       "vars": {
         "ENVIRONMENT": "production",
         "FRONTEND_URL": "https://aidnd-web.safats61.workers.dev"
-      }
+      },
+      "durable_objects": {
+        "bindings": [
+          {
+            "name": "GAME_ROOM",
+            "class_name": "GameRoom"
+          }
+        ]
+      },
+      "kv_namespaces": [
+        {
+          "binding": "ROOMS",
+          "id": "c10fedf5133c4636b679d47f5ba09524"
+        }
+      ]
     }
   }
 }
