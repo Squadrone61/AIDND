@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, useEffect } from "react";
+import { Suspense, useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { AI_PROVIDERS, getProvider } from "@aidnd/shared";
@@ -25,6 +25,7 @@ function HomePageInner() {
   const searchParams = useSearchParams();
   const { user, loading: authLoading, login, logout } = useAuth();
   const [playerName, setPlayerName] = useState("");
+  const playerNameLoadedRef = useRef(false);
   const [joinCode, setJoinCode] = useState("");
   const [joinPassword, setJoinPassword] = useState("");
   const [selectedProvider, setSelectedProvider] = useState("anthropic");
@@ -55,6 +56,13 @@ function HomePageInner() {
       // ignore malformed JSON
     }
 
+    // Restore player name from sessionStorage
+    const storedName = sessionStorage.getItem("playerName");
+    if (storedName) {
+      setPlayerName(storedName);
+      playerNameLoadedRef.current = true;
+    }
+
     const kick = sessionStorage.getItem("kick_message");
     if (kick) {
       setKickMessage(kick);
@@ -68,12 +76,23 @@ function HomePageInner() {
     }
   }, [searchParams]);
 
-  // Pre-fill character name from Google account
+  // Pre-fill character name from Google account only if user hasn't set one
   useEffect(() => {
-    if (user?.displayName && !playerName) {
+    if (user?.displayName && !playerName && !playerNameLoadedRef.current) {
       setPlayerName(user.displayName);
     }
-  }, [user, playerName]);
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Debounce-save playerName to sessionStorage as user types
+  useEffect(() => {
+    const trimmed = playerName.trim();
+    const timer = setTimeout(() => {
+      if (trimmed) {
+        sessionStorage.setItem("playerName", trimmed);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [playerName]);
 
   const currentProvider = getProvider(selectedProvider);
   const { models, loading: modelsLoading } = useModels(selectedProvider, apiKey);

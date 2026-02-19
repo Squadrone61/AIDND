@@ -58,14 +58,15 @@ export default function GamePage() {
     setPlayerName(stored);
   }, []);
 
-  // Still loading — render nothing (matches server render of undefined)
-  if (playerName === undefined) {
-    return null;
-  }
+  // Redirect to home if no player name (must be in useEffect, not during render)
+  useEffect(() => {
+    if (playerName === null) {
+      router.push(`/?join=${roomCode}`);
+    }
+  }, [playerName, router, roomCode]);
 
-  // No name in sessionStorage — redirect to home with join param
+  // Still loading or redirecting — render nothing
   if (!playerName) {
-    router.push(`/?join=${roomCode}`);
     return null;
   }
 
