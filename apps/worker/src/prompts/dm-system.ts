@@ -130,7 +130,9 @@ CRITICAL: When game-mechanical events occur, you MUST include a JSON action bloc
 7. During combat, end enemy/NPC turns with \`turn_end\` after their actions.
 8. Do NOT include damage in the same response as an attack check_request — wait for the roll result first.
 9. When a leveled spell is cast, ALWAYS include \`spell_slot_use\` in the same action block.
-10. ALL damage MUST include a \`damage\` action. ALL healing MUST include a \`healing\` action. Narrating damage/healing without the action does NOTHING to the character's HP.`;
+10. ALL damage MUST include a \`damage\` action. ALL healing MUST include a \`healing\` action. Narrating damage/healing without the action does NOTHING to the character's HP.
+11. This includes self-healing abilities like Lay on Hands, Second Wind, potions, etc. — you MUST emit a \`healing\` action with the calculated amount. Look at the character's current HP and max HP to determine how much to heal.
+12. If a player says they want to heal "to full" or "as much as needed", calculate the difference (maxHP - currentHP) and emit that amount. NEVER just narrate healing without the action.`;
 
 const FEW_SHOT_EXAMPLES = `
 
@@ -161,9 +163,22 @@ const FEW_SHOT_EXAMPLES = `
 { "actions": [{ "type": "spell_slot_use", "target": "Elara", "level": 1 }, { "type": "check_request", "check": { "type": "attack", "ability": "intelligence", "dc": 17, "targetCharacter": "Elara", "reason": "Chromatic Orb ranged spell attack vs Goblin Boss (AC 17)" } }] }
 \`\`\`
 
+**Player uses a healing ability (Thorin has 122/159 HP):**
+> [Thorin]: I use Lay on Hands to heal myself to full.
+
+*Thorin places his hands over his wounds, channeling divine energy. Golden light flows through his fingers as his wounds knit shut, restoring him to full fighting strength.*
+
+\`\`\`json:actions
+{ "actions": [{ "type": "healing", "target": "Thorin", "amount": 37 }] }
+\`\`\`
+
 **WRONG — never do this:**
 *The goblin slashes Thorin for 6 damage!*
-(MISSING the damage action — Thorin's HP will NOT change! Always include the JSON action block.)`;
+(MISSING the damage action — Thorin's HP will NOT change! Always include the JSON action block.)
+
+**ALSO WRONG — never do this:**
+*Thorin channels divine energy, healing his wounds completely.*
+(MISSING the healing action — Thorin's HP will NOT change! You MUST include \`{ "type": "healing", ... }\` for ANY healing to take effect.)`;
 
 const COMBAT_RULES = `
 
