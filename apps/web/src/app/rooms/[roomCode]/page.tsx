@@ -52,9 +52,9 @@ export default function GamePage() {
     undefined
   );
 
-  // Read player name from sessionStorage after hydration
+  // Read player name from localStorage after hydration
   useEffect(() => {
-    const stored = sessionStorage.getItem("playerName") || null;
+    const stored = localStorage.getItem("playerName") || null;
     setPlayerName(stored);
   }, []);
 
@@ -193,7 +193,6 @@ function GameContent({
           break;
 
         case "server:room_destroyed":
-          sessionStorage.removeItem("playerName");
           sessionStorage.setItem("kick_message", "The room has been destroyed by the host.");
           router.push("/");
           return;
@@ -209,7 +208,6 @@ function GameContent({
             return;
           }
           if (msg.code === "REJECTED" || msg.code === "ROOM_NOT_FOUND") {
-            sessionStorage.removeItem("playerName");
             sessionStorage.setItem("kick_message", msg.message);
             router.push("/");
             return;

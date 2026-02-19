@@ -818,7 +818,10 @@ export class GameRoom extends DurableObject<Env> {
     });
 
     if (this.aiConfig) {
-      await this.getAIResponse(session.playerName, msg.content);
+      // Use character name for AI context so the DM addresses the character, not the player
+      const character = this.characters.get(session.userId);
+      const speakerName = character?.static.name || session.playerName;
+      await this.getAIResponse(speakerName, msg.content);
     }
   }
 

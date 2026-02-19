@@ -56,8 +56,8 @@ function HomePageInner() {
       // ignore malformed JSON
     }
 
-    // Restore player name from sessionStorage
-    const storedName = sessionStorage.getItem("playerName");
+    // Restore player name from localStorage
+    const storedName = localStorage.getItem("playerName");
     if (storedName) {
       setPlayerName(storedName);
       playerNameLoadedRef.current = true;
@@ -88,7 +88,7 @@ function HomePageInner() {
     const trimmed = playerName.trim();
     const timer = setTimeout(() => {
       if (trimmed) {
-        sessionStorage.setItem("playerName", trimmed);
+        localStorage.setItem("playerName", trimmed);
       }
     }, 500);
     return () => clearTimeout(timer);
@@ -124,7 +124,7 @@ function HomePageInner() {
     setError("");
 
     try {
-      sessionStorage.setItem("playerName", playerName.trim());
+      localStorage.setItem("playerName", playerName.trim());
       saveConfig();
 
       const res = await fetch(`${getWorkerUrl()}/api/rooms/create`, {
@@ -148,7 +148,7 @@ function HomePageInner() {
       return;
     }
 
-    sessionStorage.setItem("playerName", playerName.trim());
+    localStorage.setItem("playerName", playerName.trim());
     if (joinPassword.trim()) {
       sessionStorage.setItem("roomPassword", joinPassword.trim());
     }
