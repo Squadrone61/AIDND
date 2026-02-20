@@ -7,11 +7,14 @@ import type {
   AIConfig,
   CharacterData,
   CombatState,
+  EncounterLength,
   GameEvent,
+  PacingProfile,
   PlayerInfo,
   ServerMessage,
 } from "@aidnd/shared/types";
 import { CharacterPopover } from "@/components/character/CharacterPopover";
+import { SystemPromptModal } from "@/components/sidebar/SystemPromptModal";
 import { useModels } from "@/hooks/useModels";
 
 interface SidebarProps {
@@ -28,12 +31,17 @@ interface SidebarProps {
   storyStarted: boolean;
   combatState?: CombatState | null;
   eventLog?: GameEvent[];
+  pacingProfile?: PacingProfile;
+  encounterLength?: EncounterLength;
+  customSystemPrompt?: string;
   onSetAIConfig: (config: AIConfig) => void;
   onKick: (playerName: string) => void;
   onStartStory: () => void;
   onRollback?: (eventId: string) => void;
   onDestroyRoom?: () => void;
   onSetPassword?: (password: string) => void;
+  onSetPacing?: (profile: PacingProfile, encounterLength: EncounterLength) => void;
+  onSetSystemPrompt?: (prompt?: string) => void;
 }
 
 export function Sidebar({
@@ -56,6 +64,11 @@ export function Sidebar({
   onRollback,
   onDestroyRoom,
   onSetPassword,
+  onSetPacing,
+  onSetSystemPrompt,
+  pacingProfile = "balanced",
+  encounterLength = "standard",
+  customSystemPrompt,
 }: SidebarProps) {
   const [showConfigForm, setShowConfigForm] = useState(false);
   const [dmCollapsed, setDmCollapsed] = useState(false);
@@ -68,6 +81,8 @@ export function Sidebar({
   const [hoveredPlayer, setHoveredPlayer] = useState<string | null>(null);
   const [passwordInput, setPasswordInput] = useState("");
   const [passwordSet, setPasswordSet] = useState(false);
+  const [dmSettingsCollapsed, setDmSettingsCollapsed] = useState(false);
+  const [showPromptModal, setShowPromptModal] = useState(false);
   const logEndRef = useRef<HTMLDivElement>(null);
 
   const currentFormProvider = getProvider(provider);
@@ -393,6 +408,109 @@ export function Sidebar({
             </div>
           )}
         </div>
+      )}
+
+      {/* DM Settings (Host only) */}
+      {isHost && onSetPacing && onSetSystemPrompt && (
+        <div className="border-b border-gray-700 flex flex-col min-h-0">
+          <button
+            onClick={() => setDmSettingsCollapsed(!dmSettingsCollapsed)}
+            className="flex items-center gap-1 p-4 pb-2 w-full text-left"
+          >
+            <span
+              className={`text-[10px] text-gray-600 transition-transform ${dmSettingsCollapsed ? "" : "rotate-90"}`}
+            >
+              &#9654;
+            </span>
+            <span className="text-xs text-gray-500 uppercase tracking-wider">
+              DM Settings
+            </span>
+          </button>
+          {!dmSettingsCollapsed && (
+            <div className="px-4 pb-3 space-y-3">
+              {/* Pacing Profile */}
+              <div>
+                <label className="text-[11px] text-gray-500 block mb-1">
+                  Pacing
+                </label>
+                <select
+                  value={pacingProfile}
+                  onChange={(e) =>
+                    onSetPacing(e.target.value as PacingProfile, encounterLength)
+                  }
+                  className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1.5
+                             text-sm text-gray-200 focus:outline-none focus:ring-1
+                             focus:ring-purple-500"
+                >
+                  <option value="story-heavy">Story-Heavy</option>
+                  <option value="balanced">Balanced</option>
+                  <option value="combat-heavy">Combat-Heavy</option>
+                </select>
+              </div>
+
+              {/* Encounter Length */}
+              <div>
+                <label className="text-[11px] text-gray-500 block mb-1">
+                  Encounter Length
+                </label>
+                <select
+                  value={encounterLength}
+                  onChange={(e) =>
+                    onSetPacing(pacingProfile, e.target.value as EncounterLength)
+                  }
+                  className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1.5
+                             text-sm text-gray-200 focus:outline-none focus:ring-1
+                             focus:ring-purple-500"
+                >
+                  <option value="quick">Quick</option>
+                  <option value="standard">Standard</option>
+                  <option value="epic">Epic</option>
+                </select>
+              </div>
+
+              {/* System Prompt */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] text-gray-500">System Prompt</span>
+                  <span
+                    className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                      customSystemPrompt
+                        ? "bg-yellow-600/20 text-yellow-400"
+                        : "bg-gray-700/50 text-gray-500"
+                    }`}
+                  >
+                    {customSystemPrompt ? "Custom" : "Default"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  {customSystemPrompt && (
+                    <button
+                      onClick={() => onSetSystemPrompt(undefined)}
+                      className="text-[10px] text-red-400/60 hover:text-red-400 transition-colors"
+                    >
+                      Reset
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setShowPromptModal(true)}
+                    className="text-[10px] text-purple-400 hover:text-purple-300 transition-colors"
+                  >
+                    Edit
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* System Prompt Modal */}
+      {showPromptModal && onSetSystemPrompt && (
+        <SystemPromptModal
+          currentPrompt={customSystemPrompt}
+          onSave={onSetSystemPrompt}
+          onClose={() => setShowPromptModal(false)}
+        />
       )}
 
       {/* AI Config (Host only) */}

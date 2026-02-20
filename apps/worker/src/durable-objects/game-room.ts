@@ -613,6 +613,12 @@ export class GameRoom extends DurableObject<Env> {
       }
     }
 
+    // Send game state sync (event log, pacing, custom prompt, combat)
+    this.sendTo(ws, {
+      type: "server:game_state_sync",
+      gameState: this.gameState,
+    });
+
     this.broadcastToApproved(
       {
         type: "server:player_joined",

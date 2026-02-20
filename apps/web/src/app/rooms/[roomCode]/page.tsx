@@ -11,7 +11,9 @@ import type {
   AIConfig,
   CharacterData,
   CombatState,
+  EncounterLength,
   GameEvent,
+  PacingProfile,
   PlayerInfo,
   ServerMessage,
 } from "@aidnd/shared/types";
@@ -102,6 +104,9 @@ function GameContent({
   const [storyStarted, setStoryStarted] = useState(false);
   const [combatState, setCombatState] = useState<CombatState | null>(null);
   const [eventLog, setEventLog] = useState<GameEvent[]>([]);
+  const [pacingProfile, setPacingProfile] = useState<PacingProfile>("balanced");
+  const [encounterLength, setEncounterLength] = useState<EncounterLength>("standard");
+  const [customSystemPrompt, setCustomSystemPrompt] = useState<string | undefined>(undefined);
 
   // Join state — don't render game UI until successfully joined
   const [joined, setJoined] = useState(false);
@@ -224,6 +229,9 @@ function GameContent({
             setCombatState(msg.gameState.encounter.combat);
           }
           setEventLog(msg.gameState.eventLog);
+          setPacingProfile(msg.gameState.pacingProfile);
+          setEncounterLength(msg.gameState.encounterLength);
+          setCustomSystemPrompt(msg.gameState.customSystemPrompt);
           break;
 
         case "server:rollback":
@@ -240,6 +248,9 @@ function GameContent({
             setCombatState(null);
           }
           setEventLog(msg.gameState.eventLog);
+          setPacingProfile(msg.gameState.pacingProfile);
+          setEncounterLength(msg.gameState.encounterLength);
+          setCustomSystemPrompt(msg.gameState.customSystemPrompt);
           break;
 
         case "server:event_log":
@@ -320,6 +331,17 @@ function GameContent({
 
   const handleSetPassword = (password: string) => {
     send({ type: "client:set_password", password });
+  };
+
+  const handleSetPacing = (profile: PacingProfile, length: EncounterLength) => {
+    send({ type: "client:set_pacing", profile, encounterLength: length });
+    setPacingProfile(profile);
+    setEncounterLength(length);
+  };
+
+  const handleSetSystemPrompt = (prompt?: string) => {
+    send({ type: "client:set_system_prompt", prompt });
+    setCustomSystemPrompt(prompt);
   };
 
   const handleCharacterImported = useCallback(
@@ -436,12 +458,17 @@ function GameContent({
         storyStarted={storyStarted}
         combatState={combatState}
         eventLog={eventLog}
+        pacingProfile={pacingProfile}
+        encounterLength={encounterLength}
+        customSystemPrompt={customSystemPrompt}
         onSetAIConfig={handleSetAIConfig}
         onKick={handleKick}
         onStartStory={handleStartStory}
         onRollback={handleRollback}
         onDestroyRoom={handleDestroyRoom}
         onSetPassword={handleSetPassword}
+        onSetPacing={handleSetPacing}
+        onSetSystemPrompt={handleSetSystemPrompt}
       />
     </div>
   );
