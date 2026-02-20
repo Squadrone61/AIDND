@@ -243,6 +243,31 @@ PACING (Combat-Heavy):
 - Make environments interesting tactically (cover, elevation, hazards)`,
 };
 
+const TOOL_USE_INSTRUCTIONS = `
+
+## D&D RULES REFERENCE TOOLS
+
+You have tools to look up official D&D 5e rules from the SRD. You are a RULES-DRIVEN DM.
+ALWAYS verify rules BEFORE narrating outcomes or emitting game actions.
+
+**MANDATORY tool use — do these EVERY TIME:**
+- ANY spell is cast → lookup_spell FIRST to get exact damage dice, save type, range, duration, conditions applied
+- ANY combat starts → lookup_monster for EVERY enemy type to get accurate HP, AC, speed, abilities, actions
+- ANY condition is applied or referenced → lookup_condition to verify exact mechanical effects
+- ANY attack/ability/spell involves a rule you could verify → lookup_rule to ensure correct mechanics
+- ANY damage, healing, or status effect → verify the source spell/ability mechanics BEFORE emitting the action
+
+**Process for EVERY mechanical event:**
+1. Look up the relevant spell/monster/condition/rule
+2. Calculate all side effects (damage amounts, conditions applied, area of effect targets, duration, concentration)
+3. THEN emit the correct game actions (damage, healing, condition_add, spell_slot_use, etc.)
+4. THEN narrate the outcome
+
+**When NOT to use tools:**
+- For data already provided in [DM Prep] blocks or character sheets
+- For homebrew/non-SRD content (use training knowledge)
+- If you already looked up the same spell/monster earlier in THIS response's tool calls`;
+
 const ENCOUNTER_LENGTH_NOTES: Record<EncounterLength, string> = {
   quick: "\n- Keep encounters SHORT: 2-3 rounds of combat, quick resolutions.",
   standard: "\n- Standard encounter length: 3-5 rounds of combat.",
@@ -321,6 +346,10 @@ export interface BuildDMPromptOptions {
   encounterLength?: EncounterLength;
   combatState?: CombatState;
   journal?: CampaignJournal;
+  /** Pre-built DM prep summary (party capabilities, pre-fetched spells) */
+  dmPrepSummary?: string;
+  /** Whether the current provider supports native tool-use */
+  hasToolAccess?: boolean;
 }
 
 /**
@@ -335,6 +364,8 @@ export function buildDMSystemPrompt(options: BuildDMPromptOptions): string {
     encounterLength = "standard",
     combatState,
     journal,
+    dmPrepSummary,
+    hasToolAccess,
   } = options;
 
   const entries = Object.entries(characters);
@@ -353,27 +384,37 @@ export function buildDMSystemPrompt(options: BuildDMPromptOptions): string {
     prompt += `\n\n## THE ADVENTURING PARTY\n\n${characterBlocks}`;
   }
 
-  // 3. Campaign journal (if exists)
+  // 3. DM Prep summary (party capabilities, pre-fetched spells)
+  if (dmPrepSummary) {
+    prompt += `\n\n${dmPrepSummary}`;
+  }
+
+  // 4. Campaign journal (if exists)
   if (journal) {
     prompt += buildJournalContext(journal);
   }
 
-  // 4. Structured output instructions (always included)
+  // 5. Structured output instructions (always included)
   prompt += STRUCTURED_OUTPUT_INSTRUCTIONS;
 
-  // 5. Few-shot examples (always included)
+  // 6. Few-shot examples (always included)
   prompt += FEW_SHOT_EXAMPLES;
 
-  // 6. Pacing
+  // 7. Tool-use instructions (only for tool-capable providers)
+  if (hasToolAccess) {
+    prompt += TOOL_USE_INSTRUCTIONS;
+  }
+
+  // 8. Pacing
   prompt += PACING_INSTRUCTIONS[pacingProfile];
   prompt += ENCOUNTER_LENGTH_NOTES[encounterLength];
 
-  // 7. Combat rules (only during active combat)
+  // 9. Combat rules (only during active combat)
   if (combatState && combatState.phase === "active") {
     prompt += COMBAT_RULES;
   }
 
-  // 8. Combat state context (only during active combat)
+  // 10. Combat state context (only during active combat)
   if (combatState && combatState.phase === "active") {
     prompt += buildCombatContext(combatState);
   }

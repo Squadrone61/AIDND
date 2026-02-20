@@ -18,6 +18,9 @@ import {
 } from "@aidnd/shared/utils";
 import { getProvider, MAX_PLAYERS_PER_ROOM } from "@aidnd/shared";
 import { callAI } from "../services/ai-service";
+import { callAIWithTools, providerSupportsTools } from "../services/ai-tool-loop";
+import { detectReferences, buildInjectedContext } from "../services/context-detector";
+import { runDMPrep } from "../services/dm-prep";
 import { verifyJWT } from "../auth/jwt";
 import { buildDMSystemPrompt } from "../prompts/dm-system";
 import { parseAIResponse } from "../services/ai-parser";
@@ -70,6 +73,8 @@ export class GameRoom extends DurableObject<Env> {
   /** Whether this room was explicitly created via /api/rooms/create */
   private created: boolean = false;
   private createdAt: number = 0;
+  /** DM Prep summary — cached from story start, injected into system prompt */
+  private dmPrepSummary: string = "";
 
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
@@ -99,7 +104,7 @@ export class GameRoom extends DurableObject<Env> {
       const [
         chatLog, conversationHistory, aiConfig, roomCode,
         hostPlayerName, characters, allPlayerRecords, storyStarted,
-        gameState, created, password, createdAt,
+        gameState, created, password, createdAt, dmPrepSummary,
       ] = await Promise.all([
         this.ctx.storage.get<ServerMessage[]>("chatLog"),
         this.ctx.storage.get<ConversationMessage[]>("conversationHistory"),
@@ -113,6 +118,7 @@ export class GameRoom extends DurableObject<Env> {
         this.ctx.storage.get<boolean>("created"),
         this.ctx.storage.get<string>("password"),
         this.ctx.storage.get<number>("createdAt"),
+        this.ctx.storage.get<string>("dmPrepSummary"),
       ]);
       if (chatLog) this.chatLog = chatLog;
       if (conversationHistory) this.conversationHistory = conversationHistory;
@@ -126,6 +132,7 @@ export class GameRoom extends DurableObject<Env> {
       if (created) this.created = created;
       if (password) this.password = password;
       if (createdAt) this.createdAt = createdAt;
+      if (dmPrepSummary) this.dmPrepSummary = dmPrepSummary;
       this.storageLoaded = true;
     });
   }
@@ -793,6 +800,7 @@ export class GameRoom extends DurableObject<Env> {
     this.created = false;
     this.password = null;
     this.createdAt = 0;
+    this.dmPrepSummary = "";
   }
 
   private async handleChat(
@@ -854,6 +862,47 @@ export class GameRoom extends DurableObject<Env> {
 
   // --- AI ---
 
+  /**
+   * Unified AI call that uses tool-use for capable providers (Anthropic, OpenAI)
+   * and falls back to plain callAI() for others.
+   */
+  private async makeAICall(
+    systemPrompt: string,
+    messages: ConversationMessage[],
+  ): Promise<{ text: string }> {
+    if (!this.aiConfig) {
+      throw new Error("No AI config");
+    }
+
+    if (providerSupportsTools(this.aiConfig.provider)) {
+      return callAIWithTools({
+        aiConfig: this.aiConfig,
+        systemPrompt,
+        messages,
+        kvCache: this.env.DND_CACHE,
+      });
+    }
+
+    return callAI({
+      aiConfig: this.aiConfig,
+      systemPrompt,
+      messages,
+    });
+  }
+
+  /** Get all unique prepared spell names from the party (for context injection). */
+  private getAllPartySpellNames(): string[] {
+    const spells = new Set<string>();
+    for (const char of this.characters.values()) {
+      for (const spell of char.static.spells) {
+        if (spell.prepared || spell.alwaysPrepared) {
+          spells.add(spell.name);
+        }
+      }
+    }
+    return [...spells];
+  }
+
   private async sendAIGreeting(): Promise<void> {
     if (!this.aiConfig) return;
 
@@ -877,11 +926,10 @@ export class GameRoom extends DurableObject<Env> {
 
       const userMsg = `The adventuring party has gathered: ${partyDescriptions.join(", ")}. Set the scene and introduce each character!`;
 
-      const result = await callAI({
-        aiConfig: this.aiConfig,
+      const result = await this.makeAICall(
         systemPrompt,
-        messages: [{ role: "user", content: userMsg }],
-      });
+        [{ role: "user", content: userMsg }],
+      );
 
       // Parse AI response for actions
       const parsed = parseAIResponse(result.text);
@@ -929,11 +977,24 @@ export class GameRoom extends DurableObject<Env> {
 
     try {
       const systemPrompt = this.buildSystemPrompt(this.getCharactersByPlayerName());
-      const result = await callAI({
-        aiConfig: this.aiConfig,
-        systemPrompt,
-        messages: this.conversationHistory,
-      });
+
+      // For non-tool providers, inject D&D reference context into the last user message
+      let messagesForAI = this.conversationHistory;
+      if (!providerSupportsTools(this.aiConfig.provider)) {
+        const refs = detectReferences(content, this.getAllPartySpellNames());
+        const ctx = await buildInjectedContext(refs, this.env.DND_CACHE);
+        if (ctx) {
+          // Clone conversation and prepend context to last user message
+          messagesForAI = [...this.conversationHistory];
+          const lastIdx = messagesForAI.length - 1;
+          messagesForAI[lastIdx] = {
+            ...messagesForAI[lastIdx],
+            content: `${ctx}\n${messagesForAI[lastIdx].content}`,
+          };
+        }
+      }
+
+      const result = await this.makeAICall(systemPrompt, messagesForAI);
 
       // Parse AI response for structured actions
       const parsed = parseAIResponse(result.text);
@@ -963,6 +1024,9 @@ export class GameRoom extends DurableObject<Env> {
 
   /** Build system prompt with current game state context. */
   private buildSystemPrompt(characters: Record<string, CharacterData>): string {
+    const hasToolAccess = this.aiConfig
+      ? providerSupportsTools(this.aiConfig.provider)
+      : false;
     return buildDMSystemPrompt({
       characters,
       customPrompt: this.gameState.customSystemPrompt,
@@ -970,6 +1034,8 @@ export class GameRoom extends DurableObject<Env> {
       encounterLength: this.gameState.encounterLength,
       combatState: this.gameState.encounter?.combat ?? undefined,
       journal: this.gameState.journal,
+      dmPrepSummary: this.dmPrepSummary || undefined,
+      hasToolAccess,
     });
   }
 
@@ -1096,11 +1162,10 @@ export class GameRoom extends DurableObject<Env> {
           const systemPrompt = this.buildSystemPrompt(
             this.getCharactersByPlayerName()
           );
-          const aiResult = await callAI({
-            aiConfig: this.aiConfig,
+          const aiResult = await this.makeAICall(
             systemPrompt,
-            messages: this.conversationHistory,
-          });
+            this.conversationHistory,
+          );
           const parsed = parseAIResponse(aiResult.text);
           await this.appendToConversation({
             role: "assistant",
@@ -1176,11 +1241,10 @@ export class GameRoom extends DurableObject<Env> {
         const systemPrompt = this.buildSystemPrompt(
           this.getCharactersByPlayerName()
         );
-        const aiResult = await callAI({
-          aiConfig: this.aiConfig,
+        const aiResult = await this.makeAICall(
           systemPrompt,
-          messages: this.conversationHistory,
-        });
+          this.conversationHistory,
+        );
         const parsed = parseAIResponse(aiResult.text);
         await this.appendToConversation({
           role: "assistant",
@@ -1271,6 +1335,19 @@ export class GameRoom extends DurableObject<Env> {
       timestamp: Date.now(),
     });
 
+    // Run DM Prep phase — pre-fetch party spells and build capabilities summary
+    try {
+      const prep = await runDMPrep(
+        this.getCharactersByPlayerName(),
+        this.env.DND_CACHE,
+      );
+      this.dmPrepSummary = prep.prepSummary;
+      await this.ctx.storage.put("dmPrepSummary", this.dmPrepSummary);
+    } catch (error) {
+      console.error("[DM Prep] Non-fatal error:", error);
+      // Non-fatal — continue without prep data
+    }
+
     await this.sendAIGreeting();
   }
 
@@ -1359,11 +1436,10 @@ export class GameRoom extends DurableObject<Env> {
     if (this.aiConfig) {
       try {
         const systemPrompt = this.buildSystemPrompt(this.getCharactersByPlayerName());
-        const result = await callAI({
-          aiConfig: this.aiConfig,
+        const result = await this.makeAICall(
           systemPrompt,
-          messages: this.conversationHistory,
-        });
+          this.conversationHistory,
+        );
 
         const parsed = parseAIResponse(result.text);
         await this.appendToConversation({ role: "assistant", content: result.text });

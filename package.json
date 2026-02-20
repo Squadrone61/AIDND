@@ -14,6 +14,7 @@
     "deploy:web": "turbo deploy --filter=@aidnd/web"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "turbo": "^2",
     "typescript": "^5.9"
   },

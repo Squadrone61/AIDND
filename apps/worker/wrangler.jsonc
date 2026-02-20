@@ -1,57 +1,64 @@
 {
-  "name": "aidnd-worker",
-  "main": "src/index.ts",
-  "compatibility_date": "2025-12-01",
-  "compatibility_flags": ["nodejs_compat"],
-
-  "vars": {
-    "ENVIRONMENT": "development",
-    "FRONTEND_URL": "http://localhost:3000"
-  },
-
-  "durable_objects": {
-    "bindings": [
-      {
-        "name": "GAME_ROOM",
-        "class_name": "GameRoom"
-      }
-    ]
-  },
-
-  "kv_namespaces": [
-    {
-      "binding": "ROOMS",
-      "id": "c10fedf5133c4636b679d47f5ba09524"
-    }
-  ],
-
-  "migrations": [
-    {
-      "tag": "v1",
-      "new_sqlite_classes": ["GameRoom"]
-    }
-  ],
-
-  "env": {
-    "production": {
-      "vars": {
-        "ENVIRONMENT": "production",
-        "FRONTEND_URL": "https://aidnd-web.safats61.workers.dev"
-      },
-      "durable_objects": {
-        "bindings": [
-          {
-            "name": "GAME_ROOM",
-            "class_name": "GameRoom"
-          }
-        ]
-      },
-      "kv_namespaces": [
-        {
-          "binding": "ROOMS",
-          "id": "c10fedf5133c4636b679d47f5ba09524"
-        }
-      ]
-    }
-  }
+	"name": "aidnd-worker",
+	"main": "src/index.ts",
+	"compatibility_date": "2025-12-01",
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	"vars": {
+		"ENVIRONMENT": "development",
+		"FRONTEND_URL": "http://localhost:3000"
+	},
+	"durable_objects": {
+		"bindings": [
+			{
+				"name": "GAME_ROOM",
+				"class_name": "GameRoom"
+			}
+		]
+	},
+	"kv_namespaces": [
+		{
+			"binding": "ROOMS",
+			"id": "c10fedf5133c4636b679d47f5ba09524"
+		},
+		{
+			"binding": "DND_CACHE",
+			"id": "5974079b9523467faa4c52eae728f120"
+		}
+	],
+	"migrations": [
+		{
+			"tag": "v1",
+			"new_sqlite_classes": [
+				"GameRoom"
+			]
+		}
+	],
+	"env": {
+		"production": {
+			"vars": {
+				"ENVIRONMENT": "production",
+				"FRONTEND_URL": "https://aidnd-web.safats61.workers.dev"
+			},
+			"durable_objects": {
+				"bindings": [
+					{
+						"name": "GAME_ROOM",
+						"class_name": "GameRoom"
+					}
+				]
+			},
+			"kv_namespaces": [
+				{
+					"binding": "ROOMS",
+					"id": "c10fedf5133c4636b679d47f5ba09524"
+				},
+				{
+					"binding": "DND_CACHE",
+					"id": "5974079b9523467faa4c52eae728f120"
+				}
+			]
+		}
+	}
 }

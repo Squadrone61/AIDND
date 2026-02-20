@@ -10,3 +10,5 @@ dist
 .dev.vars
 worker-configuration.d.ts
 .claude
+CLAUDE.md
+.testing

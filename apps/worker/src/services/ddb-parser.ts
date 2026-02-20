@@ -473,6 +473,32 @@ function computeAbilityScores(char: any, warnings: string[]): AbilityScores {
   // Step 4: Modifiers — "set-base" overrides and "bonus" additions
   // Following ddb2alchemy: iterate all modifier categories, apply set-base
   // (use highest), then add bonuses.
+  //
+  // 2024 PHB detection: In 2024 D&D, background ability score bonuses are
+  // placed in the "race" modifier category (via the "Ability Score Increases"
+  // species trait). stats[] already includes these bonuses, so we must skip
+  // race-sourced ability score modifiers to avoid double-counting.
+  // For 2014 characters, race modifiers are genuine racial bonuses that
+  // need to be applied on top of stats[] base values.
+  const hasAbilityScoreIncreasesTrait = (char.race?.racialTraits || []).some(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (t: any) => t.definition?.name === "Ability Score Increases"
+  );
+
+  // Collect race-sourced ability score modifier componentIds to skip
+  const raceAbilityModComponentIds = new Set<number>();
+  if (hasAbilityScoreIncreasesTrait) {
+    for (const mod of (char.modifiers?.race || []) as DDBModifier[]) {
+      if (
+        mod.type === "bonus" &&
+        mod.subType?.endsWith("-score") &&
+        mod.componentId != null
+      ) {
+        raceAbilityModComponentIds.add(mod.componentId);
+      }
+    }
+  }
+
   const setValues: Partial<Record<keyof AbilityScores, number>> = {};
 
   for (const statId of [1, 2, 3, 4, 5, 6] as const) {
@@ -489,10 +515,23 @@ function computeAbilityScores(char: any, warnings: string[]): AbilityScores {
     }
 
     // "bonus" modifiers (racial, class, feat, item bonuses)
-    const bonus = sumModifiers(char, {
+    // For 2024 characters, skip race-sourced ability score modifiers
+    // (from "Ability Score Increases" trait) since stats[] already includes them
+    const bonusMods = getModifiers(char, {
       type: "bonus",
       subType: `${key}-score`,
     });
+    let bonus = 0;
+    for (const mod of bonusMods) {
+      if (
+        raceAbilityModComponentIds.size > 0 &&
+        mod.componentId != null &&
+        raceAbilityModComponentIds.has(mod.componentId)
+      ) {
+        continue; // skip double-applied 2024 racial ASI modifiers
+      }
+      bonus += mod.value || 0;
+    }
     if (bonus !== 0) {
       abilities[key] += bonus;
     }
@@ -634,8 +673,18 @@ function computeArmorClass(char: any, abilities: AbilityScores): number {
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function computeSpeed(char: any): number {
-  const baseSpeed: number =
+  let baseSpeed: number =
     char.race?.weightSpeeds?.normal?.walk ?? 30;
+
+  // Check for set-type speed modifiers (2024 races like Wood Elf use
+  // "innate-speed-walking" to override the default 30 ft base speed)
+  const setSpeed = maxModifier(char, {
+    type: "set",
+    subType: "innate-speed-walking",
+  });
+  if (setSpeed > 0) {
+    baseSpeed = Math.max(baseSpeed, setSpeed);
+  }
 
   // Speed bonuses from modifiers (e.g., Monk Unarmored Movement, Longstrider)
   const speedBonus = sumModifiers(char, { type: "bonus", subType: "speed" });
@@ -904,6 +953,10 @@ function extractProficiencies(char: any): ProficiencyGroup {
   for (const mod of profMods) {
     const name = mod.friendlySubtypeName;
     if (!name || seen.has(name)) continue;
+
+    // Skip "Choose a ..." placeholders from DDB character builder
+    if (/^choose\s+an?\s+/i.test(name)) continue;
+
     seen.add(name);
 
     // Use entityTypeId for reliable categorization
@@ -923,7 +976,12 @@ function extractProficiencies(char: any): ProficiencyGroup {
       ) {
         continue;
       }
-      group.other.push(name);
+      // Catch weapon proficiencies by name (2024 characters may lack entityTypeId)
+      if (lower.includes("weapon")) {
+        group.weapons.push(name);
+      } else {
+        group.other.push(name);
+      }
     }
   }
 
@@ -1042,6 +1100,8 @@ function extractFeatures(
     "Race";
   for (const trait of char.race?.racialTraits || []) {
     if (!trait.definition?.name) continue;
+    // Skip 2024 "Ability Score Increases" species trait (bonuses come from background)
+    if (trait.definition.name === "Ability Score Increases") continue;
     addFeature({
       name: trait.definition.name,
       description: trait.definition.description
@@ -1056,13 +1116,18 @@ function extractFeatures(
   // Feats
   for (const feat of char.feats || []) {
     if (!feat.definition?.name) continue;
+    const featName: string = feat.definition.name;
+    // Skip campaign option artifacts
+    if (featName === "Dark Bargain") continue;
+    // Skip "[Background] Ability Score Improvements" (bonuses already in ability scores)
+    if (featName.endsWith("Ability Score Improvements")) continue;
     addFeature({
-      name: feat.definition.name,
+      name: featName,
       description: feat.definition.description
         ? stripHtml(feat.definition.description)
         : "",
       source: "feat",
-      sourceLabel: feat.definition.name,
+      sourceLabel: featName,
       activationType: formatCastingTime(feat.definition?.activation ?? feat.activation),
     });
   }
@@ -1390,7 +1455,7 @@ function extractInventory(
       }
     }
 
-    // Attack bonus for weapons
+    // Attack bonus and damage modifier for weapons
     let attackBonus: number | undefined;
     if (isWeapon && damage) {
       const isRanged = def.attackType === 2;
@@ -1410,6 +1475,14 @@ function extractInventory(
       // Magic bonus from item itself (e.g. +1 weapon)
       const magicBonus = def.magicBonus || 0;
       attackBonus = proficiencyBonus + abilityMod + magicBonus;
+
+      // Append ability + magic modifier to damage string (e.g. "1d12" → "1d12+3")
+      const damageMod = abilityMod + magicBonus;
+      if (damageMod > 0) {
+        damage = `${damage}+${damageMod}`;
+      } else if (damageMod < 0) {
+        damage = `${damage}${damageMod}`;
+      }
     }
 
     items.push({
