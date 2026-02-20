@@ -11,7 +11,10 @@
     "dev:all": "turbo dev --filter=@aidnd/web --filter=@aidnd/worker",
     "deploy": "turbo deploy",
     "deploy:worker": "turbo deploy --filter=@aidnd/worker",
-    "deploy:web": "turbo deploy --filter=@aidnd/web"
+    "deploy:web": "turbo deploy --filter=@aidnd/web",
+    "test": "node scripts/test.mjs",
+    "test:only": "playwright test",
+    "test:ui": "playwright test --ui"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",

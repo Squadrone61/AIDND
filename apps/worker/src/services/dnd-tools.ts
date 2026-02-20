@@ -1,7 +1,3 @@
-// === D&D Tool Definitions + Executor ===
-// Provider-agnostic tool definitions for D&D 5e rule lookups.
-// Includes format converters for Anthropic and OpenAI APIs.
-
 import {
   lookupSpell,
   lookupMonster,
@@ -13,8 +9,6 @@ import {
   formatConditionForAI,
   formatRuleForAI,
 } from "./dnd-api";
-
-// ─── Provider-agnostic tool definition ───
 
 export interface ToolDefinition {
   name: string;
@@ -105,8 +99,6 @@ export const DND_TOOLS: ToolDefinition[] = [
   },
 ];
 
-// ─── Tool executor ───
-
 export interface ToolCallResult {
   content: string;
   isError: boolean;
@@ -172,9 +164,6 @@ export async function executeToolCall(
   }
 }
 
-// ─── Provider format converters ───
-
-// Anthropic format: { name, description, input_schema }
 export function toAnthropicTools(
   tools: ToolDefinition[],
 ): Array<{ name: string; description: string; input_schema: Record<string, unknown> }> {
@@ -185,7 +174,6 @@ export function toAnthropicTools(
   }));
 }
 
-// OpenAI format: { type: "function", function: { name, description, parameters } }
 export function toOpenAITools(
   tools: ToolDefinition[],
 ): Array<{

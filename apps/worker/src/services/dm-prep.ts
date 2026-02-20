@@ -1,7 +1,3 @@
-// === DM Prep Phase ===
-// Runs once on story start. Pre-fetches party spell details from dnd5eapi.co
-// and builds a concise prep summary for the system prompt.
-
 import type { CharacterData } from "@aidnd/shared/types";
 import { lookupSpell, formatSpellForAI } from "./dnd-api";
 
@@ -28,7 +24,6 @@ export async function runDMPrep(
     return { prepSummary: "" };
   }
 
-  // 1. Collect unique spell names from all characters
   const uniqueSpells = new Map<string, { name: string; level: number; casters: string[] }>();
 
   for (const [, char] of entries) {
@@ -51,7 +46,6 @@ export async function runDMPrep(
     }
   }
 
-  // 2. Fetch spell details (up to MAX_SPELLS_TO_FETCH, prioritize leveled spells)
   const spellsToFetch = [...uniqueSpells.values()]
     .sort((a, b) => b.level - a.level) // Higher level spells first
     .slice(0, MAX_SPELLS_TO_FETCH);
@@ -82,12 +76,10 @@ export async function runDMPrep(
     }
   }
 
-  // 3. Build the prep summary
   const lines: string[] = [];
   lines.push("## DM PREP — Party Capabilities Reference");
   lines.push("");
 
-  // Party composition
   for (const [playerName, char] of entries) {
     const s = char.static;
     const classes = s.classes.map((c) => `${c.name} ${c.level}${c.subclass ? ` (${c.subclass})` : ""}`).join(" / ");
@@ -107,7 +99,6 @@ export async function runDMPrep(
 
   let summary = lines.join("\n");
 
-  // Truncate if too long
   if (summary.length > MAX_SUMMARY_LENGTH) {
     summary = summary.slice(0, MAX_SUMMARY_LENGTH) + "\n...(truncated)";
   }

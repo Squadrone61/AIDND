@@ -1,15 +1,9 @@
-// === Context Detector ===
-// Fallback for non-tool-capable providers (Groq, DeepSeek, xAI, Mistral, etc.).
-// Detects D&D references in player messages and fetches context to inject.
-
 import {
   lookupSpell,
   lookupCondition,
   formatSpellForAI,
   formatConditionForAI,
 } from "./dnd-api";
-
-// ─── Standard D&D 5e conditions ───
 
 const DND_CONDITIONS = [
   "blinded",
@@ -28,8 +22,6 @@ const DND_CONDITIONS = [
   "stunned",
   "unconscious",
 ];
-
-// ─── Spell-casting patterns ───
 
 const CAST_PATTERNS = [
   /\bcast(?:s|ing)?\s+(.+?)(?:\s+(?:at|on|against|toward|towards)\b|[.!?,]|$)/i,
@@ -54,7 +46,6 @@ export function detectReferences(
   const spellNames = new Set<string>();
   const conditionNames = new Set<string>();
 
-  // 1. Detect spell-casting patterns
   for (const pattern of CAST_PATTERNS) {
     const match = lowerMessage.match(pattern);
     if (match?.[1]) {
@@ -66,14 +57,12 @@ export function detectReferences(
     }
   }
 
-  // 2. Match against party's known spells
   for (const spell of partySpells) {
     if (lowerMessage.includes(spell.toLowerCase())) {
       spellNames.add(spell.toLowerCase());
     }
   }
 
-  // 3. Detect standard D&D conditions
   for (const condition of DND_CONDITIONS) {
     // Word boundary match to avoid false positives
     const regex = new RegExp(`\\b${condition}\\b`, "i");
@@ -98,7 +87,6 @@ export async function buildInjectedContext(
 ): Promise<string | null> {
   const parts: string[] = [];
 
-  // Fetch spells (in parallel)
   const spellResults = await Promise.allSettled(
     refs.spellNames.map(async (name) => {
       const spell = await lookupSpell(name, kv);
@@ -112,7 +100,6 @@ export async function buildInjectedContext(
     }
   }
 
-  // Fetch conditions (in parallel)
   const conditionResults = await Promise.allSettled(
     refs.conditionNames.map(async (name) => {
       const condition = await lookupCondition(name, kv);

@@ -39,9 +39,6 @@ export async function callAI(params: CallAIParams): Promise<CallAIResult> {
   }
 }
 
-// --- OpenAI-compatible format ---
-// Covers: OpenAI, Groq, DeepSeek, xAI, Mistral, OpenRouter
-
 async function callOpenAICompatible(
   provider: AIProvider,
   apiKey: string,
@@ -83,8 +80,6 @@ async function callOpenAICompatible(
   return { text };
 }
 
-// --- Anthropic format ---
-
 async function callAnthropic(
   provider: AIProvider,
   apiKey: string,
@@ -125,8 +120,6 @@ async function callAnthropic(
     data.content?.find((block) => block.type === "text")?.text ?? "";
   return { text };
 }
-
-// --- Google Gemini format ---
 
 async function callGemini(
   provider: AIProvider,
@@ -176,8 +169,6 @@ async function callGemini(
   return { text };
 }
 
-// --- Error parsing ---
-
 async function parseErrorResponse(
   response: Response,
   providerName: string,
@@ -188,9 +179,7 @@ async function parseErrorResponse(
 
     try {
       const json = JSON.parse(body);
-      // OpenAI format: { error: { message: "..." } }
-      // Anthropic format: { error: { message: "..." } }
-      // Gemini format: { error: { message: "..." } }
+      // All providers use { error: { message: "..." } }
       errorMessage =
         json?.error?.message ??
         json?.message ??
@@ -206,10 +195,6 @@ async function parseErrorResponse(
     return `${providerName} API error (${response.status}): ${response.statusText}`;
   }
 }
-
-// ═══════════════════════════════════════════════════════
-// Raw AI call with native tool-use support
-// ═══════════════════════════════════════════════════════
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type RawMessage = Record<string, any>;
@@ -261,8 +246,6 @@ export async function callAIRaw(
   }
 }
 
-// --- Anthropic raw (with tools) ---
-
 async function callAnthropicRaw(
   provider: AIProvider,
   apiKey: string,
@@ -311,11 +294,9 @@ async function callAnthropicRaw(
     stop_reason: string;
   };
 
-  // Extract text blocks
   const textBlocks = data.content.filter((b) => b.type === "text");
   const text = textBlocks.map((b) => b.text || "").join("") || null;
 
-  // Extract tool-use blocks
   const toolUseBlocks = data.content.filter((b) => b.type === "tool_use");
   const toolCalls: ToolCallInfo[] = toolUseBlocks.map((b) => ({
     id: b.id!,
@@ -325,7 +306,6 @@ async function callAnthropicRaw(
 
   const stopReason = data.stop_reason === "tool_use" ? "tool_use" : "text";
 
-  // Reconstruct the assistant message to echo back in the loop
   const rawAssistantMessage: RawMessage = {
     role: "assistant",
     content: data.content,
@@ -333,8 +313,6 @@ async function callAnthropicRaw(
 
   return { text, toolCalls, stopReason, rawAssistantMessage };
 }
-
-// --- OpenAI raw (with tools) ---
 
 async function callOpenAIRaw(
   provider: AIProvider,
@@ -391,7 +369,6 @@ async function callOpenAIRaw(
 
   const text = choice.message.content || null;
 
-  // Extract tool calls
   const toolCalls: ToolCallInfo[] = (choice.message.tool_calls || []).map(
     (tc) => ({
       id: tc.id,
@@ -403,7 +380,6 @@ async function callOpenAIRaw(
   const stopReason =
     choice.finish_reason === "tool_calls" ? "tool_use" : "text";
 
-  // Reconstruct the assistant message for the conversation loop
   const rawAssistantMessage: RawMessage = {
     role: "assistant",
     content: choice.message.content,
@@ -422,8 +398,6 @@ function safeParseJSON(str: string): Record<string, unknown> {
     return {};
   }
 }
-
-// --- Build tool-result messages for each format ---
 
 export function buildAnthropicToolResults(
   results: Array<{ toolUseId: string; content: string; isError: boolean }>,
@@ -461,7 +435,6 @@ export function toNativeMessages(
     case "anthropic":
       return messages.map((m) => ({ role: m.role, content: m.content }));
     case "openai":
-      // OpenAI messages don't include system message — that's added separately
       return messages.map((m) => ({ role: m.role, content: m.content }));
     default:
       return messages.map((m) => ({ role: m.role, content: m.content }));

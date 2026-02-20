@@ -1,8 +1,3 @@
-// === Tool-Use Loop ===
-// Orchestrates the multi-turn tool-use conversation for tool-capable providers.
-// Calls callAIRaw() in a loop, executing tool calls until the AI produces a text response.
-// Tool-use intermediary messages are ephemeral — only the final text is returned.
-
 import type { AIConfig } from "@aidnd/shared/types";
 import { getProvider } from "@aidnd/shared";
 import {
@@ -55,14 +50,11 @@ export async function callAIWithTools(
 
   const format = provider.format;
 
-  // Convert tools to provider-specific format
   const tools =
     format === "anthropic"
       ? toAnthropicTools(DND_TOOLS)
       : toOpenAITools(DND_TOOLS);
 
-  // Build temporary message array (starts from conversation history)
-  // This array gets tool-use messages appended but is never persisted
   const tempMessages: RawMessage[] = toNativeMessages(params.messages, format);
 
   let textAccumulator = "";
@@ -76,17 +68,14 @@ export async function callAIWithTools(
       tools,
     });
 
-    // Accumulate any text the AI produced alongside tool calls
     if (result.text) {
       textAccumulator += result.text;
     }
 
-    // If no tool calls, we're done
     if (result.stopReason === "text" || result.toolCalls.length === 0) {
       return { text: textAccumulator || result.text || "" };
     }
 
-    // Execute all tool calls in parallel
     const toolResults = await Promise.all(
       result.toolCalls.map(async (tc) => {
         const execResult = await executeToolCall(
@@ -103,17 +92,14 @@ export async function callAIWithTools(
       }),
     );
 
-    // Log tool calls for debugging
     for (const tr of toolResults) {
       console.log(
         `[tool-loop] ${tr.name}: ${tr.isError ? "ERROR" : "OK"} (${tr.content.length} chars)`,
       );
     }
 
-    // Append the assistant's tool-use message to the temp conversation
     tempMessages.push(result.rawAssistantMessage);
 
-    // Append tool results in the provider's format
     if (format === "anthropic") {
       const toolResultMsg = buildAnthropicToolResults(
         toolResults.map((r) => ({
@@ -124,7 +110,6 @@ export async function callAIWithTools(
       );
       tempMessages.push(toolResultMsg);
     } else {
-      // OpenAI format: each tool result is a separate message
       const toolResultMsgs = buildOpenAIToolResults(
         toolResults.map((r) => ({
           toolCallId: r.id,
@@ -135,8 +120,7 @@ export async function callAIWithTools(
     }
   }
 
-  // If we exhausted all rounds without a text response,
-  // make one final call WITHOUT tools to force a text completion
+  // Exhausted tool rounds — force a text completion without tools
   console.warn(
     `[tool-loop] Exhausted ${MAX_TOOL_ROUNDS} tool rounds, forcing text completion`,
   );
@@ -146,7 +130,6 @@ export async function callAIWithTools(
     systemPrompt: params.systemPrompt,
     messages: tempMessages,
     maxTokens: params.maxTokens,
-    // No tools — force text response
   });
 
   return {

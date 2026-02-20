@@ -25,7 +25,6 @@ import type {
   SavingThrowProficiency,
 } from "@aidnd/shared/types";
 
-// ─── Constants ───
 
 // DDB stat IDs → ability score keys
 const STAT_ID_MAP: Record<number, keyof AbilityScores> = {
@@ -163,7 +162,6 @@ const DURATION_TYPES: Record<string, string> = {
   Special: "Special",
 };
 
-// ─── Interfaces ───
 
 interface DDBModifier {
   type: string;
@@ -200,7 +198,6 @@ interface DDBClassInfo {
   isStartingClass?: boolean;
 }
 
-// ─── Modifier Helpers (from ddb2alchemy) ───
 
 /**
  * Filter all character modifiers by matching criteria.
@@ -248,7 +245,6 @@ function gatherModifiers(char: any): DDBModifier[] {
   return (Object.values(modMap) as unknown[][]).flat() as DDBModifier[];
 }
 
-// ─── Main Parser ───
 
 /**
  * Parse raw DDB v5 JSON into our CharacterData format.
@@ -426,7 +422,6 @@ export function parseDDBCharacter(raw: unknown): {
   };
 }
 
-// ─── Computation Functions (ddb2alchemy approach) ───
 
 /**
  * Compute ability scores using ddb2alchemy's getStatValue pattern:
@@ -1051,7 +1046,6 @@ function extractSenses(
   return senses;
 }
 
-// ─── Feature & Advantage Extraction (our own, not in ddb2alchemy) ───
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function extractFeatures(
@@ -1255,7 +1249,6 @@ function extractAdvantages(char: any): AdvantageEntry[] {
   return entries;
 }
 
-// ─── Spell Extraction ───
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function extractSpells(char: any): CharacterSpell[] {
@@ -1389,7 +1382,6 @@ function extractSpells(char: any): CharacterSpell[] {
   );
 }
 
-// ─── Inventory, Currency, Traits ───
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function extractInventory(
@@ -1531,7 +1523,6 @@ function extractTraits(char: any): CharacterTraits {
   };
 }
 
-// ─── Formatting Helpers ───
 
 function stripHtml(html: string): string {
   return html
