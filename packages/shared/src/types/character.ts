@@ -185,16 +185,6 @@ export interface CharacterData {
 }
 
 /**
- * Minimal public info shown in party lists and popovers.
- */
-export interface CharacterSummary {
-  name: string;
-  race: string;
-  classes: CharacterClass[];
-  totalLevel: number;
-}
-
-/**
  * Player info with online/offline tracking.
  */
 export interface PlayerInfo {

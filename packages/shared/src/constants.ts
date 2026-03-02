@@ -1,6 +1,5 @@
 export const ROOM_CODE_LENGTH = 6;
 export const MAX_PLAYERS_PER_ROOM = 6;
-export const MAX_MESSAGE_LENGTH = 2000;
 export const DEFAULT_MAX_TOKENS = 1024;
 
 // === AI Provider Registry ===

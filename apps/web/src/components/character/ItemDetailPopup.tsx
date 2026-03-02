@@ -2,20 +2,12 @@
 
 import type { InventoryItem } from "@aidnd/shared/types";
 import { CharacterPopupOverlay } from "./CharacterPopupOverlay";
+import { RARITY_COLORS } from "./utils";
 
 interface ItemDetailPopupProps {
   item: InventoryItem;
   onClose: () => void;
 }
-
-const RARITY_COLORS: Record<string, string> = {
-  Common: "text-gray-300",
-  Uncommon: "text-green-400",
-  Rare: "text-blue-400",
-  "Very Rare": "text-purple-400",
-  Legendary: "text-orange-400",
-  Artifact: "text-red-400",
-};
 
 export function ItemDetailPopup({ item, onClose }: ItemDetailPopupProps) {
   const rarityColor = RARITY_COLORS[item.rarity ?? ""] ?? "text-gray-300";

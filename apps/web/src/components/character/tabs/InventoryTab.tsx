@@ -1,20 +1,12 @@
 import { useState, useMemo } from "react";
 import type { CharacterData, InventoryItem } from "@aidnd/shared/types";
 import { FilterChipBar } from "../FilterChipBar";
+import { RARITY_COLORS } from "../utils";
 
 interface InventoryTabProps {
   character: CharacterData;
   onItemClick: (item: InventoryItem) => void;
 }
-
-const RARITY_COLORS: Record<string, string> = {
-  Common: "text-gray-300",
-  Uncommon: "text-green-400",
-  Rare: "text-blue-400",
-  "Very Rare": "text-purple-400",
-  Legendary: "text-orange-400",
-  Artifact: "text-red-400",
-};
 
 export function InventoryTab({ character, onItemClick }: InventoryTabProps) {
   const [filter, setFilter] = useState<string>("all");

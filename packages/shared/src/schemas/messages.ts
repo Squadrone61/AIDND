@@ -22,14 +22,6 @@ export const authUserSchema = z.object({
   avatarUrl: z.string().optional(),
 });
 
-// === AI Config schema (legacy — kept for extension internal use) ===
-
-export const aiConfigSchema = z.object({
-  provider: z.string().min(1),
-  apiKey: z.string().min(1),
-  model: z.string().optional(),
-});
-
 // === Character schemas ===
 
 export const abilityScoresSchema = z.object({

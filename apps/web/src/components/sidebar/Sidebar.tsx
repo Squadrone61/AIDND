@@ -333,9 +333,9 @@ export function Sidebar({
                   }`}
                 >
                   {msg.type === "server:error" && "message" in msg
-                    ? `Error: ${(msg as { message: string }).message}`
+                    ? `Error: ${msg.message}`
                     : "content" in msg
-                      ? (msg as { content: string }).content
+                      ? msg.content
                       : ""}
                 </div>
               ))

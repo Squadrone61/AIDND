@@ -162,7 +162,7 @@ function buildCombatUpdate(combat: ReturnType<typeof buildMockCombat>) {
 
 /** Helper to wait for the BattleMap grid to render (uses terrain legend). */
 async function waitForBattleMap(page: import("@playwright/test").Page) {
-  await expect(page.getByText("Diff. Terrain")).toBeVisible({ timeout: 5_000 });
+  await expect(page.getByText("Difficult")).toBeVisible({ timeout: 5_000 });
 }
 
 /** Build a mock character to inject via server:character_updated. */
@@ -217,7 +217,7 @@ test.describe("Battle Map", () => {
     await waitForRoom(page, roomCode);
 
     // BattleMap legend should not be present
-    await expect(page.getByText("Diff. Terrain")).not.toBeVisible();
+    await expect(page.getByText("Difficult")).not.toBeVisible();
     // "Your turn" banner should not be visible
     await expect(page.getByText("Your turn")).not.toBeVisible();
     // Initiative tracker should not be visible
