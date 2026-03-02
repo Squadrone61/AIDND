@@ -119,7 +119,7 @@ async function checkToolSupport(url: string, modelName: string): Promise<void> {
     const data = await response.json() as { template?: string };
     const template = data.template ?? "";
 
-    if (template.includes("{{ .Tools }}") || template.includes("{{.Tools}}") || template.includes("{{ if .Tools }}") || template.includes("{{- if .Tools }}")) {
+    if (template.includes(".Tools")) {
       currentSupportsTools = true;
       toolStatus.textContent = "D&D tool-use supported";
       toolStatus.className = "tool-status supported";

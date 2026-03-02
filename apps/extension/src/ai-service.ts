@@ -1,6 +1,7 @@
 import type { ExtensionAIConfig } from "./types";
 
 const DEFAULT_NUM_PREDICT = 4096;
+const DEFAULT_NUM_CTX = 8192;
 
 export interface ConversationMessage {
   role: "user" | "assistant";
@@ -40,7 +41,7 @@ export async function callAI(
       model: config.model,
       stream: false,
       messages: [{ role: "system", content: systemPrompt }, ...messages],
-      options: { num_predict: DEFAULT_NUM_PREDICT },
+      options: { num_predict: DEFAULT_NUM_PREDICT, num_ctx: DEFAULT_NUM_CTX },
     }),
   });
 
@@ -68,7 +69,7 @@ export async function callAIRaw(
     model: config.model,
     stream: false,
     messages: [{ role: "system", content: systemPrompt }, ...messages],
-    options: { num_predict: DEFAULT_NUM_PREDICT },
+    options: { num_predict: DEFAULT_NUM_PREDICT, num_ctx: DEFAULT_NUM_CTX },
   };
   if (tools) body.tools = tools;
 
