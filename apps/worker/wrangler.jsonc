@@ -35,7 +35,7 @@
 		"production": {
 			"vars": {
 				"ENVIRONMENT": "production",
-				"FRONTEND_URL": "https://aidnd-web.safats61.workers.dev"
+				"FRONTEND_URL": "https://aidnd.safaakyuz.com"
 			},
 			"durable_objects": {
 				"bindings": [

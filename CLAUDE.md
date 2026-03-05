@@ -74,8 +74,8 @@ pnpm deploy:web     # Deploy web only
 ## Environment
 - **Web dev:** http://localhost:3000
 - **Worker dev:** http://localhost:8787
-- **Production web:** https://aidnd-web.safats61.workers.dev
-- **Production worker:** deployed as `aidnd-worker`
+- **Production web:** https://aidnd.safaakyuz.com
+- **Production worker:** https://aidnd-api.safaakyuz.com
 - Worker env vars: `ENVIRONMENT`, `FRONTEND_URL`
 - Secrets: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` (set via `wrangler secret put`)
 - Frontend env: `NEXT_PUBLIC_WORKER_URL` (defaults to http://localhost:8787)
