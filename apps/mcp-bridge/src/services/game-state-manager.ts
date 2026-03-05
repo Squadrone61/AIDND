@@ -1,0 +1,1316 @@
+/**
+ * GameStateManager — owns all game state, previously in the worker's GameRoom.
+ *
+ * Receives player actions from ws-client (forwarded by worker via server:player_action),
+ * processes game logic, and broadcasts results back to clients via client:broadcast.
+ */
+
+import type {
+  CharacterData,
+  CharacterDynamicData,
+  CheckRequest,
+  ClientMessage,
+  CombatState,
+  Combatant,
+  GameState,
+  GameEvent,
+  GameEventType,
+  GridPosition,
+  BattleMapState,
+  PacingProfile,
+  EncounterLength,
+  ServerMessage,
+  StateChange,
+  RollResult,
+  EncounterState,
+  CreatureSize,
+} from "@aidnd/shared/types";
+import { rollCheck, rollDamage, rollInitiative, buildCheckLabel, computeCheckModifier } from "@aidnd/shared/utils";
+import type { MessageQueue } from "../message-queue.js";
+import type { CampaignManager } from "./campaign-manager.js";
+
+interface ConversationMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+type BroadcastFn = (msg: ServerMessage, targets?: string[]) => void;
+
+export class GameStateManager {
+  gameState: GameState = {
+    encounter: null,
+    eventLog: [],
+    pacingProfile: "balanced",
+    encounterLength: "standard",
+  };
+
+  characters: Record<string, CharacterData> = {};
+  conversationHistory: ConversationMessage[] = [];
+  storyStarted = false;
+
+  private broadcast: BroadcastFn;
+  private messageQueue: MessageQueue;
+  private campaignManager: CampaignManager;
+  /** Host player name (for permission checks) */
+  hostName = "";
+  /** All known player names (for validation) */
+  playerNames: string[] = [];
+
+  constructor(opts: {
+    broadcast: BroadcastFn;
+    messageQueue: MessageQueue;
+    campaignManager: CampaignManager;
+  }) {
+    this.broadcast = opts.broadcast;
+    this.messageQueue = opts.messageQueue;
+    this.campaignManager = opts.campaignManager;
+  }
+
+  // ─── Player Action Dispatch ───
+
+  handlePlayerAction(playerName: string, action: ClientMessage, requestId: string): void {
+    switch (action.type) {
+      case "client:chat":
+        this.handleChat(playerName, action.content);
+        break;
+      case "client:start_story":
+        this.handleStartStory(playerName);
+        break;
+      case "client:roll_dice":
+        this.handleRollDice(playerName, action.checkRequestId);
+        break;
+      case "client:combat_action":
+        this.handleCombatAction(playerName, action.action);
+        break;
+      case "client:move_token":
+        this.handleMoveToken(playerName, action.to);
+        break;
+      case "client:end_turn":
+        this.handleEndTurn(playerName);
+        break;
+      case "client:rollback":
+        this.handleRollback(playerName, action.eventId);
+        break;
+      case "client:set_system_prompt":
+        this.handleSetSystemPrompt(playerName, action.prompt);
+        break;
+      case "client:set_pacing":
+        this.handleSetPacing(playerName, action.profile, action.encounterLength);
+        break;
+      case "client:dm_override":
+        this.handleDMOverride(playerName, action.characterName, action.changes);
+        break;
+      case "client:set_character":
+        this.handleSetCharacter(playerName, action.character);
+        break;
+      case "client:set_campaign":
+        // Handled by ws-client directly (campaign manager)
+        break;
+      case "client:configure_campaign":
+        // Handled by ws-client directly (campaign manager)
+        break;
+      default:
+        break;
+    }
+  }
+
+  // ─── Chat ───
+
+  handleChat(playerName: string, content: string): void {
+    // Broadcast the chat message
+    this.broadcast({
+      type: "server:chat",
+      content,
+      playerName,
+      timestamp: Date.now(),
+      id: crypto.randomUUID(),
+    });
+
+    // Build dm_request for AI
+    const character = this.findCharacterByPlayerName(playerName);
+    const speakerName = character?.static.name || playerName;
+
+    const sanitizedContent = content.replace(/\[([^\]]+)\]\s*:/g, "($1):");
+    const userMessage = `[${speakerName}]: ${sanitizedContent}`;
+    this.conversationHistory.push({ role: "user", content: userMessage });
+
+    // Push to message queue for Claude Code to pick up
+    const requestId = crypto.randomUUID();
+    const systemPrompt = this.gameState.customSystemPrompt ?? "";
+    this.messageQueue.push({
+      requestId,
+      systemPrompt,
+      messages: [...this.conversationHistory],
+    });
+  }
+
+  // ─── Start Story ───
+
+  handleStartStory(playerName: string): void {
+    if (playerName !== this.hostName) {
+      this.broadcast({
+        type: "server:error",
+        message: "Only the host can start the story",
+        code: "NOT_HOST",
+      }, [playerName]);
+      return;
+    }
+
+    if (this.storyStarted) {
+      this.broadcast({
+        type: "server:error",
+        message: "Story has already started",
+        code: "ALREADY_STARTED",
+      }, [playerName]);
+      return;
+    }
+
+    this.storyStarted = true;
+
+    // Snapshot all characters to campaign
+    const cm = this.campaignManager;
+    if (cm.activeSlug && Object.keys(this.characters).length > 0) {
+      try {
+        cm.snapshotCharacters(this.characters);
+      } catch {
+        // ignore
+      }
+    }
+
+    this.broadcast({
+      type: "server:system",
+      content: "The adventure begins...",
+      timestamp: Date.now(),
+    });
+
+    // Build greeting dm_request
+    const partyDescriptions = Object.entries(this.characters).map(([pName, char]) => {
+      const classes = char.static.classes
+        .map((c) => `${c.name} ${c.level}`)
+        .join("/");
+      return `${pName} (${char.static.name}, ${char.static.race} ${classes})`;
+    });
+
+    const userMsg = `The adventuring party has gathered: ${partyDescriptions.join(", ")}. Set the scene and introduce each character!`;
+    const systemPrompt = this.gameState.customSystemPrompt ?? "";
+
+    this.conversationHistory.push({
+      role: "user",
+      content: userMsg,
+    });
+
+    const requestId = crypto.randomUUID();
+    this.messageQueue.push({
+      requestId,
+      systemPrompt,
+      messages: [...this.conversationHistory],
+    });
+  }
+
+  // ─── Send Response (called by MCP tool) ───
+
+  sendResponse(requestId: string, text: string): void {
+    // Store in conversation history
+    this.conversationHistory.push({ role: "assistant", content: text });
+
+    // Broadcast AI narrative to all players
+    this.broadcast({
+      type: "server:ai",
+      content: text,
+      timestamp: Date.now(),
+      id: crypto.randomUUID(),
+    });
+  }
+
+  // ─── Roll Dice ───
+
+  handleRollDice(playerName: string, checkRequestId: string): void {
+    const combat = this.gameState.encounter?.combat;
+    const pendingCheck = combat?.pendingCheck ?? this.gameState.pendingCheck;
+
+    if (!pendingCheck || pendingCheck.id !== checkRequestId) {
+      this.broadcast({
+        type: "server:error",
+        message: "No matching pending check",
+        code: "NO_PENDING_CHECK",
+      }, [playerName]);
+      return;
+    }
+
+    // Find character for this player
+    const char = this.findCharacterByPlayerName(playerName);
+    if (!char || char.static.name.toLowerCase() !== pendingCheck.targetCharacter.toLowerCase()) {
+      this.broadcast({
+        type: "server:error",
+        message: "This check is not for your character",
+        code: "WRONG_CHARACTER",
+      }, [playerName]);
+      return;
+    }
+
+    // Compute modifier and roll
+    const modifier = computeCheckModifier(char, pendingCheck);
+    const roll = rollCheck({
+      modifier,
+      advantage: pendingCheck.advantage,
+      disadvantage: pendingCheck.disadvantage,
+      label: buildCheckLabel(pendingCheck),
+    });
+
+    const success = pendingCheck.dc !== undefined ? roll.total >= pendingCheck.dc : true;
+
+    // Broadcast dice roll
+    this.broadcast({
+      type: "server:dice_roll",
+      roll,
+      playerName,
+      timestamp: Date.now(),
+      id: crypto.randomUUID(),
+    });
+
+    // Broadcast check result
+    this.broadcast({
+      type: "server:check_result",
+      result: {
+        requestId: pendingCheck.id,
+        roll,
+        dc: pendingCheck.dc,
+        success,
+        characterName: char.static.name,
+      },
+      timestamp: Date.now(),
+      id: crypto.randomUUID(),
+    });
+
+    // Clear pending check
+    if (combat?.pendingCheck?.id === pendingCheck.id) {
+      combat.pendingCheck = undefined;
+    }
+    if (this.gameState.pendingCheck?.id === pendingCheck.id) {
+      this.gameState.pendingCheck = undefined;
+    }
+
+    // Inject result into conversation and trigger AI follow-up
+    const resultLabel = success ? "Success" : "Failure";
+    const dcStr = pendingCheck.dc !== undefined ? ` (DC ${pendingCheck.dc})` : "";
+    const critStr = roll.criticalHit ? " (Critical!)" : roll.criticalFail ? " (Critical Fail!)" : "";
+    const systemMsg = `[System: ${char.static.name} rolled ${roll.total} on ${pendingCheck.reason}${dcStr} — ${resultLabel}${critStr}]`;
+
+    this.conversationHistory.push({ role: "user", content: systemMsg });
+
+    // Push dm_request for AI to narrate the outcome
+    const requestId = crypto.randomUUID();
+    const systemPrompt = this.gameState.customSystemPrompt ?? "";
+    this.messageQueue.push({
+      requestId,
+      systemPrompt,
+      messages: [...this.conversationHistory],
+    });
+  }
+
+  // ─── Combat Action ───
+
+  handleCombatAction(playerName: string, action: string): void {
+    const combat = this.gameState.encounter?.combat;
+    if (!combat || combat.phase !== "active") {
+      this.broadcast({
+        type: "server:error",
+        message: "Not in active combat",
+        code: "NOT_IN_COMBAT",
+      }, [playerName]);
+      return;
+    }
+
+    // Enforce turn order
+    const activeId = combat.turnOrder[combat.turnIndex];
+    const activeCombatant = combat.combatants[activeId];
+    if (activeCombatant?.type === "player") {
+      const char = this.findCharacterByPlayerName(playerName);
+      if (!char || char.static.name.toLowerCase() !== activeCombatant.name.toLowerCase()) {
+        this.broadcast({
+          type: "server:error",
+          message: "It's not your turn",
+          code: "NOT_YOUR_TURN",
+        }, [playerName]);
+        return;
+      }
+    }
+
+    // Treat as a chat message that triggers AI response
+    this.broadcast({
+      type: "server:chat",
+      content: action,
+      playerName,
+      timestamp: Date.now(),
+      id: crypto.randomUUID(),
+    });
+
+    // Build dm_request
+    const character = this.findCharacterByPlayerName(playerName);
+    const speakerName = character?.static.name || playerName;
+    const sanitized = action.replace(/\[([^\]]+)\]\s*:/g, "($1):");
+    const userMessage = `[${speakerName}]: ${sanitized}`;
+    this.conversationHistory.push({ role: "user", content: userMessage });
+
+    const requestId = crypto.randomUUID();
+    const systemPrompt = this.gameState.customSystemPrompt ?? "";
+    this.messageQueue.push({
+      requestId,
+      systemPrompt,
+      messages: [...this.conversationHistory],
+    });
+  }
+
+  // ─── End Turn ───
+
+  handleEndTurn(playerName: string): void {
+    const combat = this.gameState.encounter?.combat;
+    if (!combat || combat.phase !== "active") {
+      this.broadcast({
+        type: "server:error",
+        message: "Not in active combat",
+        code: "NOT_IN_COMBAT",
+      }, [playerName]);
+      return;
+    }
+
+    // Find the player's combatant
+    const char = this.findCharacterByPlayerName(playerName);
+    const combatant = char
+      ? Object.values(combat.combatants).find(
+          (c) => c.type === "player" && c.name.toLowerCase() === char.static.name.toLowerCase()
+        )
+      : null;
+
+    if (!combatant) {
+      this.broadcast({
+        type: "server:error",
+        message: "No combatant found for your character",
+        code: "NO_COMBATANT",
+      }, [playerName]);
+      return;
+    }
+
+    const activeId = combat.turnOrder[combat.turnIndex];
+    if (activeId !== combatant.id) {
+      this.broadcast({
+        type: "server:error",
+        message: "It's not your turn",
+        code: "NOT_YOUR_TURN",
+      }, [playerName]);
+      return;
+    }
+
+    this.advanceTurn(combat);
+
+    this.broadcast({
+      type: "server:combat_update",
+      combat,
+      map: this.gameState.encounter?.map ?? null,
+      timestamp: Date.now(),
+    });
+
+    // Auto-resolve NPC turns
+    this.triggerNPCTurns(combat);
+  }
+
+  // ─── Move Token ───
+
+  handleMoveToken(playerName: string, to: GridPosition): void {
+    const combat = this.gameState.encounter?.combat;
+    if (!combat || combat.phase !== "active") {
+      this.broadcast({
+        type: "server:error",
+        message: "Not in active combat",
+        code: "NOT_IN_COMBAT",
+      }, [playerName]);
+      return;
+    }
+
+    const char = this.findCharacterByPlayerName(playerName);
+    const combatant = char
+      ? Object.values(combat.combatants).find(
+          (c) => c.type === "player" && c.name.toLowerCase() === char.static.name.toLowerCase()
+        )
+      : null;
+
+    if (!combatant) {
+      this.broadcast({
+        type: "server:error",
+        message: "No combatant found for your character",
+        code: "NO_COMBATANT",
+      }, [playerName]);
+      return;
+    }
+
+    const activeId = combat.turnOrder[combat.turnIndex];
+    if (activeId !== combatant.id) {
+      this.broadcast({
+        type: "server:error",
+        message: "It's not your turn",
+        code: "NOT_YOUR_TURN",
+      }, [playerName]);
+      return;
+    }
+
+    const from = combatant.position || { x: 0, y: 0 };
+    const dx = Math.abs(to.x - from.x);
+    const dy = Math.abs(to.y - from.y);
+    const distance = Math.max(dx, dy) * 5;
+
+    if (combatant.movementUsed + distance > combatant.speed) {
+      this.broadcast({
+        type: "server:error",
+        message: "Not enough movement remaining",
+        code: "NO_MOVEMENT",
+      }, [playerName]);
+      return;
+    }
+
+    combatant.position = to;
+    combatant.movementUsed += distance;
+
+    this.broadcast({
+      type: "server:combat_update",
+      combat,
+      map: this.gameState.encounter?.map ?? null,
+      timestamp: Date.now(),
+    });
+  }
+
+  // ─── Rollback ───
+
+  handleRollback(playerName: string, eventId: string): void {
+    if (playerName !== this.hostName) {
+      this.broadcast({
+        type: "server:error",
+        message: "Only the host can rollback",
+        code: "NOT_HOST",
+      }, [playerName]);
+      return;
+    }
+
+    const eventIdx = this.gameState.eventLog.findIndex((e) => e.id === eventId);
+    if (eventIdx === -1) {
+      this.broadcast({
+        type: "server:error",
+        message: "Event not found",
+        code: "EVENT_NOT_FOUND",
+      }, [playerName]);
+      return;
+    }
+
+    const event = this.gameState.eventLog[eventIdx];
+
+    // Restore character dynamic data from snapshot
+    for (const [pName, snapshot] of Object.entries(event.stateBefore.characters)) {
+      const char = this.characters[pName];
+      if (char) {
+        char.dynamic = snapshot as CharacterDynamicData;
+      }
+    }
+
+    // Restore combatant state
+    if (event.stateBefore.combatants && this.gameState.encounter?.combat) {
+      this.gameState.encounter.combat.combatants = event.stateBefore.combatants;
+    }
+
+    // Truncate conversation history
+    this.conversationHistory = this.conversationHistory.slice(0, event.conversationIndex);
+
+    // Truncate event log
+    this.gameState.eventLog = this.gameState.eventLog.slice(0, eventIdx);
+
+    // Broadcast rollback
+    this.broadcast({
+      type: "server:rollback",
+      toEventId: eventId,
+      gameState: this.gameState,
+      characterUpdates: { ...this.characters },
+      timestamp: Date.now(),
+    });
+  }
+
+  // ─── Settings ───
+
+  handleSetSystemPrompt(playerName: string, prompt?: string): void {
+    if (playerName !== this.hostName) {
+      this.broadcast({
+        type: "server:error",
+        message: "Only the host can change the system prompt",
+        code: "NOT_HOST",
+      }, [playerName]);
+      return;
+    }
+
+    this.gameState.customSystemPrompt = prompt;
+
+    // Save to campaign
+    const cm = this.campaignManager;
+    if (cm.activeSlug && prompt) {
+      try {
+        cm.saveSystemPrompt(prompt);
+      } catch {
+        // ignore
+      }
+    }
+
+    this.broadcast({
+      type: "server:system",
+      content: prompt ? "System prompt updated." : "System prompt reset to default.",
+      timestamp: Date.now(),
+    });
+  }
+
+  handleSetPacing(playerName: string, profile: PacingProfile, encounterLength: EncounterLength): void {
+    if (playerName !== this.hostName) {
+      this.broadcast({
+        type: "server:error",
+        message: "Only the host can change pacing",
+        code: "NOT_HOST",
+      }, [playerName]);
+      return;
+    }
+
+    this.gameState.pacingProfile = profile;
+    this.gameState.encounterLength = encounterLength;
+
+    this.broadcast({
+      type: "server:system",
+      content: `Pacing set to ${profile}, encounter length: ${encounterLength}.`,
+      timestamp: Date.now(),
+    });
+  }
+
+  handleDMOverride(playerName: string, characterName: string, changes: StateChange[]): void {
+    if (playerName !== this.hostName) {
+      this.broadcast({
+        type: "server:error",
+        message: "Only the host can use DM overrides",
+        code: "NOT_HOST",
+      }, [playerName]);
+      return;
+    }
+
+    for (const [pName, char] of Object.entries(this.characters)) {
+      if (char.static.name.toLowerCase() === characterName.toLowerCase()) {
+        for (const change of changes) {
+          switch (change.type) {
+            case "damage": {
+              const amount = Math.max(0, change.amount);
+              let remaining = amount;
+              if (char.dynamic.tempHP > 0) {
+                const absorbed = Math.min(char.dynamic.tempHP, remaining);
+                char.dynamic.tempHP -= absorbed;
+                remaining -= absorbed;
+              }
+              char.dynamic.currentHP = Math.max(0, char.dynamic.currentHP - remaining);
+              break;
+            }
+            case "healing":
+              char.dynamic.currentHP = Math.min(char.static.maxHP, char.dynamic.currentHP + Math.max(0, change.amount));
+              break;
+            case "hp_set":
+              char.dynamic.currentHP = Math.max(0, Math.min(char.static.maxHP, change.value));
+              break;
+            case "temp_hp":
+              char.dynamic.tempHP = Math.max(char.dynamic.tempHP, change.amount);
+              break;
+            case "condition_add":
+              if (!char.dynamic.conditions.includes(change.condition)) {
+                char.dynamic.conditions.push(change.condition);
+              }
+              break;
+            case "condition_remove":
+              char.dynamic.conditions = char.dynamic.conditions.filter((c) => c !== change.condition);
+              break;
+          }
+        }
+
+        this.broadcast({
+          type: "server:character_updated",
+          playerName: pName,
+          character: char,
+        });
+        break;
+      }
+    }
+  }
+
+  // ─── Character Management ───
+
+  handleSetCharacter(playerName: string, character: CharacterData): void {
+    this.characters[playerName] = character;
+
+    // Snapshot to campaign
+    const cm = this.campaignManager;
+    if (cm.activeSlug) {
+      try {
+        cm.snapshotCharacters({ [playerName]: character });
+      } catch {
+        // ignore
+      }
+    }
+  }
+
+  // ─── Combat Helpers ───
+
+  private advanceTurn(combat: CombatState): void {
+    combat.turnIndex = (combat.turnIndex + 1) % combat.turnOrder.length;
+    if (combat.turnIndex === 0) {
+      combat.round++;
+    }
+    const activeId = combat.turnOrder[combat.turnIndex];
+    const active = combat.combatants[activeId];
+    if (active) {
+      active.movementUsed = 0;
+    }
+  }
+
+  private triggerNPCTurns(combat: CombatState, depth = 0): void {
+    if (depth >= 10) return;
+    if (combat.phase !== "active") return;
+
+    const activeId = combat.turnOrder[combat.turnIndex];
+    const activeCombatant = combat.combatants[activeId];
+    if (!activeCombatant || activeCombatant.type === "player") return;
+
+    // Build NPC turn context and push to message queue
+    const pos = activeCombatant.position;
+    const posStr = pos ? ` at position (${pos.x},${pos.y})` : "";
+    const speed = activeCombatant.speed ?? 30;
+    const ac = activeCombatant.armorClass ?? "?";
+    const hp = `${activeCombatant.currentHP ?? "?"}/${activeCombatant.maxHP ?? "?"}`;
+    const conditions = activeCombatant.conditions?.length
+      ? ` Conditions: ${activeCombatant.conditions.join(", ")}.`
+      : "";
+
+    const turnMsg = `[System: It is now ${activeCombatant.name}'s turn${posStr}. HP: ${hp}, AC: ${ac}, Speed: ${speed}ft.${conditions}\nResolve this combatant's turn.]`;
+    this.conversationHistory.push({ role: "user", content: turnMsg });
+
+    const requestId = crypto.randomUUID();
+    const systemPrompt = this.gameState.customSystemPrompt ?? "";
+    this.messageQueue.push({
+      requestId,
+      systemPrompt,
+      messages: [...this.conversationHistory],
+    });
+
+    // NPC turns are resolved by the AI responding via send_response,
+    // which calls sendResponse() → advance_turn tool → etc.
+    // The recursive NPC turn loop is now driven by the AI calling advance_turn.
+  }
+
+  // ─── MCP Tool Methods (called by game-tools.ts) ───
+
+  /** Get full game state for the AI */
+  getGameState(): {
+    gameState: GameState;
+    characters: Record<string, CharacterData>;
+    storyStarted: boolean;
+    conversationLength: number;
+  } {
+    return {
+      gameState: this.gameState,
+      characters: this.characters,
+      storyStarted: this.storyStarted,
+      conversationLength: this.conversationHistory.length,
+    };
+  }
+
+  /** Get a specific character */
+  getCharacter(characterName: string): { playerName: string; character: CharacterData } | null {
+    for (const [pName, char] of Object.entries(this.characters)) {
+      if (char.static.name.toLowerCase() === characterName.toLowerCase()) {
+        return { playerName: pName, character: char };
+      }
+    }
+    return null;
+  }
+
+  /** Apply damage to a character or combatant */
+  applyDamage(targetName: string, amount: number, damageType?: string): string {
+    const dmg = Math.max(0, amount);
+
+    // Check combatants first (NPCs/enemies)
+    const combat = this.gameState.encounter?.combat;
+    if (combat) {
+      const combatant = Object.values(combat.combatants).find(
+        (c) => c.name.toLowerCase() === targetName.toLowerCase() && c.type !== "player"
+      );
+      if (combatant) {
+        let remaining = dmg;
+        if ((combatant.tempHP ?? 0) > 0) {
+          const absorbed = Math.min(combatant.tempHP!, remaining);
+          combatant.tempHP! -= absorbed;
+          remaining -= absorbed;
+        }
+        combatant.currentHP = Math.max(0, (combatant.currentHP ?? 0) - remaining);
+
+        this.broadcast({
+          type: "server:combat_update",
+          combat,
+          map: this.gameState.encounter?.map ?? null,
+          timestamp: Date.now(),
+        });
+
+        return `${combatant.name} takes ${dmg} ${damageType ?? ""} damage → ${combatant.currentHP}/${combatant.maxHP} HP`;
+      }
+    }
+
+    // Check player characters
+    for (const [pName, char] of Object.entries(this.characters)) {
+      if (char.static.name.toLowerCase() === targetName.toLowerCase()) {
+        let remaining = dmg;
+        if (char.dynamic.tempHP > 0) {
+          const absorbed = Math.min(char.dynamic.tempHP, remaining);
+          char.dynamic.tempHP -= absorbed;
+          remaining -= absorbed;
+        }
+        char.dynamic.currentHP = Math.max(0, char.dynamic.currentHP - remaining);
+
+        this.broadcast({
+          type: "server:character_updated",
+          playerName: pName,
+          character: char,
+        });
+
+        return `${char.static.name} takes ${dmg} ${damageType ?? ""} damage → ${char.dynamic.currentHP}/${char.static.maxHP} HP`;
+      }
+    }
+
+    return `Target "${targetName}" not found`;
+  }
+
+  /** Heal a character or combatant */
+  heal(targetName: string, amount: number): string {
+    const healing = Math.max(0, amount);
+
+    // Check NPC combatants
+    const combat = this.gameState.encounter?.combat;
+    if (combat) {
+      const combatant = Object.values(combat.combatants).find(
+        (c) => c.name.toLowerCase() === targetName.toLowerCase() && c.type !== "player"
+      );
+      if (combatant && combatant.maxHP) {
+        combatant.currentHP = Math.min(combatant.maxHP, (combatant.currentHP ?? 0) + healing);
+        this.broadcast({
+          type: "server:combat_update",
+          combat,
+          map: this.gameState.encounter?.map ?? null,
+          timestamp: Date.now(),
+        });
+        return `${combatant.name} healed ${healing} → ${combatant.currentHP}/${combatant.maxHP} HP`;
+      }
+    }
+
+    // Check player characters
+    for (const [pName, char] of Object.entries(this.characters)) {
+      if (char.static.name.toLowerCase() === targetName.toLowerCase()) {
+        char.dynamic.currentHP = Math.min(char.static.maxHP, char.dynamic.currentHP + healing);
+        this.broadcast({
+          type: "server:character_updated",
+          playerName: pName,
+          character: char,
+        });
+        return `${char.static.name} healed ${healing} → ${char.dynamic.currentHP}/${char.static.maxHP} HP`;
+      }
+    }
+
+    return `Target "${targetName}" not found`;
+  }
+
+  /** Set HP to exact value */
+  setHP(targetName: string, value: number): string {
+    // NPC combatants
+    const combat = this.gameState.encounter?.combat;
+    if (combat) {
+      const combatant = Object.values(combat.combatants).find(
+        (c) => c.name.toLowerCase() === targetName.toLowerCase() && c.type !== "player"
+      );
+      if (combatant && combatant.maxHP) {
+        combatant.currentHP = Math.max(0, Math.min(combatant.maxHP, value));
+        this.broadcast({
+          type: "server:combat_update",
+          combat,
+          map: this.gameState.encounter?.map ?? null,
+          timestamp: Date.now(),
+        });
+        return `${combatant.name} HP set to ${combatant.currentHP}/${combatant.maxHP}`;
+      }
+    }
+
+    for (const [pName, char] of Object.entries(this.characters)) {
+      if (char.static.name.toLowerCase() === targetName.toLowerCase()) {
+        char.dynamic.currentHP = Math.max(0, Math.min(char.static.maxHP, value));
+        this.broadcast({
+          type: "server:character_updated",
+          playerName: pName,
+          character: char,
+        });
+        return `${char.static.name} HP set to ${char.dynamic.currentHP}/${char.static.maxHP}`;
+      }
+    }
+
+    return `Target "${targetName}" not found`;
+  }
+
+  /** Add a condition */
+  addCondition(targetName: string, condition: string, _duration?: number): string {
+    // NPC combatants
+    const combat = this.gameState.encounter?.combat;
+    if (combat) {
+      const combatant = Object.values(combat.combatants).find(
+        (c) => c.name.toLowerCase() === targetName.toLowerCase() && c.type !== "player"
+      );
+      if (combatant) {
+        if (!combatant.conditions) combatant.conditions = [];
+        if (!combatant.conditions.includes(condition)) {
+          combatant.conditions.push(condition);
+        }
+        this.broadcast({
+          type: "server:combat_update",
+          combat,
+          map: this.gameState.encounter?.map ?? null,
+          timestamp: Date.now(),
+        });
+        return `${combatant.name} is now ${condition}`;
+      }
+    }
+
+    for (const [pName, char] of Object.entries(this.characters)) {
+      if (char.static.name.toLowerCase() === targetName.toLowerCase()) {
+        if (!char.dynamic.conditions.includes(condition)) {
+          char.dynamic.conditions.push(condition);
+        }
+        this.broadcast({
+          type: "server:character_updated",
+          playerName: pName,
+          character: char,
+        });
+        return `${char.static.name} is now ${condition}`;
+      }
+    }
+
+    return `Target "${targetName}" not found`;
+  }
+
+  /** Remove a condition */
+  removeCondition(targetName: string, condition: string): string {
+    const combat = this.gameState.encounter?.combat;
+    if (combat) {
+      const combatant = Object.values(combat.combatants).find(
+        (c) => c.name.toLowerCase() === targetName.toLowerCase() && c.type !== "player"
+      );
+      if (combatant && combatant.conditions) {
+        combatant.conditions = combatant.conditions.filter((c) => c !== condition);
+        this.broadcast({
+          type: "server:combat_update",
+          combat,
+          map: this.gameState.encounter?.map ?? null,
+          timestamp: Date.now(),
+        });
+        return `${condition} removed from ${combatant.name}`;
+      }
+    }
+
+    for (const [pName, char] of Object.entries(this.characters)) {
+      if (char.static.name.toLowerCase() === targetName.toLowerCase()) {
+        char.dynamic.conditions = char.dynamic.conditions.filter((c) => c !== condition);
+        this.broadcast({
+          type: "server:character_updated",
+          playerName: pName,
+          character: char,
+        });
+        return `${condition} removed from ${char.static.name}`;
+      }
+    }
+
+    return `Target "${targetName}" not found`;
+  }
+
+  /** Start combat */
+  startCombat(combatants: Array<{
+    name: string;
+    type: "player" | "npc" | "enemy";
+    initiative?: number;
+    initiativeModifier?: number;
+    speed?: number;
+    maxHP?: number;
+    currentHP?: number;
+    armorClass?: number;
+    position?: GridPosition;
+    size?: CreatureSize;
+    tokenColor?: string;
+  }>): string {
+    const combatantMap: Record<string, Combatant> = {};
+    const initiativeOrder: Array<{ id: string; initiative: number }> = [];
+
+    for (const c of combatants) {
+      const id = crypto.randomUUID();
+      const initMod = c.initiativeModifier ?? 0;
+      const initiative = c.initiative ?? rollInitiative(initMod);
+
+      combatantMap[id] = {
+        id,
+        name: c.name,
+        type: c.type,
+        initiative,
+        initiativeModifier: initMod,
+        speed: c.speed ?? 30,
+        movementUsed: 0,
+        position: c.position,
+        size: c.size ?? "medium",
+        tokenColor: c.tokenColor,
+        maxHP: c.maxHP,
+        currentHP: c.currentHP ?? c.maxHP,
+        tempHP: 0,
+        armorClass: c.armorClass,
+        conditions: [],
+      };
+
+      // Link player combatants
+      if (c.type === "player") {
+        const charEntry = Object.entries(this.characters).find(
+          ([, ch]) => ch.static.name.toLowerCase() === c.name.toLowerCase()
+        );
+        if (charEntry) {
+          combatantMap[id].playerId = charEntry[0];
+        }
+      }
+
+      initiativeOrder.push({ id, initiative });
+    }
+
+    // Sort by initiative (highest first)
+    initiativeOrder.sort((a, b) => b.initiative - a.initiative);
+
+    const combat: CombatState = {
+      phase: "active",
+      round: 1,
+      turnIndex: 0,
+      turnOrder: initiativeOrder.map((i) => i.id),
+      combatants: combatantMap,
+    };
+
+    if (!this.gameState.encounter) {
+      this.gameState.encounter = {
+        id: crypto.randomUUID(),
+        phase: "combat",
+        combat,
+      };
+    } else {
+      this.gameState.encounter.phase = "combat";
+      this.gameState.encounter.combat = combat;
+    }
+
+    this.broadcast({
+      type: "server:combat_update",
+      combat,
+      map: this.gameState.encounter.map ?? null,
+      timestamp: Date.now(),
+    });
+
+    const initSummary = initiativeOrder
+      .map((i) => `${combatantMap[i.id].name}: ${i.initiative}`)
+      .join(", ");
+
+    return `Combat started! Initiative order: ${initSummary}. Round 1, ${combatantMap[initiativeOrder[0].id].name}'s turn.`;
+  }
+
+  /** End combat */
+  endCombat(): string {
+    if (!this.gameState.encounter?.combat) {
+      return "No active combat to end";
+    }
+
+    this.gameState.encounter.combat.phase = "ended";
+    this.gameState.encounter.phase = "exploration";
+    const combat = this.gameState.encounter.combat;
+    this.gameState.encounter.combat = undefined;
+
+    this.broadcast({
+      type: "server:combat_update",
+      combat: null,
+      map: this.gameState.encounter.map ?? null,
+      timestamp: Date.now(),
+    });
+
+    return "Combat ended.";
+  }
+
+  /** Advance to next turn */
+  advanceTurnMCP(): string {
+    const combat = this.gameState.encounter?.combat;
+    if (!combat || combat.phase !== "active") {
+      return "No active combat";
+    }
+
+    this.advanceTurn(combat);
+
+    this.broadcast({
+      type: "server:combat_update",
+      combat,
+      map: this.gameState.encounter?.map ?? null,
+      timestamp: Date.now(),
+    });
+
+    const activeId = combat.turnOrder[combat.turnIndex];
+    const active = combat.combatants[activeId];
+    return `Advanced to ${active?.name ?? "unknown"}'s turn (Round ${combat.round})`;
+  }
+
+  /** Add combatant mid-fight */
+  addCombatant(c: {
+    name: string;
+    type: "player" | "npc" | "enemy";
+    initiative?: number;
+    initiativeModifier?: number;
+    speed?: number;
+    maxHP?: number;
+    currentHP?: number;
+    armorClass?: number;
+    position?: GridPosition;
+    size?: CreatureSize;
+    tokenColor?: string;
+  }): string {
+    const combat = this.gameState.encounter?.combat;
+    if (!combat || combat.phase !== "active") {
+      return "No active combat";
+    }
+
+    const id = crypto.randomUUID();
+    const initMod = c.initiativeModifier ?? 0;
+    const initiative = c.initiative ?? rollInitiative(initMod);
+
+    combat.combatants[id] = {
+      id,
+      name: c.name,
+      type: c.type,
+      initiative,
+      initiativeModifier: initMod,
+      speed: c.speed ?? 30,
+      movementUsed: 0,
+      position: c.position,
+      size: c.size ?? "medium",
+      tokenColor: c.tokenColor,
+      maxHP: c.maxHP,
+      currentHP: c.currentHP ?? c.maxHP,
+      tempHP: 0,
+      armorClass: c.armorClass,
+      conditions: [],
+    };
+
+    // Insert into turn order by initiative
+    const insertIdx = combat.turnOrder.findIndex(
+      (tid) => combat.combatants[tid].initiative < initiative
+    );
+    if (insertIdx === -1) {
+      combat.turnOrder.push(id);
+    } else {
+      // Adjust turnIndex if inserting before current turn
+      if (insertIdx <= combat.turnIndex) {
+        combat.turnIndex++;
+      }
+      combat.turnOrder.splice(insertIdx, 0, id);
+    }
+
+    this.broadcast({
+      type: "server:combat_update",
+      combat,
+      map: this.gameState.encounter?.map ?? null,
+      timestamp: Date.now(),
+    });
+
+    return `${c.name} joined combat (initiative ${initiative})`;
+  }
+
+  /** Remove combatant */
+  removeCombatant(combatantName: string): string {
+    const combat = this.gameState.encounter?.combat;
+    if (!combat) return "No active combat";
+
+    const entry = Object.entries(combat.combatants).find(
+      ([, c]) => c.name.toLowerCase() === combatantName.toLowerCase()
+    );
+    if (!entry) return `Combatant "${combatantName}" not found`;
+
+    const [id] = entry;
+    const idx = combat.turnOrder.indexOf(id);
+
+    delete combat.combatants[id];
+
+    if (idx !== -1) {
+      combat.turnOrder.splice(idx, 1);
+      if (combat.turnOrder.length === 0) {
+        return this.endCombat();
+      }
+      if (idx < combat.turnIndex) {
+        combat.turnIndex--;
+      } else if (idx === combat.turnIndex) {
+        combat.turnIndex = combat.turnIndex % combat.turnOrder.length;
+      }
+    }
+
+    this.broadcast({
+      type: "server:combat_update",
+      combat,
+      map: this.gameState.encounter?.map ?? null,
+      timestamp: Date.now(),
+    });
+
+    return `${combatantName} removed from combat`;
+  }
+
+  /** Move a combatant on the battle map */
+  moveCombatant(combatantName: string, to: GridPosition): string {
+    const combat = this.gameState.encounter?.combat;
+    if (!combat) return "No active combat";
+
+    const combatant = Object.values(combat.combatants).find(
+      (c) => c.name.toLowerCase() === combatantName.toLowerCase()
+    );
+    if (!combatant) return `Combatant "${combatantName}" not found`;
+
+    combatant.position = to;
+
+    this.broadcast({
+      type: "server:combat_update",
+      combat,
+      map: this.gameState.encounter?.map ?? null,
+      timestamp: Date.now(),
+    });
+
+    return `${combatant.name} moved to (${to.x}, ${to.y})`;
+  }
+
+  /** Use a spell slot */
+  useSpellSlot(characterName: string, level: number): string {
+    for (const [pName, char] of Object.entries(this.characters)) {
+      if (char.static.name.toLowerCase() === characterName.toLowerCase()) {
+        const slot = char.dynamic.spellSlotsUsed.find((s) => s.level === level);
+        if (slot) {
+          slot.used++;
+        } else {
+          char.dynamic.spellSlotsUsed.push({ level, total: 0, used: 1 });
+        }
+
+        this.broadcast({
+          type: "server:character_updated",
+          playerName: pName,
+          character: char,
+        });
+
+        return `${char.static.name} used a level ${level} spell slot`;
+      }
+    }
+    return `Character "${characterName}" not found`;
+  }
+
+  /** Restore a spell slot */
+  restoreSpellSlot(characterName: string, level: number): string {
+    for (const [pName, char] of Object.entries(this.characters)) {
+      if (char.static.name.toLowerCase() === characterName.toLowerCase()) {
+        const slot = char.dynamic.spellSlotsUsed.find((s) => s.level === level);
+        if (slot && slot.used > 0) {
+          slot.used--;
+        }
+
+        this.broadcast({
+          type: "server:character_updated",
+          playerName: pName,
+          character: char,
+        });
+
+        return `${char.static.name} restored a level ${level} spell slot`;
+      }
+    }
+    return `Character "${characterName}" not found`;
+  }
+
+  /** Update/set the battle map */
+  updateBattleMap(map: BattleMapState): string {
+    if (!this.gameState.encounter) {
+      this.gameState.encounter = {
+        id: crypto.randomUUID(),
+        phase: "exploration",
+      };
+    }
+
+    this.gameState.encounter.map = map;
+
+    this.broadcast({
+      type: "server:combat_update",
+      combat: this.gameState.encounter.combat ?? null,
+      map,
+      timestamp: Date.now(),
+    });
+
+    return `Battle map "${map.name ?? "unnamed"}" set (${map.width}x${map.height})`;
+  }
+
+  /** Request a check from a player (DM-initiated) */
+  requestCheck(params: {
+    checkType: CheckRequest["type"];
+    targetCharacter: string;
+    ability?: string;
+    skill?: string;
+    dc?: number;
+    advantage?: boolean;
+    disadvantage?: boolean;
+    reason: string;
+  }): string {
+    // Verify target character exists
+    const charEntry = Object.entries(this.characters).find(
+      ([, c]) => c.static.name.toLowerCase() === params.targetCharacter.toLowerCase()
+    );
+    if (!charEntry) {
+      return `Character "${params.targetCharacter}" not found`;
+    }
+
+    const checkRequest: CheckRequest = {
+      id: crypto.randomUUID(),
+      type: params.checkType,
+      targetCharacter: params.targetCharacter,
+      ability: params.ability,
+      skill: params.skill,
+      dc: params.dc,
+      advantage: params.advantage,
+      disadvantage: params.disadvantage,
+      reason: params.reason,
+      dmInitiated: true,
+    };
+
+    // Store as pending check
+    const combat = this.gameState.encounter?.combat;
+    if (combat && combat.phase === "active") {
+      combat.pendingCheck = checkRequest;
+    } else {
+      this.gameState.pendingCheck = checkRequest;
+    }
+
+    // Broadcast check request
+    this.broadcast({
+      type: "server:check_request",
+      check: checkRequest,
+      timestamp: Date.now(),
+      id: crypto.randomUUID(),
+    });
+
+    return `Check requested: ${params.reason} for ${params.targetCharacter}`;
+  }
+
+  /** Send game state sync to a specific player (on join/reconnect) */
+  sendStateSyncTo(playerName: string): void {
+    this.broadcast({
+      type: "server:game_state_sync",
+      gameState: this.gameState,
+    }, [playerName]);
+  }
+
+  // ─── Internal Helpers ───
+
+  private findCharacterByPlayerName(playerName: string): CharacterData | null {
+    return this.characters[playerName] ?? null;
+  }
+}

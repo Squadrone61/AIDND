@@ -5,7 +5,7 @@ import { CampaignManager } from "./services/campaign-manager.js";
 import { createMcpServer } from "./mcp-server.js";
 
 const roomCode = process.env.AIDND_ROOM_CODE;
-const workerUrl = process.env.AIDND_WORKER_URL || "http://localhost:8787";
+const workerUrl = process.env.AIDND_WORKER_URL || "http://127.0.0.1:8787";
 
 if (!roomCode) {
   console.error(

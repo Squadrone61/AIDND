@@ -30,8 +30,6 @@ function getWorkerUrl(): string {
   return process.env.NEXT_PUBLIC_WORKER_URL || "http://localhost:8787";
 }
 
-const STORAGE_KEY = "imported_character";
-
 export function useCharacterImport(
   options?: UseCharacterImportOptions
 ): UseCharacterImportResult {
@@ -51,22 +49,6 @@ export function useCharacterImport(
     freshImportRef.current = value;
   }, []);
 
-  // Load from localStorage on mount
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const data = JSON.parse(raw) as CharacterData;
-        if (data?.static?.name) {
-          setCharacter(data);
-          setImportState("success");
-        }
-      }
-    } catch {
-      // ignore malformed JSON
-    }
-  }, []);
-
   const saveCharacter = useCallback((newChar: CharacterData) => {
     // If we have an existing character and this is NOT a fresh import, merge to preserve dynamic state
     const existing = existingRef.current;
@@ -78,7 +60,6 @@ export function useCharacterImport(
 
     setCharacter(finalChar);
     setImportState("success");
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(finalChar));
   }, []);
 
   const importFromUrl = useCallback(async (url: string) => {
@@ -163,7 +144,6 @@ export function useCharacterImport(
     setError("");
     setFallbackHint("");
     setWarnings([]);
-    localStorage.removeItem(STORAGE_KEY);
   }, []);
 
   const resetForReimport = useCallback(() => {

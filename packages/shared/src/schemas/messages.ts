@@ -3,6 +3,7 @@ import {
   gridPositionSchema,
   checkRequestSchema,
   checkResultSchema,
+  checkTypeSchema,
   rollResultSchema,
   combatStateSchema,
   battleMapStateSchema,
@@ -272,6 +273,25 @@ export const clientCampaignLoadedSchema = z.object({
   sessionCount: z.number(),
 });
 
+export const clientConfigureCampaignSchema = z.object({
+  type: z.literal("client:configure_campaign"),
+  campaignName: z.string().min(1).max(100),
+  systemPrompt: z.string().optional(),
+  pacingProfile: pacingProfileSchema,
+  encounterLength: encounterLengthSchema,
+  existingCampaignSlug: z.string().optional(),
+});
+
+export const clientCampaignConfiguredAckSchema = z.object({
+  type: z.literal("client:campaign_configured_ack"),
+  campaignSlug: z.string(),
+  campaignName: z.string(),
+  pacingProfile: pacingProfileSchema,
+  encounterLength: encounterLengthSchema,
+  systemPrompt: z.string().optional(),
+  restoredCharacters: z.record(z.string(), characterDataSchema).optional(),
+});
+
 export const clientSetPasswordSchema = z.object({
   type: z.literal("client:set_password"),
   password: z.string().max(100),
@@ -328,12 +348,52 @@ export const clientDMOverrideSchema = z.object({
   changes: z.array(z.any()), // StateChange is a union, validated at runtime
 });
 
+export const clientDMDiceRollSchema = z.object({
+  type: z.literal("client:dm_dice_roll"),
+  roll: rollResultSchema,
+  reason: z.string().optional(),
+});
+
+export const clientDMCheckRequestSchema = z.object({
+  type: z.literal("client:dm_check_request"),
+  checkType: checkTypeSchema,
+  targetCharacter: z.string(),
+  ability: z.string().optional(),
+  skill: z.string().optional(),
+  dc: z.number().optional(),
+  advantage: z.boolean().optional(),
+  disadvantage: z.boolean().optional(),
+  reason: z.string(),
+});
+
+export const clientDMCheckResultSchema = z.object({
+  type: z.literal("client:dm_check_result"),
+  checkRequestId: z.string(),
+  roll: rollResultSchema,
+  success: z.boolean(),
+  characterName: z.string(),
+  dc: z.number().optional(),
+  playerName: z.string(),
+});
+
 export const clientEndTurnSchema = z.object({
   type: z.literal("client:end_turn"),
 });
 
 export const clientDestroyRoomSchema = z.object({
   type: z.literal("client:destroy_room"),
+});
+
+export const clientBroadcastSchema = z.object({
+  type: z.literal("client:broadcast"),
+  payload: z.any(), // ServerMessage validated at runtime
+  targets: z.array(z.string()).optional(),
+});
+
+export const clientActionResultSchema = z.object({
+  type: z.literal("client:action_result"),
+  requestId: z.string(),
+  error: z.string().optional(),
 });
 
 export const clientMessageSchema = z.discriminatedUnion("type", [
@@ -343,6 +403,8 @@ export const clientMessageSchema = z.discriminatedUnion("type", [
   clientDMConfigSchema,
   clientSetCampaignSchema,
   clientCampaignLoadedSchema,
+  clientConfigureCampaignSchema,
+  clientCampaignConfiguredAckSchema,
   clientSetPasswordSchema,
   clientKickPlayerSchema,
   clientSetCharacterSchema,
@@ -356,6 +418,11 @@ export const clientMessageSchema = z.discriminatedUnion("type", [
   clientDMOverrideSchema,
   clientEndTurnSchema,
   clientDestroyRoomSchema,
+  clientDMDiceRollSchema,
+  clientDMCheckRequestSchema,
+  clientDMCheckResultSchema,
+  clientBroadcastSchema,
+  clientActionResultSchema,
 ]);
 
 // === Server → Client schemas ===
@@ -393,6 +460,7 @@ export const serverRoomJoinedSchema = z.object({
   allPlayers: z.array(playerInfoSchema).optional(),
   storyStarted: z.boolean().optional(),
   dmConnected: z.boolean(),
+  campaignConfigured: z.boolean().optional(),
   activeCampaignSlug: z.string().optional(),
   activeCampaignName: z.string().optional(),
 });
@@ -510,6 +578,35 @@ export const serverCampaignLoadedSchema = z.object({
   sessionCount: z.number(),
 });
 
+export const serverCampaignConfiguredSchema = z.object({
+  type: z.literal("server:campaign_configured"),
+  campaignName: z.string(),
+  campaignSlug: z.string(),
+  pacingProfile: pacingProfileSchema,
+  encounterLength: encounterLengthSchema,
+  systemPrompt: z.string().optional(),
+  restoredCharacters: z.record(z.string(), characterDataSchema).optional(),
+});
+
+export const serverCharacterForCampaignSchema = z.object({
+  type: z.literal("server:character_for_campaign"),
+  playerName: z.string(),
+  character: characterDataSchema,
+});
+
+export const serverDMRollRequestSchema = z.object({
+  type: z.literal("server:dm_roll_request"),
+  checkRequestId: z.string(),
+  playerName: z.string(),
+});
+
+export const serverPlayerActionSchema = z.object({
+  type: z.literal("server:player_action"),
+  playerName: z.string(),
+  action: z.any(), // ClientMessage validated at runtime
+  requestId: z.string(),
+});
+
 export const serverRoomDestroyedSchema = z.object({
   type: z.literal("server:room_destroyed"),
 });
@@ -534,5 +631,9 @@ export const serverMessageSchema = z.discriminatedUnion("type", [
   serverDMRequestSchema,
   serverDMConfigUpdateSchema,
   serverCampaignLoadedSchema,
+  serverCampaignConfiguredSchema,
+  serverCharacterForCampaignSchema,
+  serverDMRollRequestSchema,
+  serverPlayerActionSchema,
   serverRoomDestroyedSchema,
 ]);

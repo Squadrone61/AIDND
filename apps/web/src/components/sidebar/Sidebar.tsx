@@ -5,22 +5,11 @@ import { formatClassString, getTotalLevel } from "@aidnd/shared/utils";
 import type {
   CharacterData,
   CombatState,
-  EncounterLength,
   GameEvent,
-  PacingProfile,
   PlayerInfo,
   ServerMessage,
 } from "@aidnd/shared/types";
 import { CharacterPopover } from "@/components/character/CharacterPopover";
-import { SystemPromptModal } from "@/components/sidebar/SystemPromptModal";
-import { CampaignSelector } from "@/components/sidebar/CampaignSelector";
-
-interface CampaignInfo {
-  slug: string;
-  name: string;
-  lastPlayedAt: string;
-  sessionCount: number;
-}
 
 interface SidebarProps {
   roomCode: string;
@@ -34,21 +23,14 @@ interface SidebarProps {
   storyStarted: boolean;
   combatState?: CombatState | null;
   eventLog?: GameEvent[];
-  pacingProfile?: PacingProfile;
-  encounterLength?: EncounterLength;
-  customSystemPrompt?: string;
-  campaigns?: CampaignInfo[];
-  activeCampaignSlug?: string;
+  campaignConfigured?: boolean;
   activeCampaignName?: string;
   onKick: (playerName: string) => void;
   onStartStory: () => void;
   onRollback?: (eventId: string) => void;
   onDestroyRoom?: () => void;
   onSetPassword?: (password: string) => void;
-  onSetPacing?: (profile: PacingProfile, encounterLength: EncounterLength) => void;
-  onSetSystemPrompt?: (prompt?: string) => void;
-  onSelectCampaign?: (slug: string) => void;
-  onCreateCampaign?: (name: string) => void;
+  onOpenCampaignConfig?: () => void;
 }
 
 export function Sidebar({
@@ -63,31 +45,21 @@ export function Sidebar({
   storyStarted,
   combatState,
   eventLog,
+  campaignConfigured,
+  activeCampaignName,
   onKick,
   onStartStory,
   onRollback,
   onDestroyRoom,
   onSetPassword,
-  onSetPacing,
-  onSetSystemPrompt,
-  onSelectCampaign,
-  onCreateCampaign,
-  pacingProfile = "balanced",
-  encounterLength = "standard",
-  customSystemPrompt,
-  campaigns = [],
-  activeCampaignSlug,
-  activeCampaignName,
+  onOpenCampaignConfig,
 }: SidebarProps) {
-  const [dmCollapsed, setDmCollapsed] = useState(false);
   const [logCollapsed, setLogCollapsed] = useState(false);
   const [eventLogCollapsed, setEventLogCollapsed] = useState(true);
   const [copied, setCopied] = useState(false);
   const [hoveredPlayer, setHoveredPlayer] = useState<string | null>(null);
   const [passwordInput, setPasswordInput] = useState("");
   const [passwordSet, setPasswordSet] = useState(false);
-  const [dmSettingsCollapsed, setDmSettingsCollapsed] = useState(false);
-  const [showPromptModal, setShowPromptModal] = useState(false);
   const [confirmingRollbackId, setConfirmingRollbackId] = useState<string | null>(null);
   const logEndRef = useRef<HTMLDivElement>(null);
   const rollbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -299,20 +271,56 @@ export function Sidebar({
         )}
       </div>
 
-      {/* Start Story Button (Host only, before story starts) */}
-      {isHost && !storyStarted && dmConnected && (
-        <div className="p-4 border-b border-gray-700">
-          <button
-            onClick={onStartStory}
-            className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2.5 rounded-lg
-                       font-medium transition-colors text-sm flex items-center justify-center gap-2"
-          >
-            <span className="text-lg">&#9876;</span>
-            Begin the Adventure
-          </button>
-          <p className="text-[10px] text-gray-600 mt-1.5 text-center">
-            This will introduce the party and start the story
-          </p>
+      {/* Campaign & Start Story (Host only, before story starts) */}
+      {isHost && !storyStarted && (
+        <div className="p-4 border-b border-gray-700 space-y-2">
+          {campaignConfigured && activeCampaignName ? (
+            <>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                <span className="text-sm text-emerald-400 font-medium truncate">
+                  {activeCampaignName}
+                </span>
+              </div>
+              {dmConnected && (
+                <>
+                  <button
+                    onClick={onStartStory}
+                    className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2.5 rounded-lg
+                               font-medium transition-colors text-sm flex items-center justify-center gap-2"
+                  >
+                    <span className="text-lg">&#9876;</span>
+                    Begin the Adventure
+                  </button>
+                  <p className="text-[10px] text-gray-600 text-center">
+                    This will introduce the party and start the story
+                  </p>
+                </>
+              )}
+            </>
+          ) : (
+            <button
+              onClick={onOpenCampaignConfig}
+              disabled={!dmConnected}
+              className="w-full bg-gray-700 hover:bg-gray-600 disabled:opacity-40
+                         disabled:hover:bg-gray-700 text-gray-200 py-2.5 rounded-lg
+                         font-medium transition-colors text-sm"
+            >
+              Configure Campaign
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Active campaign label (after story started) */}
+      {storyStarted && activeCampaignName && (
+        <div className="px-4 py-2 border-b border-gray-700">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+            <span className="text-xs text-emerald-400/80 font-medium truncate">
+              {activeCampaignName}
+            </span>
+          </div>
         </div>
       )}
 
@@ -431,158 +439,17 @@ export function Sidebar({
         </div>
       )}
 
-      {/* DM Settings (Host only) */}
-      {isHost && onSetPacing && onSetSystemPrompt && (
-        <div className="border-b border-gray-700 flex flex-col min-h-0">
-          <button
-            onClick={() => setDmSettingsCollapsed(!dmSettingsCollapsed)}
-            className="flex items-center gap-1 p-4 pb-2 w-full text-left"
-          >
-            <span
-              className={`text-[10px] text-gray-600 transition-transform ${dmSettingsCollapsed ? "" : "rotate-90"}`}
-            >
-              &#9654;
-            </span>
-            <span className="text-xs text-gray-500 uppercase tracking-wider">
-              DM Settings
-            </span>
-          </button>
-          {!dmSettingsCollapsed && (
-            <div className="px-4 pb-3 space-y-3">
-              {/* Campaign */}
-              {dmConnected && onSelectCampaign && onCreateCampaign && (
-                <div>
-                  <label className="text-[11px] text-gray-500 block mb-1">
-                    Campaign
-                  </label>
-                  <CampaignSelector
-                    campaigns={campaigns}
-                    activeCampaignSlug={activeCampaignSlug}
-                    activeCampaignName={activeCampaignName}
-                    onSelectCampaign={onSelectCampaign}
-                    onCreateCampaign={onCreateCampaign}
-                  />
-                </div>
-              )}
-
-              {/* Pacing Profile */}
-              <div>
-                <label className="text-[11px] text-gray-500 block mb-1">
-                  Pacing
-                </label>
-                <select
-                  value={pacingProfile}
-                  onChange={(e) =>
-                    onSetPacing(e.target.value as PacingProfile, encounterLength)
-                  }
-                  className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1.5
-                             text-sm text-gray-200 focus:outline-none focus:ring-1
-                             focus:ring-purple-500"
-                >
-                  <option value="story-heavy">Story-Heavy</option>
-                  <option value="balanced">Balanced</option>
-                  <option value="combat-heavy">Combat-Heavy</option>
-                </select>
-              </div>
-
-              {/* Encounter Length */}
-              <div>
-                <label className="text-[11px] text-gray-500 block mb-1">
-                  Encounter Length
-                </label>
-                <select
-                  value={encounterLength}
-                  onChange={(e) =>
-                    onSetPacing(pacingProfile, e.target.value as EncounterLength)
-                  }
-                  className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1.5
-                             text-sm text-gray-200 focus:outline-none focus:ring-1
-                             focus:ring-purple-500"
-                >
-                  <option value="quick">Quick</option>
-                  <option value="standard">Standard</option>
-                  <option value="epic">Epic</option>
-                </select>
-              </div>
-
-              {/* System Prompt */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] text-gray-500">System Prompt</span>
-                  <span
-                    className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
-                      customSystemPrompt
-                        ? "bg-yellow-600/20 text-yellow-400"
-                        : "bg-gray-700/50 text-gray-500"
-                    }`}
-                  >
-                    {customSystemPrompt ? "Custom" : "Default"}
-                  </span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  {customSystemPrompt && (
-                    <button
-                      onClick={() => onSetSystemPrompt(undefined)}
-                      className="text-[10px] text-red-400/60 hover:text-red-400 transition-colors"
-                    >
-                      Reset
-                    </button>
-                  )}
-                  <button
-                    onClick={() => setShowPromptModal(true)}
-                    className="text-[10px] text-purple-400 hover:text-purple-300 transition-colors"
-                  >
-                    Edit
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* System Prompt Modal */}
-      {showPromptModal && onSetSystemPrompt && (
-        <SystemPromptModal
-          currentPrompt={customSystemPrompt}
-          onSave={onSetSystemPrompt}
-          onClose={() => setShowPromptModal(false)}
-        />
-      )}
-
       {/* DM Status */}
-      <div className="p-4 border-t border-gray-700">
-        <button
-          onClick={() => setDmCollapsed(!dmCollapsed)}
-          className="flex items-center gap-1 w-full text-left mb-2"
-        >
-          <span
-            className={`text-[10px] text-gray-600 transition-transform ${dmCollapsed ? "" : "rotate-90"}`}
-          >
-            &#9654;
-          </span>
-          <span className="text-xs text-gray-500 uppercase tracking-wider">
-            AI Dungeon Master
-          </span>
-        </button>
-        {!dmCollapsed && (
-          <div>
-            {dmConnected ? (
-              <div className="text-sm text-green-400 flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full bg-green-500" />
-                <span>DM connected</span>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <div className="text-sm text-yellow-400 flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" />
-                  <span>Waiting for DM...</span>
-                </div>
-                <p className="text-xs text-gray-600">
-                  Start the MCP bridge to connect Claude Code as the Dungeon Master.
-                </p>
-              </div>
-            )}
+      <div className="px-4 py-3 border-t border-gray-700">
+        {dmConnected ? (
+          <div className="text-sm text-green-400 flex items-center gap-1.5">
+            <div className="w-2 h-2 rounded-full bg-green-500" />
+            <span>DM Connected</span>
+          </div>
+        ) : (
+          <div className="text-sm text-yellow-400 flex items-center gap-1.5">
+            <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" />
+            <span>Waiting for DM...</span>
           </div>
         )}
       </div>

@@ -11,7 +11,6 @@ dist
 worker-configuration.d.ts
 .claude
 .aidnd
-.mcp.json
 .testing
 test-results
 playwright-report

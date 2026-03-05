@@ -5,6 +5,8 @@
  * `node aidnd-dm.mjs --serve`  → Server mode: runs MCP bridge (stdio)
  */
 
+export {};
+
 const isServeMode = process.argv.includes("--serve");
 
 if (isServeMode) {

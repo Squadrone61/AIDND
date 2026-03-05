@@ -17,7 +17,7 @@ export async function startServer(): Promise<void> {
     process.env.AIDND_WORKER_URL ||
     (typeof PRODUCTION_WORKER_URL !== "undefined"
       ? PRODUCTION_WORKER_URL
-      : "http://localhost:8787");
+      : "http://127.0.0.1:8787");
 
   if (!roomCode) {
     console.error(

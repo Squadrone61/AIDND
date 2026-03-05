@@ -49,6 +49,7 @@ export const checkRequestSchema = z.object({
   advantage: z.boolean().optional(),
   disadvantage: z.boolean().optional(),
   reason: z.string(),
+  dmInitiated: z.boolean().optional(),
 });
 
 export const checkResultSchema = z.object({

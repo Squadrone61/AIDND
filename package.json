@@ -15,10 +15,12 @@
     "test": "node scripts/test.mjs",
     "test:ui": "playwright test --ui",
     "dev:mcp": "tsx apps/mcp-bridge/src/index.ts",
-    "build:dm": "cd apps/dm-launcher && node build.mjs"
+    "build:dm": "cd apps/dm-launcher && node build.mjs",
+    "dead-code": "knip"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
+    "knip": "^5.85.0",
     "turbo": "^2",
     "typescript": "^5.9"
   },

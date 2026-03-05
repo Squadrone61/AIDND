@@ -71,6 +71,27 @@ export interface ClientSetCampaignMessage {
   newCampaignName?: string;
 }
 
+/** Host-only: configure campaign settings before story starts */
+export interface ClientConfigureCampaignMessage {
+  type: "client:configure_campaign";
+  campaignName: string;
+  systemPrompt?: string;
+  pacingProfile: PacingProfile;
+  encounterLength: EncounterLength;
+  existingCampaignSlug?: string;
+}
+
+/** DM Bridge → Server: campaign configured acknowledgement */
+export interface ClientCampaignConfiguredAckMessage {
+  type: "client:campaign_configured_ack";
+  campaignSlug: string;
+  campaignName: string;
+  pacingProfile: PacingProfile;
+  encounterLength: EncounterLength;
+  systemPrompt?: string;
+  restoredCharacters?: Record<string, CharacterData>;
+}
+
 /** DM Bridge → Server: campaign loaded confirmation */
 export interface ClientCampaignLoadedMessage {
   type: "client:campaign_loaded";
@@ -138,6 +159,37 @@ export interface ClientDMOverrideMessage {
   changes: StateChange[];
 }
 
+/** DM Bridge → Server: DM rolled dice (monster attacks, damage, etc.) */
+export interface ClientDMDiceRollMessage {
+  type: "client:dm_dice_roll";
+  roll: RollResult;
+  reason?: string;
+}
+
+/** DM Bridge → Server: DM requests a check from a player */
+export interface ClientDMCheckRequestMessage {
+  type: "client:dm_check_request";
+  checkType: CheckRequest["type"];
+  targetCharacter: string;
+  ability?: string;
+  skill?: string;
+  dc?: number;
+  advantage?: boolean;
+  disadvantage?: boolean;
+  reason: string;
+}
+
+/** DM Bridge → Server: computed check result after player rolled */
+export interface ClientDMCheckResultMessage {
+  type: "client:dm_check_result";
+  checkRequestId: string;
+  roll: RollResult;
+  success: boolean;
+  characterName: string;
+  dc?: number;
+  playerName: string;
+}
+
 /** Host-only: permanently destroy the room and wipe all data */
 export interface ClientEndTurnMessage {
   type: "client:end_turn";
@@ -147,6 +199,20 @@ export interface ClientDestroyRoomMessage {
   type: "client:destroy_room";
 }
 
+/** DM Bridge → Server: broadcast a ServerMessage payload to all (or targeted) players */
+export interface ClientBroadcastMessage {
+  type: "client:broadcast";
+  payload: ServerMessage;
+  targets?: string[];
+}
+
+/** DM Bridge → Server: acknowledge a player action (optional error feedback) */
+export interface ClientActionResultMessage {
+  type: "client:action_result";
+  requestId: string;
+  error?: string;
+}
+
 export type ClientMessage =
   | ClientChatMessage
   | ClientJoinMessage
@@ -154,6 +220,8 @@ export type ClientMessage =
   | ClientDMConfigMessage
   | ClientSetCampaignMessage
   | ClientCampaignLoadedMessage
+  | ClientConfigureCampaignMessage
+  | ClientCampaignConfiguredAckMessage
   | ClientSetPasswordMessage
   | ClientKickPlayerMessage
   | ClientSetCharacterMessage
@@ -166,7 +234,12 @@ export type ClientMessage =
   | ClientSetPacingMessage
   | ClientDMOverrideMessage
   | ClientEndTurnMessage
-  | ClientDestroyRoomMessage;
+  | ClientDestroyRoomMessage
+  | ClientDMDiceRollMessage
+  | ClientDMCheckRequestMessage
+  | ClientDMCheckResultMessage
+  | ClientBroadcastMessage
+  | ClientActionResultMessage;
 
 // === Server → Client messages ===
 
@@ -204,6 +277,8 @@ export interface ServerRoomJoinedMessage {
   storyStarted?: boolean;
   /** Whether a DM bridge has connected */
   dmConnected: boolean;
+  /** Whether campaign has been configured */
+  campaignConfigured?: boolean;
   /** Active campaign info (if one is loaded) */
   activeCampaignSlug?: string;
   activeCampaignName?: string;
@@ -320,6 +395,39 @@ export interface ServerCampaignLoadedMessage {
   sessionCount: number;
 }
 
+/** Campaign configured — broadcast to all clients after bridge confirms */
+export interface ServerCampaignConfiguredMessage {
+  type: "server:campaign_configured";
+  campaignName: string;
+  campaignSlug: string;
+  pacingProfile: PacingProfile;
+  encounterLength: EncounterLength;
+  systemPrompt?: string;
+  restoredCharacters?: Record<string, CharacterData>;
+}
+
+/** Server → DM Bridge: forward character data for campaign persistence */
+export interface ServerCharacterForCampaignMessage {
+  type: "server:character_for_campaign";
+  playerName: string;
+  character: CharacterData;
+}
+
+/** Server → DM Bridge: forward player's "Roll" click for bridge to compute */
+export interface ServerDMRollRequestMessage {
+  type: "server:dm_roll_request";
+  checkRequestId: string;
+  playerName: string;
+}
+
+/** Server → DM Bridge: forward a player action for bridge to handle */
+export interface ServerPlayerActionMessage {
+  type: "server:player_action";
+  playerName: string;
+  action: ClientMessage;
+  requestId: string;
+}
+
 /** Broadcast when host destroys the room — all clients should disconnect */
 export interface ServerRoomDestroyedMessage {
   type: "server:room_destroyed";
@@ -345,4 +453,8 @@ export type ServerMessage =
   | ServerDMRequestMessage
   | ServerDMConfigUpdateMessage
   | ServerCampaignLoadedMessage
+  | ServerCampaignConfiguredMessage
+  | ServerCharacterForCampaignMessage
+  | ServerDMRollRequestMessage
+  | ServerPlayerActionMessage
   | ServerRoomDestroyedMessage;

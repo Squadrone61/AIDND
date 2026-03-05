@@ -8,8 +8,10 @@ import {
   formatMonsterForAI,
   formatConditionForAI,
 } from "../services/dnd-api.js";
+import type { WSClient } from "../ws-client.js";
+import { rollDamage } from "@aidnd/shared/utils";
 
-export function registerDndTools(server: McpServer): void {
+export function registerDndTools(server: McpServer, wsClient: WSClient): void {
   server.tool(
     "lookup_spell",
     "Look up a D&D 5e spell by name from the SRD API. Returns level, casting time, range, components, duration, damage, saving throw, area of effect, and classes. Call this BEFORE resolving any spell cast.",
@@ -98,13 +100,43 @@ export function registerDndTools(server: McpServer): void {
 
   server.tool(
     "roll_dice",
-    "Roll dice using standard D&D notation. Supports NdS, NdS+M, NdS-M formats, and advantage/disadvantage for d20 rolls.",
+    `Roll dice — ALL rolls are shown to players in chat.
+
+**Mode 1 — Direct DM roll** (monster attacks, damage, hidden rolls):
+Just provide \`notation\` and optional \`reason\`. Roll happens immediately, result appears in chat.
+
+**Mode 2 — Player check** (interactive):
+Include \`targetCharacter\` + \`checkType\`. The player sees a "Roll d20" button, clicks it, modifiers are computed from their character sheet, and the result appears in chat.
+
+If \`targetCharacter\` is provided → Mode 2. Otherwise → Mode 1.`,
     {
       notation: z
         .string()
-        .describe(
-          "Dice notation, e.g. '2d6+3', 'd20', '4d8', '1d20+5'"
-        ),
+        .describe("Dice notation, e.g. '2d6+3', 'd20', '4d8', '1d20+5'"),
+      reason: z
+        .string()
+        .optional()
+        .describe("Why the roll is happening, e.g. 'Goblin attack damage', 'Spot the trap'"),
+      targetCharacter: z
+        .string()
+        .optional()
+        .describe("Character name for interactive player check (triggers Mode 2)"),
+      checkType: z
+        .enum(["ability", "skill", "saving_throw", "attack", "custom"])
+        .optional()
+        .describe("Type of check (required when targetCharacter is set)"),
+      ability: z
+        .string()
+        .optional()
+        .describe("Ability score for the check, e.g. 'wisdom', 'strength'"),
+      skill: z
+        .string()
+        .optional()
+        .describe("Skill name for skill checks, e.g. 'perception', 'stealth'"),
+      dc: z
+        .number()
+        .optional()
+        .describe("Difficulty Class for the check"),
       advantage: z
         .boolean()
         .optional()
@@ -114,61 +146,72 @@ export function registerDndTools(server: McpServer): void {
         .optional()
         .describe("Roll with disadvantage (roll 2d20, take lower)"),
     },
-    async ({ notation, advantage, disadvantage }) => {
-      const result = rollDice(notation, advantage, disadvantage);
+    async ({ notation, reason, targetCharacter, checkType, ability, skill, dc, advantage, disadvantage }) => {
+      // Mode 2: Interactive player check
+      if (targetCharacter) {
+        if (!checkType) {
+          return {
+            content: [{
+              type: "text" as const,
+              text: "Error: checkType is required when targetCharacter is provided. Use 'ability', 'skill', 'saving_throw', 'attack', or 'custom'.",
+            }],
+          };
+        }
+
+        try {
+          const result = await wsClient.sendCheckRequest({
+            checkType,
+            targetCharacter,
+            ability,
+            skill,
+            dc,
+            advantage,
+            disadvantage,
+            reason: reason || `${checkType} check`,
+          });
+
+          const successStr = result.dc !== undefined
+            ? ` — ${result.success ? "SUCCESS" : "FAILURE"} (DC ${result.dc})`
+            : "";
+          const critStr = result.roll.criticalHit ? " CRITICAL HIT!" : result.roll.criticalFail ? " CRITICAL FAIL!" : "";
+
+          return {
+            content: [{
+              type: "text" as const,
+              text: `${result.characterName} rolled ${result.roll.total} on ${result.roll.label}${successStr}${critStr}`,
+            }],
+          };
+        } catch (error) {
+          return {
+            content: [{
+              type: "text" as const,
+              text: `Check request failed: ${error instanceof Error ? error.message : String(error)}`,
+            }],
+          };
+        }
+      }
+
+      // Mode 1: Direct DM roll
+      const roll = rollDamage(notation);
+
+      // Send to worker so all players see it in chat
+      wsClient.sendDiceRoll(roll, reason);
+
+      const rollsStr = roll.rolls.length > 1
+        ? ` [${roll.rolls.map(r => r.result).join(", ")}]`
+        : "";
+      const modStr = roll.modifier !== 0
+        ? (roll.modifier > 0 ? `+${roll.modifier}` : `${roll.modifier}`)
+        : "";
+      const critStr = roll.criticalHit ? " (CRITICAL HIT!)" : roll.criticalFail ? " (CRITICAL FAIL!)" : "";
+      const reasonStr = reason ? ` (${reason})` : "";
+
       return {
-        content: [{ type: "text" as const, text: result }],
+        content: [{
+          type: "text" as const,
+          text: `${notation}:${rollsStr} ${roll.rolls.reduce((s, r) => s + r.result, 0)}${modStr} = ${roll.total}${critStr}${reasonStr}`,
+        }],
       };
     }
   );
-}
-
-function rollDice(
-  notation: string,
-  advantage?: boolean,
-  disadvantage?: boolean
-): string {
-  const match = notation.match(/^(\d*)d(\d+)([+-]\d+)?$/i);
-  if (!match) {
-    return `Invalid dice notation: "${notation}". Use format like "2d6+3", "d20", "4d8".`;
-  }
-
-  const count = parseInt(match[1] || "1", 10);
-  const sides = parseInt(match[2], 10);
-  const modifier = parseInt(match[3] || "0", 10);
-
-  // Advantage/disadvantage only applies to single d20 rolls
-  if (sides === 20 && count === 1 && (advantage || disadvantage)) {
-    const roll1 = randomInt(1, 20);
-    const roll2 = randomInt(1, 20);
-    const chosen = advantage
-      ? Math.max(roll1, roll2)
-      : Math.min(roll1, roll2);
-    const total = chosen + modifier;
-    const modStr = modifier !== 0 ? (modifier > 0 ? `+${modifier}` : `${modifier}`) : "";
-    const label = advantage ? "advantage" : "disadvantage";
-    const crit = chosen === 20 ? " (CRITICAL HIT!)" : chosen === 1 ? " (CRITICAL FAIL!)" : "";
-    return `d20 with ${label}: [${roll1}, ${roll2}] → ${chosen}${modStr} = ${total}${crit}`;
-  }
-
-  const rolls: number[] = [];
-  for (let i = 0; i < count; i++) {
-    rolls.push(randomInt(1, sides));
-  }
-  const sum = rolls.reduce((a, b) => a + b, 0);
-  const total = sum + modifier;
-  const modStr = modifier !== 0 ? (modifier > 0 ? `+${modifier}` : `${modifier}`) : "";
-  const rollsStr = rolls.length > 1 ? ` [${rolls.join(", ")}]` : "";
-
-  let crit = "";
-  if (sides === 20 && count === 1) {
-    if (rolls[0] === 20) crit = " (CRITICAL HIT!)";
-    else if (rolls[0] === 1) crit = " (CRITICAL FAIL!)";
-  }
-
-  return `${notation}:${rollsStr} ${sum}${modStr} = ${total}${crit}`;
-}
-
-function randomInt(min: number, max: number): number {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
 }

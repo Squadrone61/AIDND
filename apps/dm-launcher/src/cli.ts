@@ -8,7 +8,7 @@ import * as path from "path";
 import * as readline from "readline";
 import { spawn, execSync } from "child_process";
 import { randomBytes } from "crypto";
-import { DM_PROMPT } from "./dm-prompt.js";
+import { DM_SYSTEM_PROMPT } from "@aidnd/shared";
 
 declare const AIDND_VERSION: string;
 
@@ -59,6 +59,7 @@ export async function startCli(): Promise<void> {
   // Get room code and model from args or interactive prompt
   let roomCode = findArg("--room");
   let model = findArg("--model") || "sonnet";
+  const workerUrl = findArg("--worker-url") || process.env.AIDND_WORKER_URL || "http://127.0.0.1:8787";
 
   if (!roomCode) {
     const rl = readline.createInterface({
@@ -99,7 +100,6 @@ export async function startCli(): Promise<void> {
 
   // Write .mcp.json — command points to this script with --serve
   // Note: always use "node" directly, not "cmd /c node" — cmd eats stdin
-  const isWindows = process.platform === "win32";
   const mcpConfig = {
     mcpServers: {
       "aidnd-dm": {
@@ -108,6 +108,7 @@ export async function startCli(): Promise<void> {
         env: {
           AIDND_ROOM_CODE: roomCode,
           AIDND_CAMPAIGNS_DIR: campaignsDir,
+          AIDND_WORKER_URL: workerUrl,
         },
       },
     },
@@ -119,16 +120,18 @@ export async function startCli(): Promise<void> {
   );
 
   // Write CLAUDE.md
-  fs.writeFileSync(path.join(tmpDir, "CLAUDE.md"), DM_PROMPT);
+  fs.writeFileSync(path.join(tmpDir, "CLAUDE.md"), DM_SYSTEM_PROMPT);
 
   console.log(`Room:       ${roomCode}`);
   console.log(`Model:      ${model}`);
+  console.log(`Worker:     ${workerUrl}`);
   console.log(`Campaigns:  ${campaignsDir}`);
   console.log(`Temp dir:   ${tmpDir}`);
   console.log("");
   console.log("Launching Claude Code...\n");
 
-  // Spawn Claude Code
+  // Spawn Claude Code with full DM system prompt (replaces default coding assistant prompt)
+  // Auto-allow all aidnd-dm MCP tools so the DM can run without permission prompts
   const claude = spawn(
     "claude",
     [
@@ -136,13 +139,18 @@ export async function startCli(): Promise<void> {
       path.join(tmpDir, ".mcp.json"),
       "--model",
       model,
-      "--append-system-prompt",
-      "You are the AI Dungeon Master. Read CLAUDE.md for your full instructions, then call wait_for_message to begin.",
+      "--system-prompt",
+      DM_SYSTEM_PROMPT,
+      "--tools",
+      "",
+      "--allowedTools",
+      "mcp__aidnd-dm__wait_for_message,mcp__aidnd-dm__send_response,mcp__aidnd-dm__get_players,mcp__aidnd-dm__lookup_spell,mcp__aidnd-dm__lookup_monster,mcp__aidnd-dm__lookup_condition,mcp__aidnd-dm__roll_dice,mcp__aidnd-dm__create_campaign,mcp__aidnd-dm__list_campaigns,mcp__aidnd-dm__load_campaign_context,mcp__aidnd-dm__save_campaign_file,mcp__aidnd-dm__read_campaign_file,mcp__aidnd-dm__list_campaign_files,mcp__aidnd-dm__end_session",
+      "--",
+      "Start the DM game loop. Call wait_for_message now and keep looping.",
     ],
     {
       cwd: tmpDir,
       stdio: "inherit",
-      shell: isWindows,
     }
   );
 

@@ -31,6 +31,9 @@ export interface CampaignManifest {
   partyLevel: number;
   createdAt: string;
   lastPlayedAt: string;
+  pacingProfile?: string;
+  encounterLength?: string;
+  systemPrompt?: string;
 }
 
 export interface CampaignSummary {

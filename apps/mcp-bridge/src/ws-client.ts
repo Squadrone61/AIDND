@@ -1,12 +1,17 @@
 import WebSocket from "ws";
 import type { MessageQueue } from "./message-queue.js";
 import type { CampaignManager } from "./services/campaign-manager.js";
+import { GameStateManager } from "./services/game-state-manager.js";
 import type { PlayerSummary } from "./types.js";
 import type {
+  ClientMessage,
   ServerMessage,
   CharacterData,
+  CheckRequest,
+  CheckResult,
   PlayerInfo,
   GameState,
+  RollResult,
 } from "@aidnd/shared/types";
 
 interface WSClientOptions {
@@ -14,7 +19,6 @@ interface WSClientOptions {
   roomCode: string;
   messageQueue: MessageQueue;
   campaignManager: CampaignManager;
-  onStateSync?: (gameState: GameState) => void;
 }
 
 export class WSClient {
@@ -28,16 +32,23 @@ export class WSClient {
   players: PlayerSummary[] = [];
   /** Latest character data keyed by player name */
   characters: Record<string, CharacterData> = {};
-  /** Latest game state from game_state_sync */
-  gameState: GameState | null = null;
   /** Whether the DM config has been sent */
   private configSent = false;
 
   connected = false;
   storyStarted = false;
 
+  /** Game state manager — owns all game state */
+  gameStateManager: GameStateManager;
+
   constructor(options: WSClientOptions) {
     this.options = options;
+
+    this.gameStateManager = new GameStateManager({
+      broadcast: (msg, targets) => this.broadcastViaWorker(msg, targets),
+      messageQueue: options.messageQueue,
+      campaignManager: options.campaignManager,
+    });
   }
 
   connect(): void {
@@ -72,6 +83,24 @@ export class WSClient {
           return;
         }
 
+        // Handle relayed client:configure_campaign from worker
+        if (raw.type === "client:configure_campaign") {
+          this.handleConfigureCampaign(raw);
+          return;
+        }
+
+        // Handle character forwarding for campaign persistence
+        if (raw.type === "server:character_for_campaign") {
+          this.handleCharacterForCampaign(raw);
+          return;
+        }
+
+        // Handle player action forwarded from worker
+        if (raw.type === "server:player_action") {
+          this.handlePlayerAction(raw);
+          return;
+        }
+
         const msg = raw as ServerMessage;
         this.handleMessage(msg);
       } catch {
@@ -96,6 +125,8 @@ export class WSClient {
       case "server:room_joined": {
         this.connected = true;
         this.storyStarted = msg.storyStarted ?? false;
+        this.gameStateManager.storyStarted = this.storyStarted;
+        this.gameStateManager.hostName = msg.hostName;
         console.error(
           `[ws-client] Joined room ${msg.roomCode} as DM (host: ${msg.hostName}, players: ${msg.players.join(", ")})`
         );
@@ -103,11 +134,15 @@ export class WSClient {
         // Store initial character data
         if (msg.characters) {
           this.characters = msg.characters;
+          this.gameStateManager.characters = { ...msg.characters };
         }
 
         // Build initial player list
         if (msg.allPlayers) {
           this.updatePlayers(msg.allPlayers);
+          this.gameStateManager.playerNames = msg.allPlayers
+            .filter((p) => p.name !== "DM")
+            .map((p) => p.name);
         }
 
         // Send DM config to announce the bridge with campaign list
@@ -124,47 +159,41 @@ export class WSClient {
         break;
       }
 
-      case "server:player_joined":
+      case "server:player_joined": {
+        if (msg.allPlayers) {
+          this.updatePlayers(msg.allPlayers);
+          this.gameStateManager.playerNames = msg.allPlayers
+            .filter((p) => p.name !== "DM")
+            .map((p) => p.name);
+        }
+        console.error(
+          `[ws-client] + ${msg.playerName} (${msg.players.length} players)`
+        );
+
+        // Send game state sync to newly joined player
+        if (msg.playerName !== "DM") {
+          this.gameStateManager.hostName = msg.hostName;
+          this.gameStateManager.sendStateSyncTo(msg.playerName);
+        }
+        break;
+      }
+
       case "server:player_left": {
         if (msg.allPlayers) {
           this.updatePlayers(msg.allPlayers);
+          this.gameStateManager.playerNames = msg.allPlayers
+            .filter((p) => p.name !== "DM")
+            .map((p) => p.name);
         }
         console.error(
-          `[ws-client] ${msg.type === "server:player_joined" ? "+" : "-"} ${msg.playerName} (${msg.players.length} players)`
+          `[ws-client] - ${msg.playerName} (${msg.players.length} players)`
         );
         break;
       }
 
       case "server:character_updated": {
         this.characters[msg.playerName] = msg.character;
-        break;
-      }
-
-      case "server:game_state_sync": {
-        this.gameState = msg.gameState;
-        this.options.onStateSync?.(msg.gameState);
-
-        // Persist system prompt to campaign if one is active
-        const cm = this.options.campaignManager;
-        if (cm.activeSlug && msg.gameState.customSystemPrompt) {
-          try {
-            cm.saveSystemPrompt(msg.gameState.customSystemPrompt);
-          } catch {
-            // ignore — campaign might not exist yet
-          }
-        }
-        break;
-      }
-
-      case "server:dm_request": {
-        console.error(
-          `[ws-client] Received dm_request (id: ${msg.requestId}, ${msg.messages.length} messages)`
-        );
-        this.options.messageQueue.push({
-          requestId: msg.requestId,
-          systemPrompt: msg.systemPrompt,
-          messages: msg.messages,
-        });
+        this.gameStateManager.characters[msg.playerName] = msg.character;
         break;
       }
 
@@ -180,16 +209,49 @@ export class WSClient {
 
       case "server:room_destroyed": {
         console.error(`[ws-client] Room destroyed.`);
-        // Auto-snapshot characters before shutting down
         this.autoSnapshot();
         this.close();
         break;
       }
 
-      // Other messages are game state updates that we observe passively
       default:
         break;
     }
+  }
+
+  /** Handle server:player_action — dispatch to GameStateManager */
+  private handlePlayerAction(raw: {
+    type: "server:player_action";
+    playerName: string;
+    action: ClientMessage;
+    requestId: string;
+  }): void {
+    console.error(`[ws-client] Player action from ${raw.playerName}: ${raw.action.type}`);
+
+    // Special handling: set_campaign and configure_campaign are campaign manager operations
+    if (raw.action.type === "client:set_campaign") {
+      this.handleSetCampaign(raw.action);
+      return;
+    }
+    if (raw.action.type === "client:configure_campaign") {
+      this.handleConfigureCampaign(raw.action);
+      return;
+    }
+
+    this.gameStateManager.handlePlayerAction(
+      raw.playerName,
+      raw.action,
+      raw.requestId
+    );
+  }
+
+  /** Send a ServerMessage to all clients via the worker's client:broadcast relay */
+  private broadcastViaWorker(msg: ServerMessage, targets?: string[]): void {
+    this.send({
+      type: "client:broadcast",
+      payload: msg,
+      targets,
+    });
   }
 
   /** Handle set_campaign relayed from worker. */
@@ -202,13 +264,11 @@ export class WSClient {
     try {
       let manifest;
       if (msg.newCampaignName) {
-        // Create new campaign
         manifest = cm.createCampaign(msg.newCampaignName);
         console.error(
           `[ws-client] Created campaign: ${manifest.name} (${manifest.slug})`
         );
       } else if (msg.campaignSlug) {
-        // Load existing campaign
         manifest = cm.loadCampaign(msg.campaignSlug);
         console.error(
           `[ws-client] Loaded campaign: ${manifest.name} (${manifest.slug})`
@@ -218,7 +278,6 @@ export class WSClient {
         return;
       }
 
-      // Send campaign_loaded confirmation back through worker
       this.send({
         type: "client:campaign_loaded",
         campaignSlug: manifest.slug,
@@ -226,7 +285,6 @@ export class WSClient {
         sessionCount: manifest.sessionCount,
       });
 
-      // Send updated campaign list
       const campaigns = cm.listCampaigns();
       this.send({
         type: "client:dm_config",
@@ -238,6 +296,95 @@ export class WSClient {
       console.error(
         `[ws-client] Campaign error: ${e instanceof Error ? e.message : String(e)}`
       );
+    }
+  }
+
+  /** Handle configure_campaign relayed from worker. */
+  private handleConfigureCampaign(msg: {
+    campaignName: string;
+    systemPrompt?: string;
+    pacingProfile: string;
+    encounterLength: string;
+    existingCampaignSlug?: string;
+  }): void {
+    const cm = this.options.campaignManager;
+
+    try {
+      let manifest;
+      let restoredCharacters: Record<string, unknown> | undefined;
+
+      if (msg.existingCampaignSlug) {
+        manifest = cm.loadCampaign(msg.existingCampaignSlug);
+        console.error(`[ws-client] Loaded campaign: ${manifest.name} (${manifest.slug})`);
+
+        const chars = cm.loadCharacters();
+        if (Object.keys(chars).length > 0) {
+          restoredCharacters = chars;
+          console.error(`[ws-client] Restored ${Object.keys(chars).length} character(s) from campaign`);
+        }
+      } else {
+        manifest = cm.createCampaign(msg.campaignName);
+        console.error(`[ws-client] Created campaign: ${manifest.name} (${manifest.slug})`);
+      }
+
+      if (msg.systemPrompt) {
+        cm.saveSystemPrompt(msg.systemPrompt);
+        this.gameStateManager.gameState.customSystemPrompt = msg.systemPrompt;
+      } else if (msg.existingCampaignSlug) {
+        const savedPrompt = cm.getSystemPrompt();
+        if (savedPrompt) {
+          this.gameStateManager.gameState.customSystemPrompt = savedPrompt;
+        }
+      }
+
+      cm.saveSettings({
+        pacingProfile: msg.pacingProfile,
+        encounterLength: msg.encounterLength,
+        systemPrompt: msg.systemPrompt,
+      });
+
+      // Update game state manager
+      this.gameStateManager.gameState.pacingProfile = msg.pacingProfile as import("@aidnd/shared/types").PacingProfile;
+      this.gameStateManager.gameState.encounterLength = msg.encounterLength as import("@aidnd/shared/types").EncounterLength;
+
+      this.send({
+        type: "client:campaign_configured_ack",
+        campaignSlug: manifest.slug,
+        campaignName: manifest.name,
+        pacingProfile: msg.pacingProfile,
+        encounterLength: msg.encounterLength,
+        systemPrompt: msg.systemPrompt,
+        restoredCharacters,
+      });
+
+      const campaigns = cm.listCampaigns();
+      this.send({
+        type: "client:dm_config",
+        provider: "claude-code-mcp",
+        supportsTools: true,
+        campaigns: campaigns.length > 0 ? campaigns : undefined,
+      });
+    } catch (e) {
+      console.error(`[ws-client] Campaign configure error: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+
+  /** Handle character data forwarded from worker for campaign persistence. */
+  private handleCharacterForCampaign(msg: {
+    playerName: string;
+    character: CharacterData;
+  }): void {
+    const cm = this.options.campaignManager;
+    if (!cm.activeSlug) return;
+
+    this.characters[msg.playerName] = msg.character;
+    this.gameStateManager.characters[msg.playerName] = msg.character;
+
+    try {
+      cm.snapshotCharacters({ [msg.playerName]: msg.character });
+      console.error(`[ws-client] Saved character "${msg.character.static.name}" for ${msg.playerName}`);
+    } catch (e) {
+      console.error(`[ws-client] Character save error: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
 
@@ -263,7 +410,7 @@ export class WSClient {
 
   private updatePlayers(allPlayers: PlayerInfo[]): void {
     this.players = allPlayers
-      .filter((p) => p.name !== "DM") // exclude ourselves
+      .filter((p) => p.name !== "DM")
       .map((p) => {
         const char = this.characters[p.name];
         const summary: PlayerSummary = {
@@ -299,12 +446,103 @@ export class WSClient {
     }
   }
 
-  /** Send a DM response back to the worker. */
+  /** Send a DM response — now goes through GameStateManager */
   sendDMResponse(requestId: string, text: string): void {
-    this.send({
-      type: "client:dm_response",
-      requestId,
-      text,
+    this.gameStateManager.sendResponse(requestId, text);
+  }
+
+  /** Send a DM dice roll to all players */
+  sendDiceRoll(roll: RollResult, reason?: string): void {
+    this.broadcastViaWorker({
+      type: "server:dice_roll",
+      roll: { ...roll, label: reason ? `${roll.label} — ${reason}` : roll.label },
+      playerName: "DM",
+      timestamp: Date.now(),
+      id: crypto.randomUUID(),
+    });
+  }
+
+  /** Send a check request and wait for the result. */
+  sendCheckRequest(params: {
+    checkType: CheckRequest["type"];
+    targetCharacter: string;
+    ability?: string;
+    skill?: string;
+    dc?: number;
+    advantage?: boolean;
+    disadvantage?: boolean;
+    reason: string;
+  }): Promise<CheckResult> {
+    return new Promise((resolve, reject) => {
+      // Use GameStateManager to create the check request
+      const result = this.gameStateManager.requestCheck(params);
+
+      if (result.startsWith("Character")) {
+        reject(new Error(result));
+        return;
+      }
+
+      // Wait for the player to roll — listen for the check result via game state manager
+      // The player clicks "Roll" → worker forwards roll_dice → bridge handles it →
+      // broadcasts check_result → conversation history gets the result
+      // For now, we resolve when the check is processed by handleRollDice
+      const checkId = this.gameStateManager.gameState.pendingCheck?.id
+        ?? this.gameStateManager.gameState.encounter?.combat?.pendingCheck?.id;
+
+      if (!checkId) {
+        reject(new Error("Failed to create check request"));
+        return;
+      }
+
+      // Poll for check completion (pendingCheck gets cleared when resolved)
+      const interval = setInterval(() => {
+        const combat = this.gameStateManager.gameState.encounter?.combat;
+        const pendingCheck = combat?.pendingCheck ?? this.gameStateManager.gameState.pendingCheck;
+
+        // Check cleared = resolved
+        if (!pendingCheck || pendingCheck.id !== checkId) {
+          clearInterval(interval);
+          clearTimeout(timeout);
+
+          // Extract the last check result from conversation history
+          const lastMsg = this.gameStateManager.conversationHistory
+            .filter((m) => m.role === "user" && m.content.includes("[System:") && m.content.includes("rolled"))
+            .pop();
+
+          if (lastMsg) {
+            // Parse basic info from system message
+            const totalMatch = lastMsg.content.match(/rolled (\d+)/);
+            const successMatch = lastMsg.content.match(/— (Success|Failure)/);
+            const charMatch = lastMsg.content.match(/\[System: (.+?) rolled/);
+
+            resolve({
+              requestId: checkId,
+              roll: {
+                id: crypto.randomUUID(),
+                rolls: [],
+                modifier: 0,
+                total: totalMatch ? parseInt(totalMatch[1]) : 0,
+                label: params.reason,
+              },
+              dc: params.dc,
+              success: successMatch?.[1] === "Success",
+              characterName: charMatch?.[1] ?? params.targetCharacter,
+            });
+          } else {
+            resolve({
+              requestId: checkId,
+              roll: { id: crypto.randomUUID(), rolls: [], modifier: 0, total: 0, label: params.reason },
+              success: true,
+              characterName: params.targetCharacter,
+            });
+          }
+        }
+      }, 500);
+
+      const timeout = setTimeout(() => {
+        clearInterval(interval);
+        reject(new Error(`Check request timed out for ${params.targetCharacter}`));
+      }, 120_000);
     });
   }
 

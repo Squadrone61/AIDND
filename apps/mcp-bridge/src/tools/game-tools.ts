@@ -8,6 +8,8 @@ export function registerGameTools(
   messageQueue: MessageQueue,
   wsClient: WSClient
 ): void {
+  // ─── Core Game Loop ───
+
   server.tool(
     "wait_for_message",
     "Block until a player message or DM request arrives via WebSocket. Returns the request with systemPrompt and conversation messages. This is the main loop driver — call this repeatedly to process game turns.",
@@ -35,7 +37,7 @@ export function registerGameTools(
 
   server.tool(
     "send_response",
-    "Send the DM narrative response back to the game room via WebSocket. The worker will broadcast it to all players and resolve any structured actions.",
+    "Send the DM narrative response back to all players. This broadcasts the AI message, stores it in conversation history, and updates game state.",
     {
       requestId: z
         .string()
@@ -78,6 +80,269 @@ export function registerGameTools(
           },
         ],
       };
+    }
+  );
+
+  // ─── State Query Tools ───
+
+  server.tool(
+    "get_game_state",
+    "Get the full game state snapshot including combat, encounter, pending checks, event log, and all characters.",
+    {},
+    async () => {
+      const state = wsClient.gameStateManager.getGameState();
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(state, null, 2),
+          },
+        ],
+      };
+    }
+  );
+
+  server.tool(
+    "get_character",
+    "Get a specific player's full character data including stats, HP, spell slots, conditions, inventory.",
+    {
+      character_name: z.string().describe("The character name to look up"),
+    },
+    async ({ character_name }) => {
+      const result = wsClient.gameStateManager.getCharacter(character_name);
+      if (!result) {
+        return {
+          content: [{ type: "text" as const, text: `Character "${character_name}" not found` }],
+        };
+      }
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
+      };
+    }
+  );
+
+  // ─── HP & Conditions ───
+
+  server.tool(
+    "apply_damage",
+    "Deal damage to a character or combatant. Handles temp HP absorption automatically. Use for monster attacks, traps, environmental damage.",
+    {
+      target: z.string().describe("Name of the character or combatant to damage"),
+      amount: z.number().describe("Amount of damage to deal"),
+      damage_type: z.string().optional().describe("Type of damage (e.g., 'fire', 'slashing', 'psychic')"),
+    },
+    async ({ target, amount, damage_type }) => {
+      const result = wsClient.gameStateManager.applyDamage(target, amount, damage_type);
+      return { content: [{ type: "text" as const, text: result }] };
+    }
+  );
+
+  server.tool(
+    "heal",
+    "Restore HP to a character or combatant. Cannot exceed max HP.",
+    {
+      target: z.string().describe("Name of the character or combatant to heal"),
+      amount: z.number().describe("Amount of HP to restore"),
+    },
+    async ({ target, amount }) => {
+      const result = wsClient.gameStateManager.heal(target, amount);
+      return { content: [{ type: "text" as const, text: result }] };
+    }
+  );
+
+  server.tool(
+    "set_hp",
+    "Set a character or combatant's HP to an exact value. Useful for special effects or corrections.",
+    {
+      target: z.string().describe("Name of the character or combatant"),
+      value: z.number().describe("HP value to set"),
+    },
+    async ({ target, value }) => {
+      const result = wsClient.gameStateManager.setHP(target, value);
+      return { content: [{ type: "text" as const, text: result }] };
+    }
+  );
+
+  server.tool(
+    "add_condition",
+    "Add a condition to a character or combatant (e.g., poisoned, stunned, prone, frightened).",
+    {
+      target: z.string().describe("Name of the character or combatant"),
+      condition: z.string().describe("Condition name (e.g., 'poisoned', 'stunned', 'prone')"),
+      duration: z.number().optional().describe("Duration in rounds (optional)"),
+    },
+    async ({ target, condition, duration }) => {
+      const result = wsClient.gameStateManager.addCondition(target, condition, duration);
+      return { content: [{ type: "text" as const, text: result }] };
+    }
+  );
+
+  server.tool(
+    "remove_condition",
+    "Remove a condition from a character or combatant.",
+    {
+      target: z.string().describe("Name of the character or combatant"),
+      condition: z.string().describe("Condition name to remove"),
+    },
+    async ({ target, condition }) => {
+      const result = wsClient.gameStateManager.removeCondition(target, condition);
+      return { content: [{ type: "text" as const, text: result }] };
+    }
+  );
+
+  // ─── Combat Management ───
+
+  server.tool(
+    "start_combat",
+    "Initialize combat with a list of combatants. Rolls initiative automatically (unless provided), creates turn order, and broadcasts combat state to all players.",
+    {
+      combatants: z.array(z.object({
+        name: z.string().describe("Combatant name"),
+        type: z.enum(["player", "npc", "enemy"]).describe("Combatant type"),
+        initiative: z.number().optional().describe("Pre-rolled initiative (auto-rolled if omitted)"),
+        initiativeModifier: z.number().optional().describe("Initiative modifier for auto-roll"),
+        speed: z.number().optional().describe("Movement speed in feet (default 30)"),
+        maxHP: z.number().optional().describe("Maximum HP (required for NPCs/enemies)"),
+        currentHP: z.number().optional().describe("Current HP (defaults to maxHP)"),
+        armorClass: z.number().optional().describe("Armor Class"),
+        position: z.object({ x: z.number(), y: z.number() }).optional().describe("Starting grid position"),
+        size: z.enum(["tiny", "small", "medium", "large", "huge", "gargantuan"]).optional().describe("Creature size (default medium)"),
+        tokenColor: z.string().optional().describe("Token color for battle map"),
+      })).describe("List of combatants to add to combat"),
+    },
+    async ({ combatants }) => {
+      const result = wsClient.gameStateManager.startCombat(combatants);
+      return { content: [{ type: "text" as const, text: result }] };
+    }
+  );
+
+  server.tool(
+    "end_combat",
+    "End the current combat encounter. Clears combat state and returns to exploration.",
+    {},
+    async () => {
+      const result = wsClient.gameStateManager.endCombat();
+      return { content: [{ type: "text" as const, text: result }] };
+    }
+  );
+
+  server.tool(
+    "advance_turn",
+    "Move to the next combatant's turn in initiative order. Increments round counter on wrap-around.",
+    {},
+    async () => {
+      const result = wsClient.gameStateManager.advanceTurnMCP();
+      return { content: [{ type: "text" as const, text: result }] };
+    }
+  );
+
+  server.tool(
+    "add_combatant",
+    "Add a new combatant to active combat mid-fight (reinforcements, summoned creatures, etc.).",
+    {
+      name: z.string().describe("Combatant name"),
+      type: z.enum(["player", "npc", "enemy"]).describe("Combatant type"),
+      initiative: z.number().optional().describe("Pre-rolled initiative"),
+      initiativeModifier: z.number().optional().describe("Initiative modifier for auto-roll"),
+      speed: z.number().optional().describe("Movement speed in feet"),
+      maxHP: z.number().optional().describe("Maximum HP"),
+      currentHP: z.number().optional().describe("Current HP"),
+      armorClass: z.number().optional().describe("Armor Class"),
+      position: z.object({ x: z.number(), y: z.number() }).optional().describe("Grid position"),
+      size: z.enum(["tiny", "small", "medium", "large", "huge", "gargantuan"]).optional(),
+      tokenColor: z.string().optional(),
+    },
+    async (params) => {
+      const result = wsClient.gameStateManager.addCombatant(params);
+      return { content: [{ type: "text" as const, text: result }] };
+    }
+  );
+
+  server.tool(
+    "remove_combatant",
+    "Remove a combatant from combat (dead, fled, dismissed, etc.).",
+    {
+      name: z.string().describe("Name of the combatant to remove"),
+    },
+    async ({ name }) => {
+      const result = wsClient.gameStateManager.removeCombatant(name);
+      return { content: [{ type: "text" as const, text: result }] };
+    }
+  );
+
+  server.tool(
+    "move_combatant",
+    "Move a combatant's token on the battle map to a new position.",
+    {
+      name: z.string().describe("Name of the combatant to move"),
+      x: z.number().describe("Target X grid position"),
+      y: z.number().describe("Target Y grid position"),
+    },
+    async ({ name, x, y }) => {
+      const result = wsClient.gameStateManager.moveCombatant(name, { x, y });
+      return { content: [{ type: "text" as const, text: result }] };
+    }
+  );
+
+  // ─── Spell Slots ───
+
+  server.tool(
+    "use_spell_slot",
+    "Expend a spell slot at a given level for a character.",
+    {
+      character_name: z.string().describe("Character name"),
+      level: z.number().describe("Spell slot level (1-9)"),
+    },
+    async ({ character_name, level }) => {
+      const result = wsClient.gameStateManager.useSpellSlot(character_name, level);
+      return { content: [{ type: "text" as const, text: result }] };
+    }
+  );
+
+  server.tool(
+    "restore_spell_slot",
+    "Restore a spell slot at a given level (e.g., after short rest, Arcane Recovery).",
+    {
+      character_name: z.string().describe("Character name"),
+      level: z.number().describe("Spell slot level (1-9)"),
+    },
+    async ({ character_name, level }) => {
+      const result = wsClient.gameStateManager.restoreSpellSlot(character_name, level);
+      return { content: [{ type: "text" as const, text: result }] };
+    }
+  );
+
+  // ─── Battle Map ───
+
+  server.tool(
+    "update_battle_map",
+    "Set or update the battle map grid. Define the grid dimensions, terrain tiles, and optional name.",
+    {
+      width: z.number().describe("Grid width in tiles"),
+      height: z.number().describe("Grid height in tiles"),
+      name: z.string().optional().describe("Map name (e.g., 'Goblin Cave', 'Town Square')"),
+      tiles: z.array(z.array(z.object({
+        type: z.enum(["floor", "wall", "difficult_terrain", "water", "pit", "door", "stairs"]),
+      }))).optional().describe("2D array of tiles [y][x]. If omitted, all floor."),
+    },
+    async ({ width, height, name, tiles }) => {
+      const mapTiles = tiles ?? Array.from({ length: height }, () =>
+        Array.from({ length: width }, () => ({ type: "floor" as const }))
+      );
+
+      const result = wsClient.gameStateManager.updateBattleMap({
+        id: crypto.randomUUID(),
+        width,
+        height,
+        tiles: mapTiles,
+        name,
+      });
+      return { content: [{ type: "text" as const, text: result }] };
     }
   );
 }

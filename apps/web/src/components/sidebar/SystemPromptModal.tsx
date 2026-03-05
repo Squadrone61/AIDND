@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { DEFAULT_DM_PROMPT } from "@aidnd/shared";
+import { DM_SYSTEM_PROMPT } from "@aidnd/shared";
 
 interface SystemPromptModalProps {
   currentPrompt?: string;
@@ -14,8 +14,8 @@ export function SystemPromptModal({
   onSave,
   onClose,
 }: SystemPromptModalProps) {
-  const [text, setText] = useState(currentPrompt || DEFAULT_DM_PROMPT);
-  const isCustom = text !== DEFAULT_DM_PROMPT;
+  const [text, setText] = useState(currentPrompt || DM_SYSTEM_PROMPT);
+  const isCustom = text !== DM_SYSTEM_PROMPT;
 
   // Close on Escape
   useEffect(() => {
@@ -28,7 +28,7 @@ export function SystemPromptModal({
 
   const handleSave = () => {
     // If the text matches default, save as undefined (reset)
-    if (text.trim() === DEFAULT_DM_PROMPT.trim()) {
+    if (text.trim() === DM_SYSTEM_PROMPT.trim()) {
       onSave(undefined);
     } else {
       onSave(text);
@@ -37,7 +37,7 @@ export function SystemPromptModal({
   };
 
   const handleReset = () => {
-    setText(DEFAULT_DM_PROMPT);
+    setText(DM_SYSTEM_PROMPT);
   };
 
   return (

@@ -3,52 +3,16 @@ import { clientMessageSchema } from "@aidnd/shared/schemas";
 import type {
   AuthUser,
   CharacterData,
-  CharacterDynamicData,
-  CheckRequest,
   ClientMessage,
   DMBridgeConfig,
-  GameState,
   PlayerInfo,
   ServerMessage,
 } from "@aidnd/shared/types";
-import {
-  getModifier,
-  getSkillModifier,
-  getSavingThrowModifier,
-} from "@aidnd/shared/utils";
 import { MAX_PLAYERS_PER_ROOM } from "@aidnd/shared";
 import { verifyJWT } from "../auth/jwt";
-import { rollCheck } from "../services/dice";
 import type { Env, RoomMeta } from "../types";
 
 type PlayerStatus = "host" | "player";
-
-/** Build a descriptive label for a dice roll from check fields. */
-function buildCheckLabel(check: CheckRequest): string {
-  const abilityAbbr = check.ability?.slice(0, 3).toUpperCase();
-  switch (check.type) {
-    case "saving_throw":
-      return abilityAbbr
-        ? `${abilityAbbr} Save${check.reason ? ` — ${check.reason}` : ""}`
-        : `Save${check.reason ? ` — ${check.reason}` : ""}`;
-    case "skill": {
-      const skill = check.skill
-        ? check.skill.charAt(0).toUpperCase() + check.skill.slice(1)
-        : null;
-      return skill
-        ? `${skill}${check.reason && check.reason.toLowerCase() !== skill.toLowerCase() ? ` — ${check.reason}` : ""}`
-        : check.reason;
-    }
-    case "ability":
-      return abilityAbbr
-        ? `${abilityAbbr} Check${check.reason ? ` — ${check.reason}` : ""}`
-        : check.reason;
-    case "attack":
-      return `Attack${check.reason ? ` — ${check.reason}` : ""}`;
-    default:
-      return check.reason;
-  }
-}
 
 interface SessionData {
   playerName: string;
@@ -58,46 +22,26 @@ interface SessionData {
   joinedAt: number;
 }
 
-interface ConversationMessage {
-  role: "user" | "assistant";
-  content: string;
-}
-
 interface PlayerRecord {
   name: string;
   isHost: boolean;
 }
 
-const DEFAULT_GAME_STATE: GameState = {
-  encounter: null,
-  eventLog: [],
-  pacingProfile: "balanced",
-  encounterLength: "standard",
-};
-
 export class GameRoom extends DurableObject<Env> {
   private sessions: Map<WebSocket, SessionData> = new Map();
   private dmBridgeConfig: DMBridgeConfig | null = null;
-  private conversationHistory: ConversationMessage[] = [];
-  private pendingDMRequests = new Map<string, {
-    resolve: (text: string) => void;
-    reject: (error: Error) => void;
-  }>();
   private hostUserId: string | null = null;
   private hostPlayerName: string = "";
   private approvedUserIds: Set<string> = new Set();
   private chatLog: ServerMessage[] = [];
   private roomCode: string = "";
-  private storageLoaded = false;
   private characters: Map<string, CharacterData> = new Map(); // keyed by userId
   private allPlayerRecords: Map<string, PlayerRecord> = new Map(); // keyed by userId
   private storyStarted: boolean = false;
-  private gameState: GameState = { ...DEFAULT_GAME_STATE, eventLog: [] };
   private password: string | null = null;
-  /** Whether this room was explicitly created via /api/rooms/create */
   private created: boolean = false;
   private createdAt: number = 0;
-  /** Active campaign slug (set via set_campaign, stored for display/reconnect) */
+  private campaignConfigured: boolean = false;
   private activeCampaignSlug: string | null = null;
   private activeCampaignName: string | null = null;
 
@@ -105,12 +49,9 @@ export class GameRoom extends DurableObject<Env> {
     super(ctx, env);
 
     for (const ws of this.ctx.getWebSockets()) {
-      const attachment = ws.deserializeAttachment() as
-        | SessionData
-        | undefined;
+      const attachment = ws.deserializeAttachment() as SessionData | undefined;
       if (attachment) {
         this.sessions.set(ws, attachment);
-        // Restore host state
         if (attachment.status === "host") {
           this.hostUserId = attachment.userId;
         }
@@ -124,50 +65,48 @@ export class GameRoom extends DurableObject<Env> {
       new WebSocketRequestResponsePair("ping", "pong")
     );
 
-    // Load persisted state from storage
     this.ctx.blockConcurrencyWhile(async () => {
       const [
-        chatLog, conversationHistory, roomCode,
+        chatLog, roomCode,
         hostPlayerName, characters, allPlayerRecords, storyStarted,
-        gameState, created, password, createdAt,
+        created, password, createdAt,
         dmBridgeConfig,
+        campaignConfigured,
         activeCampaignSlug,
         activeCampaignName,
       ] = await Promise.all([
         this.ctx.storage.get<ServerMessage[]>("chatLog"),
-        this.ctx.storage.get<ConversationMessage[]>("conversationHistory"),
         this.ctx.storage.get<string>("roomCode"),
         this.ctx.storage.get<string>("hostPlayerName"),
         this.ctx.storage.get<Record<string, CharacterData>>("characters"),
         this.ctx.storage.get<Record<string, PlayerRecord>>("allPlayerRecords"),
         this.ctx.storage.get<boolean>("storyStarted"),
-        this.ctx.storage.get<GameState>("gameState"),
         this.ctx.storage.get<boolean>("created"),
         this.ctx.storage.get<string>("password"),
         this.ctx.storage.get<number>("createdAt"),
         this.ctx.storage.get<DMBridgeConfig>("dmBridgeConfig"),
+        this.ctx.storage.get<boolean>("campaignConfigured"),
         this.ctx.storage.get<string>("activeCampaignSlug"),
         this.ctx.storage.get<string>("activeCampaignName"),
       ]);
       if (chatLog) this.chatLog = chatLog;
-      if (conversationHistory) this.conversationHistory = conversationHistory;
       if (roomCode) this.roomCode = roomCode;
       if (hostPlayerName) this.hostPlayerName = hostPlayerName;
       if (characters) this.characters = new Map(Object.entries(characters));
       if (allPlayerRecords) this.allPlayerRecords = new Map(Object.entries(allPlayerRecords));
       if (storyStarted) this.storyStarted = storyStarted;
-      if (gameState) this.gameState = gameState;
       if (created) this.created = created;
       if (password) this.password = password;
       if (createdAt) this.createdAt = createdAt;
       if (dmBridgeConfig) this.dmBridgeConfig = dmBridgeConfig;
+      if (campaignConfigured) this.campaignConfigured = campaignConfigured;
       if (activeCampaignSlug) this.activeCampaignSlug = activeCampaignSlug;
       if (activeCampaignName) this.activeCampaignName = activeCampaignName;
-      this.storageLoaded = true;
     });
   }
 
-  /** Update room metadata in KV for the room list */
+  // --- Room Metadata ---
+
   private async updateRoomMeta(): Promise<void> {
     if (!this.roomCode) return;
     const meta: RoomMeta = {
@@ -186,22 +125,14 @@ export class GameRoom extends DurableObject<Env> {
     }
   }
 
-  /** Append a message to the chat log and persist it */
   private async appendToChatLog(message: ServerMessage): Promise<void> {
     this.chatLog.push(message);
     await this.ctx.storage.put("chatLog", this.chatLog);
   }
 
-  /** Append to AI conversation history and persist it */
-  private async appendToConversation(
-    ...messages: ConversationMessage[]
-  ): Promise<void> {
-    this.conversationHistory.push(...messages);
-    await this.ctx.storage.put("conversationHistory", this.conversationHistory);
-  }
+  // --- HTTP & WebSocket Entry ---
 
   async fetch(request: Request): Promise<Response> {
-    // Internal init request from /api/rooms/create — marks room as explicitly created
     const url = new URL(request.url);
     if (url.pathname === "/init" && request.method === "POST") {
       this.created = true;
@@ -269,22 +200,9 @@ export class GameRoom extends DurableObject<Env> {
       case "client:join":
         await this.handleJoin(ws, msg);
         break;
-      case "client:chat":
-        await this.handleChat(ws, msg);
-        break;
-      case "client:dm_response": {
-        const pending = this.pendingDMRequests.get(msg.requestId);
-        if (pending) {
-          this.pendingDMRequests.delete(msg.requestId);
-          if (msg.error) pending.reject(new Error(msg.error));
-          else pending.resolve(msg.text);
-        }
-        break;
-      }
       case "client:dm_config": {
         this.dmBridgeConfig = { provider: msg.provider, supportsTools: msg.supportsTools };
         this.ctx.storage.put("dmBridgeConfig", this.dmBridgeConfig);
-        // Notify all players the DM bridge is connected
         const campaignInfo = this.activeCampaignName
           ? ` Campaign: ${this.activeCampaignName}.`
           : "";
@@ -293,7 +211,6 @@ export class GameRoom extends DurableObject<Env> {
           content: `DM connected (${msg.provider}). The AI Dungeon Master is ready!${campaignInfo}`,
           timestamp: Date.now(),
         });
-        // Forward dm_config (with campaigns list) to all clients
         this.broadcast({
           type: "server:dm_config_update",
           provider: msg.provider,
@@ -302,32 +219,7 @@ export class GameRoom extends DurableObject<Env> {
         });
         break;
       }
-      case "client:set_campaign": {
-        // Host-only: relay to DM bridge
-        const setCampSession = this.sessions.get(ws);
-        if (setCampSession?.status !== "host") {
-          this.sendTo(ws, {
-            type: "server:error",
-            message: "Only the host can set the campaign",
-            code: "NOT_HOST",
-          });
-          break;
-        }
-        // Forward raw JSON to DM bridge (bridge parses it directly)
-        const dmWsForCampaign = this.findDMBridgeWebSocket();
-        if (dmWsForCampaign) {
-          dmWsForCampaign.send(JSON.stringify(msg));
-        } else {
-          this.sendTo(ws, {
-            type: "server:error",
-            message: "DM bridge not connected",
-            code: "NO_DM",
-          });
-        }
-        break;
-      }
       case "client:campaign_loaded": {
-        // From DM bridge: store and broadcast
         this.activeCampaignSlug = msg.campaignSlug;
         this.activeCampaignName = msg.campaignName;
         this.ctx.storage.put("activeCampaignSlug", msg.campaignSlug);
@@ -340,44 +232,50 @@ export class GameRoom extends DurableObject<Env> {
         });
         break;
       }
+      case "client:campaign_configured_ack":
+        await this.handleCampaignConfiguredAck(ws, msg);
+        break;
       case "client:set_password":
         await this.handleSetPassword(ws, msg);
         break;
       case "client:kick_player":
         await this.handleKickPlayer(ws, msg);
         break;
+      case "client:destroy_room":
+        await this.handleDestroyRoom(ws);
+        break;
+      case "client:broadcast":
+        this.handleBroadcast(ws, msg);
+        break;
+      case "client:action_result":
+        // Bridge acknowledges a forwarded action — currently no-op
+        break;
+
+      // --- Forwarded to bridge ---
       case "client:set_character":
         await this.handleSetCharacter(ws, msg);
         break;
+      case "client:chat":
       case "client:start_story":
-        await this.handleStartStory(ws);
-        break;
       case "client:roll_dice":
-        await this.handleRollDice(ws, msg);
-        break;
       case "client:combat_action":
-        await this.handleCombatAction(ws, msg);
-        break;
       case "client:move_token":
-        await this.handleMoveToken(ws, msg);
-        break;
-      case "client:rollback":
-        await this.handleRollback(ws, msg);
-        break;
-      case "client:set_system_prompt":
-        await this.handleSetSystemPrompt(ws, msg);
-        break;
-      case "client:set_pacing":
-        await this.handleSetPacing(ws, msg);
-        break;
-      case "client:dm_override":
-        await this.handleDMOverride(ws, msg);
-        break;
       case "client:end_turn":
-        await this.handleEndTurn(ws);
+      case "client:rollback":
+      case "client:set_system_prompt":
+      case "client:set_pacing":
+      case "client:dm_override":
+      case "client:set_campaign":
+      case "client:configure_campaign":
+        this.forwardToBridge(ws, msg);
         break;
-      case "client:destroy_room":
-        await this.handleDestroyRoom(ws);
+
+      // These are bridge→server messages handled directly by bridge now
+      case "client:dm_response":
+      case "client:dm_dice_roll":
+      case "client:dm_check_request":
+      case "client:dm_check_result":
+        // Legacy: no longer processed by worker — bridge handles internally
         break;
     }
   }
@@ -392,7 +290,6 @@ export class GameRoom extends DurableObject<Env> {
     ws.close(code, "Connection closed");
 
     if (session?.playerName) {
-      // Player stays in allPlayerRecords (visible as offline)
       this.broadcast({
         type: "server:player_left",
         playerName: session.playerName,
@@ -405,6 +302,16 @@ export class GameRoom extends DurableObject<Env> {
         content: `${session.playerName} has disconnected.`,
         timestamp: Date.now(),
       });
+
+      // Notify bridge of player leaving
+      this.forwardToBridgeDirect({
+        type: "server:player_left",
+        playerName: session.playerName,
+        players: this.getPlayerNames(),
+        hostName: this.getHostName(),
+        allPlayers: this.getAllPlayersWithStatus(),
+      });
+
       this.updateRoomMeta();
     }
   }
@@ -415,13 +322,120 @@ export class GameRoom extends DurableObject<Env> {
     console.error("WebSocket error:", error, "Player:", session?.playerName);
   }
 
-  // --- Handlers ---
+  // --- Bridge Relay ---
+
+  /**
+   * Forward a player's action to the DM bridge as server:player_action.
+   * The bridge handles all game logic and broadcasts results via client:broadcast.
+   */
+  private forwardToBridge(ws: WebSocket, msg: ClientMessage): void {
+    const session = this.sessions.get(ws);
+    if (!session?.playerName) {
+      this.sendTo(ws, {
+        type: "server:error",
+        message: "Must join room first",
+        code: "NOT_JOINED",
+      });
+      return;
+    }
+
+    const dmWs = this.findDMBridgeWebSocket();
+    if (!dmWs) {
+      this.sendTo(ws, {
+        type: "server:error",
+        message: "DM bridge not connected",
+        code: "NO_DM",
+      });
+      return;
+    }
+
+    const requestId = crypto.randomUUID();
+    dmWs.send(JSON.stringify({
+      type: "server:player_action",
+      playerName: session.playerName,
+      action: msg,
+      requestId,
+    }));
+  }
+
+  /**
+   * Send a raw ServerMessage directly to the bridge WebSocket (not wrapped).
+   */
+  private forwardToBridgeDirect(msg: ServerMessage): void {
+    const dmWs = this.findDMBridgeWebSocket();
+    if (dmWs) {
+      dmWs.send(JSON.stringify(msg));
+    }
+  }
+
+  /**
+   * Handle client:broadcast from the DM bridge.
+   * Validates sender is DM, extracts payload, broadcasts to targets.
+   */
+  private handleBroadcast(
+    ws: WebSocket,
+    msg: Extract<ClientMessage, { type: "client:broadcast" }>
+  ): void {
+    const session = this.sessions.get(ws);
+    if (session?.playerName !== "DM") {
+      this.sendTo(ws, {
+        type: "server:error",
+        message: "Only the DM bridge can broadcast",
+        code: "NOT_DM",
+      });
+      return;
+    }
+
+    const payload = msg.payload as ServerMessage;
+
+    // Handle character_updated: sync worker's character cache
+    if (payload.type === "server:character_updated") {
+      for (const [userId, record] of this.allPlayerRecords.entries()) {
+        if (record.name === payload.playerName) {
+          this.characters.set(userId, payload.character);
+          this.persistCharacters();
+          break;
+        }
+      }
+    }
+
+    // Handle story started state
+    if (payload.type === "server:system" && payload.content === "The adventure begins...") {
+      this.storyStarted = true;
+      this.ctx.storage.put("storyStarted", true);
+    }
+
+    if (msg.targets && msg.targets.length > 0) {
+      // Send only to named players
+      const json = JSON.stringify(payload);
+      for (const [clientWs, clientSession] of this.sessions.entries()) {
+        if (msg.targets.includes(clientSession.playerName)) {
+          try {
+            clientWs.send(json);
+          } catch {
+            // WebSocket might be closing
+          }
+        }
+      }
+      // Still persist chat messages
+      if (
+        payload.type !== "server:player_joined" &&
+        payload.type !== "server:player_left"
+      ) {
+        this.appendToChatLog(payload);
+      }
+    } else {
+      // Broadcast to all
+      this.broadcast(payload);
+    }
+  }
+
+  // --- Join Handler ---
 
   private async handleJoin(
     ws: WebSocket,
     msg: Extract<ClientMessage, { type: "client:join" }>
   ): Promise<void> {
-    // Reject if room was never explicitly created via /api/rooms/create
     if (!this.created) {
       this.sendTo(ws, {
         type: "server:error",
@@ -432,13 +446,11 @@ export class GameRoom extends DurableObject<Env> {
       return;
     }
 
-    // Store room code for later use (e.g., approve/reject)
     if (!this.roomCode) {
       this.roomCode = msg.roomCode;
       this.ctx.storage.put("roomCode", this.roomCode);
     }
 
-    // Resolve user identity from auth token or generate guest ID
     let userId: string;
     let avatarUrl: string | undefined;
     let authUser: AuthUser | undefined;
@@ -455,14 +467,12 @@ export class GameRoom extends DurableObject<Env> {
           avatarUrl: payload.picture,
         };
       } else {
-        // Token invalid — treat as guest
         userId = msg.guestId || `guest_${crypto.randomUUID().slice(0, 8)}`;
       }
     } else {
       userId = msg.guestId || `guest_${crypto.randomUUID().slice(0, 8)}`;
     }
 
-    // Check room capacity
     if (this.getPlayerNames().length >= MAX_PLAYERS_PER_ROOM) {
       this.sendTo(ws, {
         type: "server:error",
@@ -472,7 +482,6 @@ export class GameRoom extends DurableObject<Env> {
       return;
     }
 
-    // Check room password (skip for reconnecting players)
     const isReturning = this.approvedUserIds.has(userId) || this.hostUserId === userId;
     if (this.password !== null && !isReturning) {
       if (!msg.password) {
@@ -493,8 +502,6 @@ export class GameRoom extends DurableObject<Env> {
       }
     }
 
-    // Clean up stale sessions for the same player name
-    // (e.g., the previous WebSocket was lost but session entry remains)
     for (const [existingWs, existingSession] of this.sessions.entries()) {
       if (existingWs === ws) continue;
       if (existingSession.playerName === msg.playerName) {
@@ -507,9 +514,7 @@ export class GameRoom extends DurableObject<Env> {
       }
     }
 
-    // Check for duplicate names among active players
     if (this.getPlayerNames().includes(msg.playerName)) {
-      // If reconnecting with same userId, allow it (close old socket)
       const existingEntry = this.findSessionByUserId(userId);
       if (existingEntry) {
         const [oldWs] = existingEntry;
@@ -529,25 +534,21 @@ export class GameRoom extends DurableObject<Env> {
       }
     }
 
-    // Determine player status — no pending state, all valid joins are immediate
     let status: PlayerStatus;
     const isReconnect =
       this.approvedUserIds.has(userId) || this.hostUserId === userId;
 
     if (!this.hostUserId) {
-      // First player to join is the host
       status = "host";
       this.hostUserId = userId;
       this.hostPlayerName = msg.playerName;
       this.approvedUserIds.add(userId);
       this.ctx.storage.put("hostPlayerName", this.hostPlayerName);
     } else if (this.hostUserId === userId) {
-      // Host reconnecting
       status = "host";
       this.hostPlayerName = msg.playerName;
       this.ctx.storage.put("hostPlayerName", this.hostPlayerName);
     } else {
-      // Regular player (new or reconnecting)
       status = "player";
       this.approvedUserIds.add(userId);
     }
@@ -572,8 +573,7 @@ export class GameRoom extends DurableObject<Env> {
     isReconnect: boolean,
     authUser?: AuthUser
   ): void {
-    // Track in allPlayerRecords (persists across disconnects)
-    if (!this.allPlayerRecords.has(session.userId)) {
+    if (!this.allPlayerRecords.has(session.userId) && session.playerName !== "DM") {
       this.allPlayerRecords.set(session.userId, {
         name: session.playerName,
         isHost: session.status === "host",
@@ -593,21 +593,25 @@ export class GameRoom extends DurableObject<Env> {
       allPlayers: this.getAllPlayersWithStatus(),
       storyStarted: this.storyStarted,
       dmConnected: this.dmBridgeConfig !== null,
+      campaignConfigured: this.campaignConfigured || undefined,
       activeCampaignSlug: this.activeCampaignSlug ?? undefined,
       activeCampaignName: this.activeCampaignName ?? undefined,
     });
 
-    // Replay full chat log so joining/reconnecting players see all history
+    // Replay chat log
     if (this.chatLog.length > 0) {
       for (const msg of this.chatLog) {
         this.sendTo(ws, msg);
       }
     }
 
-    // Send game state sync (event log, pacing, custom prompt, combat)
-    this.sendTo(ws, {
-      type: "server:game_state_sync",
-      gameState: this.gameState,
+    // Notify bridge so it can send game_state_sync
+    this.forwardToBridgeDirect({
+      type: "server:player_joined",
+      playerName: session.playerName,
+      players: this.getPlayerNames(),
+      hostName: this.getHostName(),
+      allPlayers: this.getAllPlayersWithStatus(),
     });
 
     this.broadcastToApproved(
@@ -635,12 +639,52 @@ export class GameRoom extends DurableObject<Env> {
       });
     }
 
-    // Story greeting is now host-triggered via client:start_story
-    // (no auto-greeting on join)
-
-    // Update room metadata in KV (player count, host name)
     this.updateRoomMeta();
   }
+
+  // --- Campaign Config Ack ---
+
+  private async handleCampaignConfiguredAck(
+    ws: WebSocket,
+    msg: Extract<ClientMessage, { type: "client:campaign_configured_ack" }>
+  ): Promise<void> {
+    this.campaignConfigured = true;
+    this.activeCampaignSlug = msg.campaignSlug;
+    this.activeCampaignName = msg.campaignName;
+    await this.ctx.storage.put("campaignConfigured", true);
+    await this.ctx.storage.put("activeCampaignSlug", msg.campaignSlug);
+    await this.ctx.storage.put("activeCampaignName", msg.campaignName);
+
+    if (msg.restoredCharacters) {
+      for (const [playerName, charData] of Object.entries(msg.restoredCharacters)) {
+        for (const [userId, record] of this.allPlayerRecords.entries()) {
+          if (record.name === playerName) {
+            this.characters.set(userId, charData);
+            break;
+          }
+        }
+      }
+      this.persistCharacters();
+    }
+
+    this.broadcast({
+      type: "server:campaign_configured",
+      campaignName: msg.campaignName,
+      campaignSlug: msg.campaignSlug,
+      pacingProfile: msg.pacingProfile,
+      encounterLength: msg.encounterLength,
+      systemPrompt: msg.systemPrompt,
+      restoredCharacters: msg.restoredCharacters,
+    } as ServerMessage);
+
+    this.broadcast({
+      type: "server:system",
+      content: `Campaign "${msg.campaignName}" configured.`,
+      timestamp: Date.now(),
+    });
+  }
+
+  // --- Room Management (kept in worker) ---
 
   private async handleSetPassword(
     ws: WebSocket,
@@ -658,7 +702,6 @@ export class GameRoom extends DurableObject<Env> {
 
     this.password = msg.password || null;
     await this.ctx.storage.put("password", this.password);
-
     this.updateRoomMeta();
 
     this.broadcast({
@@ -705,7 +748,6 @@ export class GameRoom extends DurableObject<Env> {
       return;
     }
 
-    // Remove from approved list so they can't auto-rejoin
     this.approvedUserIds.delete(targetSession.userId);
 
     this.sendTo(targetWs, {
@@ -715,11 +757,9 @@ export class GameRoom extends DurableObject<Env> {
 
     this.sessions.delete(targetWs);
 
-    // Remove from allPlayerRecords on kick (they are removed from the story)
     this.allPlayerRecords.delete(targetSession.userId);
     this.persistAllPlayerRecords();
 
-    // Remove their character too
     if (this.characters.has(targetSession.userId)) {
       this.characters.delete(targetSession.userId);
       this.persistCharacters();
@@ -759,10 +799,8 @@ export class GameRoom extends DurableObject<Env> {
       return;
     }
 
-    // Broadcast room_destroyed to all connected clients
     this.broadcast({ type: "server:room_destroyed" });
 
-    // Close all WebSocket connections
     for (const [clientWs] of this.sessions) {
       try {
         clientWs.close(1000, "Room destroyed");
@@ -771,21 +809,16 @@ export class GameRoom extends DurableObject<Env> {
       }
     }
 
-    // Delete room from KV registry
     try {
       await this.env.ROOMS.delete(`room:${this.roomCode}`);
     } catch {
       // ignore
     }
 
-    // Wipe all DO storage
     await this.ctx.storage.deleteAll();
 
-    // Reset in-memory state
     this.sessions.clear();
     this.dmBridgeConfig = null;
-    this.pendingDMRequests.clear();
-    this.conversationHistory = [];
     this.hostUserId = null;
     this.hostPlayerName = "";
     this.approvedUserIds.clear();
@@ -794,196 +827,12 @@ export class GameRoom extends DurableObject<Env> {
     this.characters.clear();
     this.allPlayerRecords.clear();
     this.storyStarted = false;
-    this.gameState = { ...DEFAULT_GAME_STATE, eventLog: [] };
     this.created = false;
     this.password = null;
     this.createdAt = 0;
   }
 
-  private async handleChat(
-    ws: WebSocket,
-    msg: Extract<ClientMessage, { type: "client:chat" }>
-  ): Promise<void> {
-    const session = this.sessions.get(ws);
-    if (!session?.playerName) {
-      this.sendTo(ws, {
-        type: "server:error",
-        message: "Must join room first",
-        code: "NOT_JOINED",
-      });
-      return;
-    }
-
-    this.broadcast({
-      type: "server:chat",
-      content: msg.content,
-      playerName: session.playerName,
-      timestamp: Date.now(),
-      id: crypto.randomUUID(),
-    });
-
-    if (this.dmBridgeConfig) {
-      // Use character name for AI context so the DM addresses the character, not the player
-      const character = this.characters.get(session.userId);
-      const speakerName = character?.static.name || session.playerName;
-      await this.getAIResponse(speakerName, msg.content);
-    }
-  }
-
-  // --- AI (DM Bridge) ---
-
-  /**
-   * Find the DM bridge participant's WebSocket connection.
-   * The MCP bridge joins as a player named "DM" with guestId "aidnd-dm-bridge".
-   */
-  private findDMBridgeWebSocket(): WebSocket | null {
-    for (const [ws, session] of this.sessions.entries()) {
-      if (session.playerName === "DM") return ws;
-    }
-    return null;
-  }
-
-  /**
-   * Send a dm_request to the DM bridge (MCP server) and await the response.
-   * The bridge routes requests to Claude Code, which handles AI reasoning,
-   * D&D tool lookups, and narrative generation.
-   */
-  private async makeAICall(
-    systemPrompt: string,
-    messages: ConversationMessage[],
-  ): Promise<{ text: string }> {
-    const dmWs = this.findDMBridgeWebSocket();
-    if (!dmWs) throw new Error("DM bridge not connected — start the MCP bridge server");
-
-    const requestId = crypto.randomUUID();
-
-    return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        this.pendingDMRequests.delete(requestId);
-        reject(new Error("DM bridge did not respond (timeout after 5 minutes)"));
-      }, 300_000);
-
-      this.pendingDMRequests.set(requestId, {
-        resolve: (text) => { clearTimeout(timeout); resolve({ text }); },
-        reject: (err) => { clearTimeout(timeout); reject(err); },
-      });
-
-      this.sendTo(dmWs, {
-        type: "server:dm_request",
-        requestId,
-        systemPrompt,
-        messages: messages.map((m) => ({ role: m.role, content: m.content })),
-      });
-    });
-  }
-
-  /**
-   * Request AI response from the DM bridge and broadcast the result.
-   * The DM bridge / Claude Code handles all narrative generation, D&D lookups, etc.
-   */
-  private async getAIResponse(
-    playerName: string,
-    content: string
-  ): Promise<void> {
-    if (!this.dmBridgeConfig) {
-      this.broadcast({
-        type: "server:system",
-        content:
-          "No DM bridge connected. Start the MCP bridge server to enable the AI Dungeon Master.",
-        timestamp: Date.now(),
-      });
-      return;
-    }
-
-    // Sanitize: replace any [Name]: patterns in content to prevent speaker injection
-    const sanitizedContent = content.replace(/\[([^\]]+)\]\s*:/g, "($1):");
-    const userMessage = `[${playerName}]: ${sanitizedContent}`;
-    await this.appendToConversation({ role: "user", content: userMessage });
-
-    try {
-      const systemPrompt = this.gameState.customSystemPrompt ?? "";
-      const result = await this.makeAICall(systemPrompt, this.conversationHistory);
-
-      // Store in conversation history
-      await this.appendToConversation({
-        role: "assistant",
-        content: result.text,
-      });
-
-      // Broadcast the AI narrative
-      this.broadcast({
-        type: "server:ai",
-        content: result.text,
-        timestamp: Date.now(),
-        id: crypto.randomUUID(),
-      });
-    } catch (error) {
-      this.broadcast({
-        type: "server:error",
-        message:
-          error instanceof Error
-            ? error.message
-            : "DM bridge request failed",
-        code: "AI_ERROR",
-      });
-    }
-  }
-
-  private async sendAIGreeting(): Promise<void> {
-    if (!this.dmBridgeConfig) return;
-
-    try {
-      const characterMap = this.getCharactersByPlayerName();
-      const playerNames = this.getPlayerNames().filter((n) => n !== "DM");
-      const partyDescriptions = playerNames.map((name) => {
-        const char = characterMap[name];
-        if (char) {
-          const classes = char.static.classes
-            .map((c) => `${c.name} ${c.level}`)
-            .join("/");
-          return `${name} (${char.static.name}, ${char.static.race} ${classes})`;
-        }
-        return name;
-      });
-
-      const userMsg = `The adventuring party has gathered: ${partyDescriptions.join(", ")}. Set the scene and introduce each character!`;
-      const systemPrompt = this.gameState.customSystemPrompt ?? "";
-
-      const result = await this.makeAICall(
-        systemPrompt,
-        [{ role: "user", content: userMsg }],
-      );
-
-      await this.appendToConversation(
-        { role: "user", content: `[Party gathered: ${playerNames.join(", ")}]` },
-        { role: "assistant", content: result.text }
-      );
-
-      // Broadcast the AI greeting
-      this.broadcast({
-        type: "server:ai",
-        content: result.text,
-        timestamp: Date.now(),
-        id: crypto.randomUUID(),
-      });
-    } catch (error) {
-      this.broadcast({
-        type: "server:error",
-        message:
-          error instanceof Error
-            ? error.message
-            : "DM bridge greeting failed",
-        code: "AI_ERROR",
-      });
-    }
-  }
-
-  /** Persist game state to Durable Object storage. */
-  private async persistGameState(): Promise<void> {
-    await this.ctx.storage.put("gameState", this.gameState);
-  }
-
-  // --- Character & Story Handlers ---
+  // --- Character Handler (relay + cache) ---
 
   private async handleSetCharacter(
     ws: WebSocket,
@@ -999,633 +848,38 @@ export class GameRoom extends DurableObject<Env> {
       return;
     }
 
+    // Cache character in worker for reconnect data
     this.characters.set(session.userId, msg.character);
     this.persistCharacters();
 
-    // Broadcast character update to all approved players
+    // Broadcast to all players
     this.broadcast({
       type: "server:character_updated",
       playerName: session.playerName,
       character: msg.character,
     });
-  }
 
-  private async handleStartStory(ws: WebSocket): Promise<void> {
-    const session = this.sessions.get(ws);
-    if (!session || session.status !== "host") {
-      this.sendTo(ws, {
-        type: "server:error",
-        message: "Only the host can start the story",
-        code: "NOT_HOST",
-      });
-      return;
-    }
-
-    if (this.storyStarted) {
-      this.sendTo(ws, {
-        type: "server:error",
-        message: "Story has already started",
-        code: "ALREADY_STARTED",
-      });
-      return;
-    }
-
-    if (!this.dmBridgeConfig) {
-      this.sendTo(ws, {
-        type: "server:error",
-        message: "DM bridge not connected. Start the MCP bridge server first.",
-        code: "NO_DM_BRIDGE",
-      });
-      return;
-    }
-
-    this.storyStarted = true;
-    this.ctx.storage.put("storyStarted", true);
-
-    this.broadcast({
-      type: "server:system",
-      content: "The adventure begins...",
-      timestamp: Date.now(),
-    });
-
-    await this.sendAIGreeting();
-  }
-
-  // --- Game Mechanic Handlers ---
-
-  private async handleRollDice(
-    ws: WebSocket,
-    msg: Extract<ClientMessage, { type: "client:roll_dice" }>
-  ): Promise<void> {
-    const session = this.sessions.get(ws);
-    if (!session?.playerName) {
-      this.sendTo(ws, { type: "server:error", message: "Must join room first", code: "NOT_JOINED" });
-      return;
-    }
-
-    // Find the pending check
-    const combat = this.gameState.encounter?.combat;
-    const pendingCheck = combat?.pendingCheck ?? this.gameState.pendingCheck;
-    if (!pendingCheck || pendingCheck.id !== msg.checkRequestId) {
-      this.sendTo(ws, { type: "server:error", message: "No matching pending check", code: "NO_PENDING_CHECK" });
-      return;
-    }
-
-    // Verify the rolling player owns the target character
-    const char = this.characters.get(session.userId);
-    if (!char || char.static.name.toLowerCase() !== pendingCheck.targetCharacter.toLowerCase()) {
-      this.sendTo(ws, { type: "server:error", message: "This check is not for your character", code: "WRONG_CHARACTER" });
-      return;
-    }
-
-    // Compute modifier from character data
-    const modifier = this.computeCheckModifier(char, pendingCheck);
-
-    // Roll the check
-    const roll = rollCheck({
-      modifier,
-      advantage: pendingCheck.advantage,
-      disadvantage: pendingCheck.disadvantage,
-      label: buildCheckLabel(pendingCheck),
-    });
-
-    // Determine success
-    const success = pendingCheck.dc !== undefined ? roll.total >= pendingCheck.dc : true;
-
-    // Broadcast dice roll (inline in chat)
-    this.broadcast({
-      type: "server:dice_roll",
-      roll,
-      playerName: session.playerName,
-      timestamp: Date.now(),
-      id: crypto.randomUUID(),
-    });
-
-    // Broadcast check result
-    this.broadcast({
-      type: "server:check_result",
-      result: {
-        requestId: pendingCheck.id,
-        roll,
-        dc: pendingCheck.dc,
-        success,
-        characterName: char.static.name,
-      },
-      timestamp: Date.now(),
-      id: crypto.randomUUID(),
-    });
-
-    // Clear pending check
-    if (combat?.pendingCheck?.id === pendingCheck.id) {
-      combat.pendingCheck = undefined;
-    }
-    if (this.gameState.pendingCheck?.id === pendingCheck.id) {
-      this.gameState.pendingCheck = undefined;
-    }
-
-    await this.persistGameState();
-
-    // Inject result into AI conversation and trigger follow-up
-    const resultLabel = success ? "Success" : "Failure";
-    const dcStr = pendingCheck.dc !== undefined ? ` (DC ${pendingCheck.dc})` : "";
-    const systemMsg = `[System: ${char.static.name} rolled ${roll.total} on ${pendingCheck.reason}${dcStr} — ${resultLabel}${roll.criticalHit ? " (Critical!)" : ""}${roll.criticalFail ? " (Critical Fail!)" : ""}]`;
-
-    await this.appendToConversation({ role: "user", content: systemMsg });
-
-    // Trigger AI to narrate the outcome via DM bridge
-    if (this.dmBridgeConfig) {
-      try {
-        const systemPrompt = this.gameState.customSystemPrompt ?? "";
-        const aiResult = await this.makeAICall(systemPrompt, this.conversationHistory);
-        await this.appendToConversation({ role: "assistant", content: aiResult.text });
-        this.broadcast({
-          type: "server:ai",
-          content: aiResult.text,
-          timestamp: Date.now(),
-          id: crypto.randomUUID(),
-        });
-      } catch (error) {
-        this.broadcast({
-          type: "server:error",
-          message: error instanceof Error ? error.message : "AI follow-up failed",
-          code: "AI_ERROR",
-        });
-      }
-    }
-  }
-
-  private async handleCombatAction(
-    ws: WebSocket,
-    msg: Extract<ClientMessage, { type: "client:combat_action" }>
-  ): Promise<void> {
-    const session = this.sessions.get(ws);
-    if (!session?.playerName) {
-      this.sendTo(ws, { type: "server:error", message: "Must join room first", code: "NOT_JOINED" });
-      return;
-    }
-
-    const combat = this.gameState.encounter?.combat;
-    if (!combat || combat.phase !== "active") {
-      this.sendTo(ws, { type: "server:error", message: "Not in active combat", code: "NOT_IN_COMBAT" });
-      return;
-    }
-
-    // Enforce turn order — only the active combatant's player can act
-    const activeId = combat.turnOrder[combat.turnIndex];
-    const activeCombatant = combat.combatants[activeId];
-    if (activeCombatant?.type === "player" && activeCombatant.playerId !== session.userId) {
-      this.sendTo(ws, { type: "server:error", message: "It's not your turn", code: "NOT_YOUR_TURN" });
-      return;
-    }
-
-    // Treat as a chat message that triggers AI response
-    this.broadcast({
-      type: "server:chat",
-      content: msg.action,
-      playerName: session.playerName,
-      timestamp: Date.now(),
-      id: crypto.randomUUID(),
-    });
-
-    if (this.dmBridgeConfig) {
-      await this.getAIResponse(session.playerName, msg.action);
-    }
-  }
-
-  /** Advance to the next combatant in turn order, incrementing round on wrap. */
-  private advanceTurn(combat: import("@aidnd/shared/types").CombatState): void {
-    combat.turnIndex = (combat.turnIndex + 1) % combat.turnOrder.length;
-    if (combat.turnIndex === 0) {
-      combat.round++;
-    }
-    const activeId = combat.turnOrder[combat.turnIndex];
-    const active = combat.combatants[activeId];
-    if (active) {
-      active.movementUsed = 0;
-    }
-  }
-
-  /**
-   * Trigger AI to resolve the active NPC's turn via the DM bridge.
-   * Sends turn context, gets narrative response, auto-advances and recurses for consecutive NPCs.
-   */
-  private async triggerNPCTurn(npcTurnDepth: number = 0): Promise<void> {
-    if (npcTurnDepth >= 10) return;
-
-    const combat = this.gameState.encounter?.combat;
-    if (!combat || combat.phase !== "active" || !this.dmBridgeConfig) return;
-
-    const activeId = combat.turnOrder[combat.turnIndex];
-    const activeCombatant = combat.combatants[activeId];
-    if (!activeCombatant || activeCombatant.type === "player") return;
-
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-
-    // Build NPC turn context message
-    const pos = activeCombatant.position;
-    const posStr = pos ? ` at position (${pos.x},${pos.y})` : "";
-    const speed = activeCombatant.speed ?? 30;
-    const ac = activeCombatant.armorClass ?? "?";
-    const hp = `${activeCombatant.currentHP ?? "?"}/${activeCombatant.maxHP ?? "?"}`;
-    const conditions = activeCombatant.conditions?.length
-      ? ` Conditions: ${activeCombatant.conditions.join(", ")}.`
-      : "";
-
-    const turnMsg = `[System: It is now ${activeCombatant.name}'s turn${posStr}. HP: ${hp}, AC: ${ac}, Speed: ${speed}ft.${conditions}\nResolve this combatant's turn.]`;
-    await this.appendToConversation({ role: "user", content: turnMsg });
-
-    try {
-      const systemPrompt = this.gameState.customSystemPrompt ?? "";
-      let aiResult = await this.makeAICall(systemPrompt, this.conversationHistory);
-
-      if (!aiResult.text || !aiResult.text.trim()) {
-        console.warn("[NPC Turn] Empty response for", activeCombatant.name, "— retrying");
-        aiResult = await this.makeAICall(systemPrompt, this.conversationHistory);
-      }
-
-      await this.appendToConversation({ role: "assistant", content: aiResult.text });
-
-      this.broadcast({
-        type: "server:ai",
-        content: aiResult.text,
-        timestamp: Date.now(),
-        id: crypto.randomUUID(),
-      });
-
-      // Auto-advance NPC turn and continue loop
-      this.advanceTurn(combat);
-      this.broadcast({
-        type: "server:combat_update",
-        combat,
-        map: this.gameState.encounter?.map ?? null,
-        timestamp: Date.now(),
-      });
-      await this.persistGameState();
-      await this.triggerNPCTurn(npcTurnDepth + 1);
-    } catch (error) {
-      console.error("[NPC Turn]", error);
-      this.broadcast({
-        type: "server:error",
-        message: `Failed to resolve ${activeCombatant.name}'s turn — skipping`,
-        code: "AI_ERROR",
-      });
-
-      this.advanceTurn(combat);
-      this.broadcast({
-        type: "server:combat_update",
-        combat,
-        map: this.gameState.encounter?.map ?? null,
-        timestamp: Date.now(),
-      });
-      await this.persistGameState();
-      await this.triggerNPCTurn(npcTurnDepth + 1);
-    }
-  }
-
-  private async handleEndTurn(ws: WebSocket): Promise<void> {
-    const session = this.sessions.get(ws);
-    if (!session?.playerName) {
-      this.sendTo(ws, { type: "server:error", message: "Must join room first", code: "NOT_JOINED" });
-      return;
-    }
-
-    const combat = this.gameState.encounter?.combat;
-    if (!combat || combat.phase !== "active") {
-      this.sendTo(ws, { type: "server:error", message: "Not in active combat", code: "NOT_IN_COMBAT" });
-      return;
-    }
-
-    // Find the player's combatant
-    const combatant = Object.values(combat.combatants).find(
-      (c) => c.type === "player" && c.playerId === session.userId
-    );
-    if (!combatant) {
-      this.sendTo(ws, { type: "server:error", message: "No combatant found for your character", code: "NO_COMBATANT" });
-      return;
-    }
-
-    // Verify it's their turn
-    const activeId = combat.turnOrder[combat.turnIndex];
-    if (activeId !== combatant.id) {
-      this.sendTo(ws, { type: "server:error", message: "It's not your turn", code: "NOT_YOUR_TURN" });
-      return;
-    }
-
-    this.advanceTurn(combat);
-
-    this.broadcast({
-      type: "server:combat_update",
-      combat,
-      map: this.gameState.encounter?.map ?? null,
-      timestamp: Date.now(),
-    });
-
-    await this.persistGameState();
-
-    // Auto-resolve consecutive NPC turns
-    await this.triggerNPCTurn(0);
-  }
-
-  private async handleMoveToken(
-    ws: WebSocket,
-    msg: Extract<ClientMessage, { type: "client:move_token" }>
-  ): Promise<void> {
-    const session = this.sessions.get(ws);
-    if (!session?.playerName) {
-      this.sendTo(ws, { type: "server:error", message: "Must join room first", code: "NOT_JOINED" });
-      return;
-    }
-
-    const combat = this.gameState.encounter?.combat;
-    if (!combat || combat.phase !== "active") {
-      this.sendTo(ws, { type: "server:error", message: "Not in active combat", code: "NOT_IN_COMBAT" });
-      return;
-    }
-
-    // Find the player's combatant
-    const combatant = Object.values(combat.combatants).find(
-      (c) => c.type === "player" && c.playerId === session.userId
-    );
-    if (!combatant) {
-      this.sendTo(ws, { type: "server:error", message: "No combatant found for your character", code: "NO_COMBATANT" });
-      return;
-    }
-
-    // Verify it's their turn
-    const activeId = combat.turnOrder[combat.turnIndex];
-    if (activeId !== combatant.id) {
-      this.sendTo(ws, { type: "server:error", message: "It's not your turn", code: "NOT_YOUR_TURN" });
-      return;
-    }
-
-    // Calculate movement distance (simple Manhattan for now)
-    const from = combatant.position || { x: 0, y: 0 };
-    const dx = Math.abs(msg.to.x - from.x);
-    const dy = Math.abs(msg.to.y - from.y);
-    const distance = Math.max(dx, dy) * 5; // 5ft per tile
-
-    if (combatant.movementUsed + distance > combatant.speed) {
-      this.sendTo(ws, { type: "server:error", message: "Not enough movement remaining", code: "NO_MOVEMENT" });
-      return;
-    }
-
-    combatant.position = msg.to;
-    combatant.movementUsed += distance;
-
-    this.broadcast({
-      type: "server:combat_update",
-      combat,
-      map: this.gameState.encounter?.map ?? null,
-      timestamp: Date.now(),
-    });
-
-    await this.persistGameState();
-  }
-
-  private async handleRollback(
-    ws: WebSocket,
-    msg: Extract<ClientMessage, { type: "client:rollback" }>
-  ): Promise<void> {
-    const session = this.sessions.get(ws);
-    if (!session || session.status !== "host") {
-      this.sendTo(ws, { type: "server:error", message: "Only the host can rollback", code: "NOT_HOST" });
-      return;
-    }
-
-    const eventIdx = this.gameState.eventLog.findIndex((e) => e.id === msg.eventId);
-    if (eventIdx === -1) {
-      this.sendTo(ws, { type: "server:error", message: "Event not found", code: "EVENT_NOT_FOUND" });
-      return;
-    }
-
-    const event = this.gameState.eventLog[eventIdx];
-
-    // Restore character dynamic data from snapshot
-    for (const [userId, snapshot] of Object.entries(event.stateBefore.characters)) {
-      const char = this.characters.get(userId);
-      if (char) {
-        char.dynamic = snapshot as CharacterDynamicData;
-      }
-    }
-
-    // Restore combatant state if available
-    if (event.stateBefore.combatants && this.gameState.encounter?.combat) {
-      this.gameState.encounter.combat.combatants = event.stateBefore.combatants;
-    }
-
-    // Truncate conversation history
-    this.conversationHistory = this.conversationHistory.slice(0, event.conversationIndex);
-    await this.ctx.storage.put("conversationHistory", this.conversationHistory);
-
-    // Truncate event log (remove target event + everything after)
-    this.gameState.eventLog = this.gameState.eventLog.slice(0, eventIdx);
-
-    // Truncate chat log to messages before event timestamp
-    this.chatLog = this.chatLog.filter((msg) => {
-      if ("timestamp" in msg) {
-        return (msg as { timestamp: number }).timestamp < event.timestamp;
-      }
-      return true;
-    });
-    await this.ctx.storage.put("chatLog", this.chatLog);
-
-    // Persist everything
-    this.persistCharacters();
-    await this.persistGameState();
-
-    // Broadcast rollback with full restored state
-    const characterUpdates: Record<string, CharacterData> = {};
-    for (const [userId, char] of this.characters) {
-      const playerName = this.getPlayerNameByUserId(userId);
-      if (playerName) {
-        characterUpdates[playerName] = char;
-      }
-    }
-
-    this.broadcast({
-      type: "server:rollback",
-      toEventId: msg.eventId,
-      gameState: this.gameState,
-      characterUpdates,
-      timestamp: Date.now(),
-    });
-  }
-
-  private async handleSetSystemPrompt(
-    ws: WebSocket,
-    msg: Extract<ClientMessage, { type: "client:set_system_prompt" }>
-  ): Promise<void> {
-    const session = this.sessions.get(ws);
-    if (!session || session.status !== "host") {
-      this.sendTo(ws, { type: "server:error", message: "Only the host can change the system prompt", code: "NOT_HOST" });
-      return;
-    }
-
-    this.gameState.customSystemPrompt = msg.prompt;
-    await this.persistGameState();
-
-    this.broadcast({
-      type: "server:system",
-      content: msg.prompt ? "System prompt updated." : "System prompt reset to default.",
-      timestamp: Date.now(),
-    });
-  }
-
-  private async handleSetPacing(
-    ws: WebSocket,
-    msg: Extract<ClientMessage, { type: "client:set_pacing" }>
-  ): Promise<void> {
-    const session = this.sessions.get(ws);
-    if (!session || session.status !== "host") {
-      this.sendTo(ws, { type: "server:error", message: "Only the host can change pacing", code: "NOT_HOST" });
-      return;
-    }
-
-    this.gameState.pacingProfile = msg.profile;
-    this.gameState.encounterLength = msg.encounterLength;
-    await this.persistGameState();
-
-    this.broadcast({
-      type: "server:system",
-      content: `Pacing set to ${msg.profile}, encounter length: ${msg.encounterLength}.`,
-      timestamp: Date.now(),
-    });
-  }
-
-  private async handleDMOverride(
-    ws: WebSocket,
-    msg: Extract<ClientMessage, { type: "client:dm_override" }>
-  ): Promise<void> {
-    const session = this.sessions.get(ws);
-    if (!session || session.status !== "host") {
-      this.sendTo(ws, { type: "server:error", message: "Only the host can use DM overrides", code: "NOT_HOST" });
-      return;
-    }
-
-    // Find the character by name
-    for (const [userId, char] of this.characters) {
-      if (char.static.name.toLowerCase() === msg.characterName.toLowerCase()) {
-        // Apply changes manually (trusted from host)
-        for (const change of msg.changes) {
-          switch (change.type) {
-            case "damage": {
-              const amount = Math.max(0, change.amount);
-              let remaining = amount;
-              if (char.dynamic.tempHP > 0) {
-                const absorbed = Math.min(char.dynamic.tempHP, remaining);
-                char.dynamic.tempHP -= absorbed;
-                remaining -= absorbed;
-              }
-              char.dynamic.currentHP = Math.max(0, char.dynamic.currentHP - remaining);
-              break;
-            }
-            case "healing":
-              char.dynamic.currentHP = Math.min(char.static.maxHP, char.dynamic.currentHP + Math.max(0, change.amount));
-              break;
-            case "hp_set":
-              char.dynamic.currentHP = Math.max(0, Math.min(char.static.maxHP, change.value));
-              break;
-            case "temp_hp":
-              char.dynamic.tempHP = Math.max(char.dynamic.tempHP, change.amount);
-              break;
-            case "condition_add":
-              if (!char.dynamic.conditions.includes(change.condition)) {
-                char.dynamic.conditions.push(change.condition);
-              }
-              break;
-            case "condition_remove":
-              char.dynamic.conditions = char.dynamic.conditions.filter((c) => c !== change.condition);
-              break;
-          }
-        }
-
-        this.persistCharacters();
-
-        const playerName = this.getPlayerNameByUserId(userId);
-        if (playerName) {
-          this.broadcast({
-            type: "server:character_updated",
-            playerName,
-            character: char,
-          });
-        }
-        break;
-      }
-    }
-  }
-
-  /** Compute the modifier for a check based on character data. */
-  private computeCheckModifier(
-    char: CharacterData,
-    check: import("@aidnd/shared/types").CheckRequest
-  ): number {
-    const s = char.static;
-
-    if (check.type === "skill" && check.skill) {
-      const skill = s.skills.find(
-        (sk) => sk.name.toLowerCase() === check.skill!.toLowerCase()
-      );
-      if (skill) {
-        return getSkillModifier(skill, s.abilities, s.proficiencyBonus);
-      }
-    }
-
-    if (check.type === "saving_throw" && check.ability) {
-      const save = s.savingThrows.find(
-        (sv) => sv.ability === check.ability
-      );
-      if (save) {
-        return getSavingThrowModifier(save, s.abilities, s.proficiencyBonus);
-      }
-      // Fallback: raw ability modifier
-      const abilityKey = check.ability as keyof typeof s.abilities;
-      if (s.abilities[abilityKey] !== undefined) {
-        return getModifier(s.abilities[abilityKey]);
-      }
-    }
-
-    if (check.type === "ability" && check.ability) {
-      const abilityKey = check.ability as keyof typeof s.abilities;
-      if (s.abilities[abilityKey] !== undefined) {
-        return getModifier(s.abilities[abilityKey]);
-      }
-    }
-
-    if (check.type === "attack") {
-      // Use spell attack bonus or proficiency + STR/DEX
-      if (s.spellAttackBonus !== undefined) {
-        return s.spellAttackBonus;
-      }
-      // Melee: STR + prof, Ranged: DEX + prof
-      const strMod = getModifier(s.abilities.strength);
-      const dexMod = getModifier(s.abilities.dexterity);
-      return Math.max(strMod, dexMod) + s.proficiencyBonus;
-    }
-
-    return 0;
+    // Forward to bridge for campaign persistence + state tracking
+    this.forwardToBridge(ws, msg);
   }
 
   // --- Helpers ---
 
+  private findDMBridgeWebSocket(): WebSocket | null {
+    for (const [ws, session] of this.sessions.entries()) {
+      if (session.playerName === "DM") return ws;
+    }
+    return null;
+  }
+
   private getPlayerNames(): string[] {
     return Array.from(this.sessions.values())
-      .filter((s) => s.playerName)
+      .filter((s) => s.playerName && s.playerName !== "DM")
       .map((s) => s.playerName);
   }
 
   private getHostName(): string {
     return this.hostPlayerName;
-  }
-
-  private getRoomCode(): string {
-    return this.roomCode;
-  }
-
-  private findHostWebSocket(): WebSocket | null {
-    for (const [ws, session] of this.sessions.entries()) {
-      if (session.status === "host") return ws;
-    }
-    return null;
   }
 
   private findSessionByName(
@@ -1651,7 +905,6 @@ export class GameRoom extends DurableObject<Env> {
   }
 
   private broadcast(message: ServerMessage): void {
-    // Persist chat/system/AI messages to storage for replay on join
     if (
       message.type !== "server:player_joined" &&
       message.type !== "server:player_left"
@@ -1670,7 +923,6 @@ export class GameRoom extends DurableObject<Env> {
     }
   }
 
-  /** Broadcast to all players except the excluded one */
   private broadcastToApproved(
     message: ServerMessage,
     excluded?: WebSocket
@@ -1687,7 +939,6 @@ export class GameRoom extends DurableObject<Env> {
     }
   }
 
-  /** Get all players (online + offline) with their current status */
   private getAllPlayersWithStatus(): PlayerInfo[] {
     const onlineUserIds = new Set<string>();
     for (const session of this.sessions.values()) {
@@ -1703,28 +954,17 @@ export class GameRoom extends DurableObject<Env> {
     }));
   }
 
-  /** Get characters mapped by player name instead of userId */
   private getCharactersByPlayerName(): Record<string, CharacterData> {
     const result: Record<string, CharacterData> = {};
-
-    // Build userId → playerName map from allPlayerRecords
     for (const [userId, record] of this.allPlayerRecords.entries()) {
       const char = this.characters.get(userId);
       if (char) {
         result[record.name] = char;
       }
     }
-
     return result;
   }
 
-  /** Look up a player name from userId via allPlayerRecords. */
-  private getPlayerNameByUserId(userId: string): string | null {
-    const record = this.allPlayerRecords.get(userId);
-    return record?.name ?? null;
-  }
-
-  /** Persist characters to DO storage */
   private persistCharacters(): void {
     this.ctx.storage.put(
       "characters",
@@ -1732,7 +972,6 @@ export class GameRoom extends DurableObject<Env> {
     );
   }
 
-  /** Persist allPlayerRecords to DO storage */
   private persistAllPlayerRecords(): void {
     this.ctx.storage.put(
       "allPlayerRecords",

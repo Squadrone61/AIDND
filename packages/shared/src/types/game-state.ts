@@ -38,6 +38,8 @@ export interface CheckRequest {
   advantage?: boolean;
   disadvantage?: boolean;
   reason: string;
+  /** When true, this check was initiated by the DM bridge (not parsed from AI text) */
+  dmInitiated?: boolean;
 }
 
 export interface CheckResult {

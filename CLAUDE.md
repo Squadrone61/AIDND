@@ -1,27 +1,29 @@
 # AI Dungeon Master (AIDND)
 
 ## Project Overview
-AI-powered D&D 5e web app where an AI acts as the Dungeon Master. Players import D&D Beyond characters, join multiplayer rooms via WebSocket, and play through AI-generated campaigns. Claude Code acts as the AI DM via an MCP bridge that connects directly to the game server.
+AI-powered D&D 5e web app where an AI acts as the Dungeon Master. Players import D&D Beyond characters, join multiplayer rooms via WebSocket, and play through AI-generated campaigns. Claude Code acts as the AI DM via an MCP bridge that owns all game logic and connects to the game server as a participant.
 
 **Notion GDD:** https://www.notion.so/309fc254bf8381c18e37c2b5ee4d8641
 
 ## Architecture
 
 ```
-[Players' Browsers] ←WebSocket→ [Cloudflare Worker]  (multiplayer relay + rooms + auth)
+[Players' Browsers] ←WebSocket→ [Cloudflare Worker]     (pure multiplayer relay + auth)
                                        ↕ WebSocket (DM participant)
-                                [MCP Bridge Server]  (game engine + D&D tools + campaign docs)
-                                    ↕ stdio MCP
-                                [Claude Code]  (AI Dungeon Master)
+                                [MCP Bridge Server]      (game engine + state + D&D tools + campaigns)
+                                  ↕ stdio MCP
+                                [Claude Code]            (AI Dungeon Master)
 ```
+
+**Key principle:** The MCP bridge owns ALL game logic (combat, dice, HP, conditions, spell slots, conversation history). The worker is a **pure multiplayer relay** — it forwards player actions to the bridge and broadcasts bridge responses to clients.
 
 ### Monorepo Structure (pnpm workspaces + Turborepo)
 ```
-apps/web/        → Next.js 16.1 frontend (React 19, Tailwind CSS 4)
-apps/worker/     → Cloudflare Worker backend (Durable Objects, KV) — thin multiplayer relay
-apps/mcp-bridge/ → MCP server: WebSocket client to worker + D&D tools + campaign notes
-apps/extension/  → Chrome extension (minimal — no longer in AI path)
-packages/shared/ → Shared types (Zod 4 schemas), constants, utils
+apps/web/          → Next.js 16.1 frontend (React 19, Tailwind CSS 4)
+apps/worker/       → Cloudflare Worker (Durable Objects, KV) — pure multiplayer relay + auth
+apps/mcp-bridge/   → Game engine: GameStateManager + MCP tools + WebSocket client
+apps/dm-launcher/  → CLI to launch Claude Code as DM (writes .mcp.json, spawns claude)
+packages/shared/   → Shared types (Zod 4 schemas), constants, utils, dice, check helpers
 ```
 
 ### Tech Stack
@@ -39,8 +41,10 @@ packages/shared/ → Shared types (Zod 4 schemas), constants, utils
 - **Discriminated unions** for all message types (ClientMessage/ServerMessage)
 - **Event sourcing** for game state changes (GameEvent log)
 - **CharacterData split:** `static` (from D&D Beyond import) + `dynamic` (HP, spell slots, conditions — owned by our system)
-- **MCP tool-use** for D&D reference (spells, monsters, conditions), dice rolling, campaign notes
-- **dm_request/dm_response** WebSocket contract: worker sends requests to DM bridge participant, awaits response
+- **Bridge-owned game state:** GameStateManager in the MCP bridge owns all game logic — combat, dice, HP, conditions, conversation history, game state sync
+- **player_action/broadcast** WebSocket contract: worker forwards player actions to bridge as `server:player_action`, bridge processes and sends results back as `client:broadcast`
+- **MCP tool-use** for game state mutation (damage, combat, spell slots), D&D reference (spells, monsters, conditions), dice rolling, campaign persistence
+- **Campaign configuration** flow: host configures campaign (name, pacing, encounter length) before starting story via CampaignConfigModal
 - **WebSocket Hibernation API** for Durable Objects (persistent connections survive hibernation)
 
 ## Dev Commands
@@ -50,7 +54,9 @@ pnpm dev:web        # Next.js dev server only (port 3000)
 pnpm dev:worker     # Wrangler dev server only (port 8787)
 pnpm dev:mcp        # Run MCP bridge (needs AIDND_ROOM_CODE env var)
 pnpm build          # Build all packages
+pnpm build:dm       # Build dm-launcher (esbuild bundle)
 pnpm type-check     # TypeScript type checking
+pnpm dead-code      # Run knip dead code detection
 pnpm deploy         # Deploy all to Cloudflare
 pnpm deploy:worker  # Deploy worker only
 pnpm deploy:web     # Deploy web only
@@ -61,8 +67,9 @@ pnpm deploy:web     # Deploy web only
 2. Create a room in the browser, note the room code
 3. Set room code in `.mcp.json` → `AIDND_ROOM_CODE`
 4. Claude Code connects via MCP, bridge joins the room as "DM"
-5. Players join, host clicks "Begin the Adventure"
-6. Claude Code receives dm_requests via `wait_for_message`, responds via `send_response`
+5. Players join, host configures campaign (name, pacing, encounter length) via Campaign Config modal
+6. Host clicks "Begin the Adventure"
+7. Claude Code receives player messages via `wait_for_message`, responds via `send_response`
 
 ## Environment
 - **Web dev:** http://localhost:3000
@@ -79,24 +86,31 @@ pnpm deploy:web     # Deploy web only
 ### MCP Bridge (apps/mcp-bridge/src/)
 - `index.ts` — Entry: starts WS client + MCP stdio server
 - `mcp-server.ts` — MCP tool/resource registration
-- `ws-client.ts` — WebSocket client to worker (joins room as DM participant)
-- `message-queue.ts` — Async queue: WS pushes dm_requests, wait_for_message pops
-- `tools/game-tools.ts` — wait_for_message, send_response, get_players
-- `tools/dnd-tools.ts` — lookup_spell, lookup_monster, lookup_condition, roll_dice
-- `tools/campaign-tools.ts` — save_campaign_note, read_campaign_note, list_campaign_notes
+- `ws-client.ts` — WebSocket client to worker, owns GameStateManager, handles player_action dispatch + broadcast relay
+- `message-queue.ts` — Async queue: WS pushes player messages, wait_for_message pops
+- `services/game-state-manager.ts` — **Core game engine**: owns GameState, combat, dice, HP, conditions, spell slots, conversation history, check flow, battle map, rollback
+- `services/campaign-manager.ts` — Campaign persistence: create/load/list campaigns, save/read files, session management, character snapshots
+- `tools/game-tools.ts` — 17 MCP tools: wait_for_message, send_response, get_players, get_game_state, get_character, apply_damage, heal, set_hp, add_condition, remove_condition, start_combat, end_combat, advance_turn, add_combatant, remove_combatant, move_combatant, use_spell_slot, restore_spell_slot, update_battle_map
+- `tools/dnd-tools.ts` — lookup_spell, lookup_monster, lookup_condition, roll_dice (now supports interactive player checks with targetCharacter)
+- `tools/campaign-tools.ts` — create_campaign, list_campaigns, load_campaign_context, save_campaign_file, read_campaign_file, list_campaign_files, end_session
 - `services/dnd-api.ts` — D&D 5e SRD API client (in-memory cache)
-- `types.ts` — Bridge message types
+- `types.ts` — Bridge message types, CampaignManifest, CampaignSummary
+
+### DM Launcher (apps/dm-launcher/src/)
+- `entry.ts` — npm bin entry point
+- `cli.ts` — Spawns Claude Code with MCP config, writes DM_SYSTEM_PROMPT as CLAUDE.md
+- `server.ts` — Express server for OAuth callback handling
 
 ### Backend (apps/worker/src/)
 - `index.ts` — HTTP router + WebSocket upgrade endpoint
-- `durable-objects/game-room.ts` — Multiplayer state, dm_request/dm_response relay, dice, combat
-- `services/dice.ts` — D&D dice rolling (d20, advantage/disadvantage, etc.)
+- `durable-objects/game-room.ts` — Pure multiplayer relay: forwards player_action to bridge, broadcasts bridge responses via client:broadcast
+- `services/dice.ts` — Re-exports shared dice utils from `@aidnd/shared/utils`
 - `auth/google.ts` — OAuth endpoints
 - `auth/jwt.ts` — JWT signing/verification
 
 ### Frontend (apps/web/src/)
 - `app/page.tsx` — Home: create/join room
-- `app/rooms/[roomCode]/page.tsx` — Game room page
+- `app/rooms/[roomCode]/page.tsx` — Game room page (handles campaign config, DM config updates, character restoration)
 - `hooks/useWebSocket.ts` — WebSocket lifecycle, reconnection, message validation
 - `hooks/useAuth.ts` — Google OAuth flow
 - `hooks/useCharacterImport.ts` — D&D Beyond character import
@@ -105,24 +119,60 @@ pnpm deploy:web     # Deploy web only
 - `components/character/LeftSidebar.tsx` — Left sidebar with character details
 - `components/game/BattleMap.tsx` — Tactical grid combat map (CSS Grid, tokens, click-to-move)
 - `components/game/InitiativeTracker.tsx` — Combat turn order
-- `components/sidebar/Sidebar.tsx` — Right sidebar (room info, player list, activity log)
+- `components/sidebar/Sidebar.tsx` — Right sidebar (room info, player list, campaign status, activity log)
+- `components/sidebar/CampaignConfigModal.tsx` — Campaign configuration: new/existing campaign, pacing, encounter length, system prompt editor
+- `components/sidebar/SystemPromptModal.tsx` — Standalone system prompt editor
 
 ### Shared (packages/shared/src/)
-- `types/messages.ts` — ClientMessage/ServerMessage unions (WebSocket protocol)
+- `types/messages.ts` — ClientMessage/ServerMessage unions (WebSocket protocol) — includes player_action, broadcast, campaign config messages
 - `types/character.ts` — CharacterData, CharacterStaticData, CharacterDynamicData
-- `types/game-state.ts` — GameState, CombatState, GameEvent
+- `types/game-state.ts` — GameState, CombatState, GameEvent, EncounterState, CampaignJournal
 - `types/ai-actions.ts` — AI parsed action types
 - `schemas/messages.ts` — Zod schemas for runtime message validation
-- `constants.ts` — AI_PROVIDERS registry, room limits, token limits
+- `constants.ts` — DM_SYSTEM_PROMPT (single source of truth), room limits, token limits
+- `utils/dice.ts` — Shared dice rolling (rollDie, rollDice, rollCheck, rollInitiative, rollDamage)
+- `utils/check-helpers.ts` — Check modifier computation, label building from character sheets
 
 ## MCP Tools (exposed to Claude Code)
 
 ### Game Communication
 | Tool | Description |
 |------|-------------|
-| `wait_for_message` | Blocks until a player message/dm_request arrives. Returns `{ requestId, systemPrompt, messages }`. Main loop driver. |
-| `send_response` | Sends DM narrative back via WebSocket as `client:dm_response`. |
+| `wait_for_message` | Blocks until a player message arrives. Returns `{ requestId, systemPrompt, messages }`. Main loop driver. |
+| `send_response` | Sends DM narrative back, stores in conversation history, broadcasts to all players. |
 | `get_players` | Returns current player list with character summaries. |
+| `get_game_state` | Full game state snapshot (combat, encounter, checks, events, characters). |
+| `get_character` | Specific character's full data (static + dynamic) by name. |
+
+### HP & Conditions
+| Tool | Description |
+|------|-------------|
+| `apply_damage` | Deal damage to a character/combatant (handles temp HP absorption). |
+| `heal` | Restore HP (capped at max). |
+| `set_hp` | Set exact HP value. |
+| `add_condition` | Add condition (poisoned, stunned, etc.) with optional duration. |
+| `remove_condition` | Remove a condition. |
+
+### Combat Management
+| Tool | Description |
+|------|-------------|
+| `start_combat` | Initialize combat, auto-roll initiative, create turn order. |
+| `end_combat` | End combat, return to exploration phase. |
+| `advance_turn` | Next combatant's turn, increment round counter. |
+| `add_combatant` | Add mid-fight reinforcements. |
+| `remove_combatant` | Remove dead/fled/dismissed combatant. |
+| `move_combatant` | Move token on battle map. |
+
+### Spell Slots
+| Tool | Description |
+|------|-------------|
+| `use_spell_slot` | Expend a spell slot at a given level. |
+| `restore_spell_slot` | Restore a slot (short rest, Arcane Recovery, etc.). |
+
+### Battle Map
+| Tool | Description |
+|------|-------------|
+| `update_battle_map` | Set/update grid with dimensions, terrain tiles, name. |
 
 ### D&D Reference
 | Tool | Description |
@@ -130,35 +180,39 @@ pnpm deploy:web     # Deploy web only
 | `lookup_spell` | Look up spell details from D&D 5e SRD API |
 | `lookup_monster` | Look up monster stats |
 | `lookup_condition` | Look up condition effects |
-| `roll_dice` | Roll dice (e.g., "2d6+3", "d20 advantage") |
+| `roll_dice` | Roll dice — direct DM rolls (notation only) or interactive player checks (with targetCharacter, checkType, ability, skill, dc) |
 
-### Campaign Documentation
+### Campaign Persistence
 | Tool | Description |
 |------|-------------|
-| `save_campaign_note` | Save/update a campaign note (stored in `.aidnd/campaigns/{roomCode}/`) |
-| `read_campaign_note` | Read a specific note |
-| `list_campaign_notes` | List all notes for current campaign |
+| `create_campaign` | Create a new campaign directory with manifest |
+| `list_campaigns` | List all campaigns with metadata |
+| `load_campaign_context` | Load full campaign context (manifest + system prompt + active context + session notes + characters) |
+| `save_campaign_file` | Save/update a campaign file (notes, context, characters) |
+| `read_campaign_file` | Read a specific campaign file |
+| `list_campaign_files` | List all files in current campaign |
+| `end_session` | End session workflow (save summary, update context, snapshot characters, increment count) |
 
 ## WebSocket Protocol
-- **Client→Server:** chat, join, dm_response, dm_config, set_character, start_story, roll_dice, combat_action, move_token, end_turn, rollback, set_system_prompt, set_pacing, dm_override, set_password, kick_player, destroy_room
-- **Server→Client:** chat, ai, system, error, room_joined, player_joined, player_left, character_updated, check_request, check_result, dice_roll, combat_update, game_state_sync, rollback, event_log, dm_request, room_destroyed
+- **Client→Server (browser):** chat, join, set_character, start_story, roll_dice, combat_action, move_token, end_turn, rollback, set_system_prompt, set_pacing, dm_override, set_password, kick_player, destroy_room, configure_campaign
+- **Client→Server (bridge):** broadcast, dm_response, campaign_loaded, campaign_configured_ack, action_result
+- **Server→Client:** chat, ai, system, error, room_joined, player_joined, player_left, character_updated, check_request, check_result, dice_roll, combat_update, game_state_sync, rollback, event_log, dm_config_update, campaign_loaded, campaign_configured, player_action, dm_roll_request, room_destroyed
 
 ## Message Flow (per DM turn)
-1. Player types message → WebSocket → Worker broadcasts to all room participants
-2. Worker sends `server:dm_request` to DM participant (MCP bridge)
-3. MCP bridge ws-client receives dm_request → pushes to message-queue
-4. message-queue resolves `wait_for_message` → Claude Code receives `{ requestId, systemPrompt, messages }`
-5. Claude Code thinks, optionally calls `lookup_spell` / `roll_dice` / etc.
-6. Claude Code calls `send_response({ requestId, text: "The dragon..." })`
-7. MCP bridge ws-client sends `client:dm_response` via WebSocket
-8. Worker receives dm_response → broadcasts AI narrative to all players
+1. Player types message → WebSocket → Worker broadcasts chat to all + forwards as `server:player_action` to bridge
+2. Bridge's GameStateManager processes the action (adds to conversation history, creates dm_request)
+3. Message queue resolves `wait_for_message` → Claude Code receives `{ requestId, systemPrompt, messages }`
+4. Claude Code thinks, optionally calls MCP tools (`roll_dice`, `apply_damage`, `start_combat`, etc.)
+5. Claude Code calls `send_response({ requestId, text: "The dragon..." })`
+6. Bridge stores response in conversation history, sends `client:broadcast` with `server:ai` payload
+7. Worker receives `client:broadcast` → relays AI narrative to all players
 
 ## GDD Progress (Phase Completion)
 - Phase 1 (Foundation): COMPLETE — multiplayer chat, multi-provider AI, OAuth, reconnection
 - Phase 2 (Character Integration): COMPLETE — D&D Beyond import, character sheet, party list
 - Phase 3 (Game State & Rules): COMPLETE — dice, spell tracking, HP, state resolver, initiative, skill check flow, event log with rollback, editable system prompt
-- Phase 4 (Battle Map): COMPLETE — CSS Grid map renderer, token placement, click-to-move with BFS range highlighting, conditions on tokens, InitiativeTracker integration
-- Phase 5 (Campaign Persistence): NOT STARTED (D1 database)
+- Phase 4 (Battle Map): COMPLETE — CSS Grid map renderer, token placement, click-to-move with BFS range highlighting, conditions on tokens, InitiativeTracker integration. Architecture migration: extension → MCP bridge, worker → pure relay
+- Phase 5 (Campaign Persistence): IN PROGRESS — campaign config UI (CampaignConfigModal), local file persistence (.aidnd/campaigns/), campaign manifest with session tracking, character snapshots, system prompt persistence. D1 database NOT YET started
 - Phase 6 (Polish): NOT STARTED
 
 ## Testing

@@ -8,6 +8,7 @@ import { LeftSidebar } from "@/components/character/LeftSidebar";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { InitiativeTracker } from "@/components/game/InitiativeTracker";
 import { BattleMap } from "@/components/game/BattleMap";
+import { CampaignConfigModal } from "@/components/sidebar/CampaignConfigModal";
 import type {
   BattleMapState,
   CharacterData,
@@ -99,6 +100,8 @@ function GameContent({
   const [campaigns, setCampaigns] = useState<{ slug: string; name: string; lastPlayedAt: string; sessionCount: number }[]>([]);
   const [activeCampaignSlug, setActiveCampaignSlug] = useState<string | undefined>(undefined);
   const [activeCampaignName, setActiveCampaignName] = useState<string | undefined>(undefined);
+  const [campaignConfigured, setCampaignConfigured] = useState(false);
+  const [showCampaignConfig, setShowCampaignConfig] = useState(false);
 
   // Join state — don't render game UI until successfully joined
   const [joined, setJoined] = useState(false);
@@ -160,6 +163,7 @@ function GameContent({
             }
           }
           if (msg.storyStarted !== undefined) setStoryStarted(msg.storyStarted);
+          if (msg.campaignConfigured) setCampaignConfigured(true);
           if (msg.activeCampaignSlug) setActiveCampaignSlug(msg.activeCampaignSlug);
           if (msg.activeCampaignName) setActiveCampaignName(msg.activeCampaignName);
           break;
@@ -255,6 +259,22 @@ function GameContent({
         case "server:campaign_loaded":
           setActiveCampaignSlug(msg.campaignSlug);
           setActiveCampaignName(msg.campaignName);
+          break;
+
+        case "server:campaign_configured":
+          setCampaignConfigured(true);
+          setActiveCampaignSlug(msg.campaignSlug);
+          setActiveCampaignName(msg.campaignName);
+          setPacingProfile(msg.pacingProfile);
+          setEncounterLength(msg.encounterLength);
+          if (msg.systemPrompt) setCustomSystemPrompt(msg.systemPrompt);
+          // Restore characters from campaign if provided
+          if (msg.restoredCharacters) {
+            setPartyCharacters((prev) => ({ ...prev, ...msg.restoredCharacters }));
+            if (msg.restoredCharacters[playerName]) {
+              setMyCharacter(msg.restoredCharacters[playerName]);
+            }
+          }
           break;
 
         case "server:event_log":
@@ -354,23 +374,14 @@ function GameContent({
     send({ type: "client:set_password", password });
   };
 
-  const handleSetPacing = (profile: PacingProfile, length: EncounterLength) => {
-    send({ type: "client:set_pacing", profile, encounterLength: length });
-    setPacingProfile(profile);
-    setEncounterLength(length);
-  };
-
-  const handleSetSystemPrompt = (prompt?: string) => {
-    send({ type: "client:set_system_prompt", prompt });
-    setCustomSystemPrompt(prompt);
-  };
-
-  const handleSelectCampaign = (slug: string) => {
-    send({ type: "client:set_campaign", campaignSlug: slug });
-  };
-
-  const handleCreateCampaign = (name: string) => {
-    send({ type: "client:set_campaign", newCampaignName: name });
+  const handleConfigureCampaign = (config: {
+    campaignName: string;
+    systemPrompt?: string;
+    pacingProfile: PacingProfile;
+    encounterLength: EncounterLength;
+    existingCampaignSlug?: string;
+  }) => {
+    send({ type: "client:configure_campaign", ...config });
   };
 
   const handleCharacterImported = useCallback(
@@ -499,22 +510,24 @@ function GameContent({
         storyStarted={storyStarted}
         combatState={combatState}
         eventLog={eventLog}
-        pacingProfile={pacingProfile}
-        encounterLength={encounterLength}
-        customSystemPrompt={customSystemPrompt}
+        campaignConfigured={campaignConfigured}
+        activeCampaignName={activeCampaignName}
         onKick={handleKick}
         onStartStory={handleStartStory}
         onRollback={handleRollback}
         onDestroyRoom={handleDestroyRoom}
         onSetPassword={handleSetPassword}
-        onSetPacing={handleSetPacing}
-        onSetSystemPrompt={handleSetSystemPrompt}
-        campaigns={campaigns}
-        activeCampaignSlug={activeCampaignSlug}
-        activeCampaignName={activeCampaignName}
-        onSelectCampaign={handleSelectCampaign}
-        onCreateCampaign={handleCreateCampaign}
+        onOpenCampaignConfig={() => setShowCampaignConfig(true)}
       />
+
+      {/* Campaign Config Modal */}
+      {showCampaignConfig && (
+        <CampaignConfigModal
+          campaigns={campaigns}
+          onSubmit={handleConfigureCampaign}
+          onClose={() => setShowCampaignConfig(false)}
+        />
+      )}
     </div>
   );
 }
