@@ -134,7 +134,8 @@ export async function startCli(): Promise<void> {
   console.log(`Campaigns:  ${campaignsDir}`);
   console.log(`Temp dir:   ${tmpDir}`);
   console.log("");
-  console.log("Launching Claude Code...\n");
+  console.log("Launching Claude Code...");
+  console.log('Type "start" to begin the game.\n');
 
   // Spawn Claude Code
   const claude = spawn(
@@ -145,9 +146,7 @@ export async function startCli(): Promise<void> {
       "--model",
       model,
       "--append-system-prompt",
-      "You are the AI Dungeon Master. Read CLAUDE.md for your full instructions, then call wait_for_message to begin.",
-      "-p",
-      "Read CLAUDE.md, then call wait_for_message to start the game loop.",
+      "You are the AI Dungeon Master. Read CLAUDE.md for your full instructions. When the user sends any message (like 'start'), immediately call wait_for_message to begin the game loop. Do NOT ask clarifying questions — just start.",
     ],
     {
       cwd: tmpDir,
