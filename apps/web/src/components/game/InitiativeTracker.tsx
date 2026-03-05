@@ -38,7 +38,7 @@ export function InitiativeTracker({ combat, onCombatantClick }: InitiativeTracke
           ))}
         </div>
       </div>
-      <div className="flex gap-1.5 overflow-x-auto pb-1">
+      <div className="flex gap-1.5 overflow-x-auto p-1">
         {combat.turnOrder.map((id, idx) => {
           const combatant = combat.combatants[id];
           if (!combatant) return null;

@@ -106,9 +106,11 @@ interface ChatPanelProps {
   connectionState: ConnectionState;
   onRollDice?: (checkRequestId: string) => void;
   myCharacterName?: string;
+  isMyTurn?: boolean;
+  onEndTurn?: () => void;
 }
 
-export function ChatPanel({ messages, onSend, connectionState, onRollDice, myCharacterName }: ChatPanelProps) {
+export function ChatPanel({ messages, onSend, connectionState, onRollDice, myCharacterName, isMyTurn, onEndTurn }: ChatPanelProps) {
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -189,6 +191,16 @@ export function ChatPanel({ messages, onSend, connectionState, onRollDice, myCha
                        text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2
                        focus:ring-purple-500 disabled:opacity-50"
           />
+          {isMyTurn && onEndTurn && (
+            <button
+              type="button"
+              onClick={onEndTurn}
+              className="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2.5 rounded-lg
+                         font-medium transition-colors whitespace-nowrap"
+            >
+              End Turn
+            </button>
+          )}
           <button
             type="submit"
             disabled={!isConnected || !input.trim()}

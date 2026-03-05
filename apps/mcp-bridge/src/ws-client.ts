@@ -285,6 +285,9 @@ export class WSClient {
         sessionCount: manifest.sessionCount,
       });
 
+      // Restore character snapshots from campaign into game state
+      this.restoreCharactersFromCampaign(cm);
+
       const campaigns = cm.listCampaigns();
       this.send({
         type: "client:dm_config",
@@ -295,6 +298,37 @@ export class WSClient {
     } catch (e) {
       console.error(
         `[ws-client] Campaign error: ${e instanceof Error ? e.message : String(e)}`
+      );
+    }
+  }
+
+  /** Restore saved character snapshots from campaign into bridge + broadcast to worker. */
+  private restoreCharactersFromCampaign(cm: CampaignManager): void {
+    try {
+      const snapshots = cm.loadCharacterSnapshots();
+      const count = Object.keys(snapshots).length;
+      if (count === 0) return;
+
+      for (const [playerName, charData] of Object.entries(snapshots)) {
+        const character = charData as CharacterData;
+        // Only restore if we don't already have this character (live data takes priority)
+        if (!this.characters[playerName]) {
+          this.characters[playerName] = character;
+          this.gameStateManager.characters[playerName] = character;
+
+          // Broadcast to worker so the frontend gets the character sheet
+          this.broadcastViaWorker({
+            type: "server:character_updated",
+            playerName,
+            character,
+          });
+        }
+      }
+
+      console.error(`[ws-client] Restored ${count} character(s) from campaign snapshots`);
+    } catch (e) {
+      console.error(
+        `[ws-client] Character restore error: ${e instanceof Error ? e.message : String(e)}`
       );
     }
   }
@@ -472,6 +506,7 @@ export class WSClient {
     advantage?: boolean;
     disadvantage?: boolean;
     reason: string;
+    notation?: string;
   }): Promise<CheckResult> {
     return new Promise((resolve, reject) => {
       // Use GameStateManager to create the check request
@@ -540,8 +575,26 @@ export class WSClient {
       }, 500);
 
       const timeout = setTimeout(() => {
-        clearInterval(interval);
-        reject(new Error(`Check request timed out for ${params.targetCharacter}`));
+        // Auto-resolve: roll server-side instead of rejecting
+        // Find the player name for the target character
+        const charEntry = Object.entries(this.gameStateManager.characters).find(
+          ([, c]) => c.static.name.toLowerCase() === params.targetCharacter.toLowerCase()
+        );
+        if (charEntry) {
+          const [targetPlayerName] = charEntry;
+          console.error(`[ws-client] Check timed out for ${params.targetCharacter}, auto-resolving...`);
+          this.gameStateManager.handleRollDice(targetPlayerName, checkId);
+          // The polling interval will detect the cleared check and resolve normally
+        } else {
+          // No character found — clear interval and resolve with a fallback
+          clearInterval(interval);
+          resolve({
+            requestId: checkId,
+            roll: { id: crypto.randomUUID(), rolls: [], modifier: 0, total: 0, label: params.reason },
+            success: false,
+            characterName: params.targetCharacter,
+          });
+        }
       }, 120_000);
     });
   }

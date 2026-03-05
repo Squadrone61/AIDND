@@ -456,7 +456,7 @@ export function Sidebar({
 
       {/* Destroy Room — host only */}
       {isHost && onDestroyRoom && (
-        <div className="border-t border-red-900/30 pt-3 mt-4">
+        <div className="border-t border-red-900/30">
           <button
             onClick={() => {
               if (

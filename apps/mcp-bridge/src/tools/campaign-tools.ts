@@ -1,10 +1,12 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { CampaignManager } from "../services/campaign-manager.js";
+import type { WSClient } from "../ws-client.js";
 
 export function registerCampaignTools(
   server: McpServer,
-  campaignManager: CampaignManager
+  campaignManager: CampaignManager,
+  wsClient: WSClient,
 ): void {
   // --- Campaign lifecycle ---
 
@@ -116,12 +118,19 @@ export function registerCampaignTools(
     },
     async ({ summary, activeContext }) => {
       try {
-        const result = campaignManager.endSession(summary, activeContext);
+        // Pass current characters for snapshotting and player list update
+        const characters = wsClient.characters;
+        const hasCharacters = Object.keys(characters).length > 0;
+        const result = campaignManager.endSession(
+          summary,
+          activeContext,
+          hasCharacters ? characters : undefined,
+        );
         return {
           content: [
             {
               type: "text" as const,
-              text: `Session ${result.sessionNumber} ended. Summary saved, active context updated.`,
+              text: `Session ${result.sessionNumber} ended. Summary saved, active context updated.${hasCharacters ? " Characters snapshotted." : ""}`,
             },
           ],
         };

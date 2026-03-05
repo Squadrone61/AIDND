@@ -150,7 +150,45 @@ export async function startCli(): Promise<void> {
       "--tools",
       "",
       "--allowedTools",
-      "mcp__aidnd-dm__wait_for_message,mcp__aidnd-dm__send_response,mcp__aidnd-dm__get_players,mcp__aidnd-dm__lookup_spell,mcp__aidnd-dm__lookup_monster,mcp__aidnd-dm__lookup_condition,mcp__aidnd-dm__roll_dice,mcp__aidnd-dm__create_campaign,mcp__aidnd-dm__list_campaigns,mcp__aidnd-dm__load_campaign_context,mcp__aidnd-dm__save_campaign_file,mcp__aidnd-dm__read_campaign_file,mcp__aidnd-dm__list_campaign_files,mcp__aidnd-dm__end_session",
+      [
+        // Game communication
+        "mcp__aidnd-dm__wait_for_message",
+        "mcp__aidnd-dm__send_response",
+        "mcp__aidnd-dm__get_players",
+        "mcp__aidnd-dm__get_game_state",
+        "mcp__aidnd-dm__get_character",
+        // HP & conditions
+        "mcp__aidnd-dm__apply_damage",
+        "mcp__aidnd-dm__heal",
+        "mcp__aidnd-dm__set_hp",
+        "mcp__aidnd-dm__add_condition",
+        "mcp__aidnd-dm__remove_condition",
+        // Combat management
+        "mcp__aidnd-dm__start_combat",
+        "mcp__aidnd-dm__end_combat",
+        "mcp__aidnd-dm__advance_turn",
+        "mcp__aidnd-dm__add_combatant",
+        "mcp__aidnd-dm__remove_combatant",
+        "mcp__aidnd-dm__move_combatant",
+        // Spell slots
+        "mcp__aidnd-dm__use_spell_slot",
+        "mcp__aidnd-dm__restore_spell_slot",
+        // Battle map
+        "mcp__aidnd-dm__update_battle_map",
+        // D&D reference
+        "mcp__aidnd-dm__lookup_spell",
+        "mcp__aidnd-dm__lookup_monster",
+        "mcp__aidnd-dm__lookup_condition",
+        "mcp__aidnd-dm__roll_dice",
+        // Campaign persistence
+        "mcp__aidnd-dm__create_campaign",
+        "mcp__aidnd-dm__list_campaigns",
+        "mcp__aidnd-dm__load_campaign_context",
+        "mcp__aidnd-dm__save_campaign_file",
+        "mcp__aidnd-dm__read_campaign_file",
+        "mcp__aidnd-dm__list_campaign_files",
+        "mcp__aidnd-dm__end_session",
+      ].join(","),
       "--",
       "Start the DM game loop. Call wait_for_message now and keep looping.",
     ],

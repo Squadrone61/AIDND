@@ -37,6 +37,7 @@ export const checkTypeSchema = z.enum([
   "saving_throw",
   "attack",
   "custom",
+  "damage",
 ]);
 
 export const checkRequestSchema = z.object({
@@ -49,6 +50,7 @@ export const checkRequestSchema = z.object({
   advantage: z.boolean().optional(),
   disadvantage: z.boolean().optional(),
   reason: z.string(),
+  notation: z.string().optional(),
   dmInitiated: z.boolean().optional(),
 });
 

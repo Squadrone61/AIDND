@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useCallback, useState, useEffect, useRef } from "react";
+import { useCallback, useState, useEffect, useRef, useMemo } from "react";
 import { ChatPanel } from "@/components/chat/ChatPanel";
 import { Sidebar } from "@/components/sidebar/Sidebar";
 import { LeftSidebar } from "@/components/character/LeftSidebar";
@@ -400,6 +400,17 @@ function GameContent({
     setPasswordInput("");
   };
 
+  // Compute whether it's this player's turn in combat
+  const isMyTurn = useMemo(() => {
+    if (!combatState || combatState.phase !== "active" || !myCharacter) return false;
+    const activeId = combatState.turnOrder[combatState.turnIndex];
+    const activeCombatant = combatState.combatants[activeId];
+    return (
+      activeCombatant?.type === "player" &&
+      activeCombatant.name.toLowerCase() === myCharacter.static.name.toLowerCase()
+    );
+  }, [combatState, myCharacter]);
+
   // Password prompt overlay
   if (passwordRequired) {
     return (
@@ -496,6 +507,8 @@ function GameContent({
           connectionState={connectionState}
           onRollDice={handleRollDice}
           myCharacterName={myCharacter?.static.name}
+          isMyTurn={isMyTurn}
+          onEndTurn={handleEndTurn}
         />
       </div>
       <Sidebar

@@ -50,6 +50,7 @@ export class GameStateManager {
 
   private broadcast: BroadcastFn;
   private messageQueue: MessageQueue;
+  private lastSentIndex = 0;
   private campaignManager: CampaignManager;
   /** Host player name (for permission checks) */
   hostName = "";
@@ -64,6 +65,15 @@ export class GameStateManager {
     this.broadcast = opts.broadcast;
     this.messageQueue = opts.messageQueue;
     this.campaignManager = opts.campaignManager;
+  }
+
+  /** Push a DM request with only new messages since last send */
+  private pushDMRequest(): void {
+    const requestId = crypto.randomUUID();
+    const systemPrompt = this.gameState.customSystemPrompt ?? "";
+    const newMessages = this.conversationHistory.slice(this.lastSentIndex);
+    this.lastSentIndex = this.conversationHistory.length;
+    this.messageQueue.push({ requestId, systemPrompt, messages: newMessages });
   }
 
   // ─── Player Action Dispatch ───
@@ -135,13 +145,7 @@ export class GameStateManager {
     this.conversationHistory.push({ role: "user", content: userMessage });
 
     // Push to message queue for Claude Code to pick up
-    const requestId = crypto.randomUUID();
-    const systemPrompt = this.gameState.customSystemPrompt ?? "";
-    this.messageQueue.push({
-      requestId,
-      systemPrompt,
-      messages: [...this.conversationHistory],
-    });
+    this.pushDMRequest();
   }
 
   // ─── Start Story ───
@@ -199,12 +203,7 @@ export class GameStateManager {
       content: userMsg,
     });
 
-    const requestId = crypto.randomUUID();
-    this.messageQueue.push({
-      requestId,
-      systemPrompt,
-      messages: [...this.conversationHistory],
-    });
+    this.pushDMRequest();
   }
 
   // ─── Send Response (called by MCP tool) ───
@@ -212,6 +211,7 @@ export class GameStateManager {
   sendResponse(requestId: string, text: string): void {
     // Store in conversation history
     this.conversationHistory.push({ role: "assistant", content: text });
+    this.lastSentIndex = this.conversationHistory.length;
 
     // Broadcast AI narrative to all players
     this.broadcast({
@@ -245,6 +245,45 @@ export class GameStateManager {
         message: "This check is not for your character",
         code: "WRONG_CHARACTER",
       }, [playerName]);
+      return;
+    }
+
+    // Damage rolls use the provided notation directly (no d20, no modifier computation)
+    if (pendingCheck.type === "damage" && pendingCheck.notation) {
+      const roll = rollDamage(pendingCheck.notation);
+
+      // Broadcast dice roll
+      this.broadcast({
+        type: "server:dice_roll",
+        roll,
+        playerName,
+        timestamp: Date.now(),
+        id: crypto.randomUUID(),
+      });
+
+      // Broadcast check result (success is always true for damage — it's just a roll)
+      this.broadcast({
+        type: "server:check_result",
+        result: {
+          requestId: pendingCheck.id,
+          roll,
+          success: true,
+          characterName: char.static.name,
+        },
+        timestamp: Date.now(),
+        id: crypto.randomUUID(),
+      });
+
+      // Clear pending check
+      if (combat?.pendingCheck?.id === pendingCheck.id) {
+        combat.pendingCheck = undefined;
+      }
+      if (this.gameState.pendingCheck?.id === pendingCheck.id) {
+        this.gameState.pendingCheck = undefined;
+      }
+
+      const systemMsg = `[System: ${char.static.name} rolled ${roll.total} damage (${pendingCheck.notation}) for ${pendingCheck.reason}]`;
+      this.conversationHistory.push({ role: "user", content: systemMsg });
       return;
     }
 
@@ -297,15 +336,6 @@ export class GameStateManager {
     const systemMsg = `[System: ${char.static.name} rolled ${roll.total} on ${pendingCheck.reason}${dcStr} — ${resultLabel}${critStr}]`;
 
     this.conversationHistory.push({ role: "user", content: systemMsg });
-
-    // Push dm_request for AI to narrate the outcome
-    const requestId = crypto.randomUUID();
-    const systemPrompt = this.gameState.customSystemPrompt ?? "";
-    this.messageQueue.push({
-      requestId,
-      systemPrompt,
-      messages: [...this.conversationHistory],
-    });
   }
 
   // ─── Combat Action ───
@@ -352,13 +382,7 @@ export class GameStateManager {
     const userMessage = `[${speakerName}]: ${sanitized}`;
     this.conversationHistory.push({ role: "user", content: userMessage });
 
-    const requestId = crypto.randomUUID();
-    const systemPrompt = this.gameState.customSystemPrompt ?? "";
-    this.messageQueue.push({
-      requestId,
-      systemPrompt,
-      messages: [...this.conversationHistory],
-    });
+    this.pushDMRequest();
   }
 
   // ─── End Turn ───
@@ -517,6 +541,7 @@ export class GameStateManager {
 
     // Truncate conversation history
     this.conversationHistory = this.conversationHistory.slice(0, event.conversationIndex);
+    this.lastSentIndex = Math.min(this.lastSentIndex, this.conversationHistory.length);
 
     // Truncate event log
     this.gameState.eventLog = this.gameState.eventLog.slice(0, eventIdx);
@@ -688,13 +713,7 @@ export class GameStateManager {
     const turnMsg = `[System: It is now ${activeCombatant.name}'s turn${posStr}. HP: ${hp}, AC: ${ac}, Speed: ${speed}ft.${conditions}\nResolve this combatant's turn.]`;
     this.conversationHistory.push({ role: "user", content: turnMsg });
 
-    const requestId = crypto.randomUUID();
-    const systemPrompt = this.gameState.customSystemPrompt ?? "";
-    this.messageQueue.push({
-      requestId,
-      systemPrompt,
-      messages: [...this.conversationHistory],
-    });
+    this.pushDMRequest();
 
     // NPC turns are resolved by the AI responding via send_response,
     // which calls sendResponse() → advance_turn tool → etc.
@@ -933,7 +952,6 @@ export class GameStateManager {
   startCombat(combatants: Array<{
     name: string;
     type: "player" | "npc" | "enemy";
-    initiative?: number;
     initiativeModifier?: number;
     speed?: number;
     maxHP?: number;
@@ -948,8 +966,23 @@ export class GameStateManager {
 
     for (const c of combatants) {
       const id = crypto.randomUUID();
-      const initMod = c.initiativeModifier ?? 0;
-      const initiative = c.initiative ?? rollInitiative(initMod);
+
+      // For players, auto-read initiative modifier from character sheet (Dex mod)
+      let initMod = c.initiativeModifier ?? 0;
+      let linkedPlayerId: string | undefined;
+
+      if (c.type === "player") {
+        const charEntry = Object.entries(this.characters).find(
+          ([, ch]) => ch.static.name.toLowerCase() === c.name.toLowerCase()
+        );
+        if (charEntry) {
+          linkedPlayerId = charEntry[0];
+          const dex = charEntry[1].static.abilities.dexterity;
+          initMod = c.initiativeModifier ?? Math.floor((dex - 10) / 2);
+        }
+      }
+
+      const initiative = rollInitiative(initMod);
 
       combatantMap[id] = {
         id,
@@ -967,17 +1000,8 @@ export class GameStateManager {
         tempHP: 0,
         armorClass: c.armorClass,
         conditions: [],
+        playerId: linkedPlayerId,
       };
-
-      // Link player combatants
-      if (c.type === "player") {
-        const charEntry = Object.entries(this.characters).find(
-          ([, ch]) => ch.static.name.toLowerCase() === c.name.toLowerCase()
-        );
-        if (charEntry) {
-          combatantMap[id].playerId = charEntry[0];
-        }
-      }
 
       initiativeOrder.push({ id, initiative });
     }
@@ -1046,6 +1070,13 @@ export class GameStateManager {
       return "No active combat";
     }
 
+    // Guard: AI cannot end a player's turn — players click End Turn themselves
+    const activeId = combat.turnOrder[combat.turnIndex];
+    const activeCombatant = combat.combatants[activeId];
+    if (activeCombatant?.type === "player") {
+      return `Cannot advance turn: it is ${activeCombatant.name}'s turn (a player character). Players end their own turns via the End Turn button.`;
+    }
+
     this.advanceTurn(combat);
 
     this.broadcast({
@@ -1055,8 +1086,8 @@ export class GameStateManager {
       timestamp: Date.now(),
     });
 
-    const activeId = combat.turnOrder[combat.turnIndex];
-    const active = combat.combatants[activeId];
+    const newActiveId = combat.turnOrder[combat.turnIndex];
+    const active = combat.combatants[newActiveId];
     return `Advanced to ${active?.name ?? "unknown"}'s turn (Round ${combat.round})`;
   }
 
@@ -1064,7 +1095,6 @@ export class GameStateManager {
   addCombatant(c: {
     name: string;
     type: "player" | "npc" | "enemy";
-    initiative?: number;
     initiativeModifier?: number;
     speed?: number;
     maxHP?: number;
@@ -1080,8 +1110,20 @@ export class GameStateManager {
     }
 
     const id = crypto.randomUUID();
-    const initMod = c.initiativeModifier ?? 0;
-    const initiative = c.initiative ?? rollInitiative(initMod);
+
+    // For players, auto-read initiative modifier from character sheet (Dex mod)
+    let initMod = c.initiativeModifier ?? 0;
+    if (c.type === "player") {
+      const charEntry = Object.entries(this.characters).find(
+        ([, ch]) => ch.static.name.toLowerCase() === c.name.toLowerCase()
+      );
+      if (charEntry) {
+        const dex = charEntry[1].static.abilities.dexterity;
+        initMod = c.initiativeModifier ?? Math.floor((dex - 10) / 2);
+      }
+    }
+
+    const initiative = rollInitiative(initMod);
 
     combat.combatants[id] = {
       id,
@@ -1259,6 +1301,7 @@ export class GameStateManager {
     advantage?: boolean;
     disadvantage?: boolean;
     reason: string;
+    notation?: string;
   }): string {
     // Verify target character exists
     const charEntry = Object.entries(this.characters).find(
@@ -1278,6 +1321,7 @@ export class GameStateManager {
       advantage: params.advantage,
       disadvantage: params.disadvantage,
       reason: params.reason,
+      notation: params.notation,
       dmInitiated: true,
     };
 

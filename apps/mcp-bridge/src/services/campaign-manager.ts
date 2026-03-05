@@ -248,12 +248,41 @@ export class CampaignManager {
       );
       fs.writeFileSync(
         path.join(charDir, `${slug}.json`),
-        JSON.stringify(charData, null, 2),
+        JSON.stringify({ playerName, ...charData }, null, 2),
         "utf-8"
       );
       count++;
     }
     return count;
+  }
+
+  /** Load character snapshots from campaign's characters/ folder.
+   *  Returns a map of playerName → { static, dynamic } for restoring into game state. */
+  loadCharacterSnapshots(): Record<string, { static: unknown; dynamic: unknown }> {
+    if (!this.activeDir) throw new Error("No campaign loaded");
+    const charDir = path.join(this.activeDir, "characters");
+    if (!fs.existsSync(charDir)) return {};
+
+    const result: Record<string, { static: unknown; dynamic: unknown }> = {};
+    const charFiles = fs.readdirSync(charDir).filter((f) => f.endsWith(".json"));
+
+    for (const file of charFiles) {
+      try {
+        const data = JSON.parse(
+          fs.readFileSync(path.join(charDir, file), "utf-8")
+        );
+        const playerName = data.playerName as string | undefined;
+        const charName = (data.static as { name?: string })?.name;
+        // Use saved playerName, fall back to character name
+        const key = playerName || charName || file.replace(".json", "");
+        if (data.static && data.dynamic) {
+          result[key] = { static: data.static, dynamic: data.dynamic };
+        }
+      } catch {
+        // skip corrupt files
+      }
+    }
+    return result;
   }
 
   /**

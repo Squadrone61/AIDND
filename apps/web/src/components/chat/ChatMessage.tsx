@@ -84,7 +84,7 @@ export function ChatMessage({ message, onRollDice, myCharacterName }: ChatMessag
               className="mt-1 bg-amber-600 hover:bg-amber-700 text-white text-sm px-4 py-1.5
                          rounded-lg font-medium transition-colors"
             >
-              Roll d20
+              {check.type === "damage" ? `Roll Damage${check.notation ? ` (${check.notation})` : ""}` : "Roll d20"}
             </button>
           )}
         </div>

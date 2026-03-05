@@ -18,7 +18,7 @@ export function createMcpServer(
 
   registerGameTools(server, messageQueue, wsClient);
   registerDndTools(server, wsClient);
-  registerCampaignTools(server, campaignManager);
+  registerCampaignTools(server, campaignManager, wsClient);
 
   return server;
 }

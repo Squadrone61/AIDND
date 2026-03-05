@@ -199,13 +199,12 @@ export function registerGameTools(
 
   server.tool(
     "start_combat",
-    "Initialize combat with a list of combatants. Rolls initiative automatically (unless provided), creates turn order, and broadcasts combat state to all players.",
+    "Initialize combat with a list of combatants. Initiative is rolled automatically by the system for all combatants. Creates turn order and broadcasts combat state to all players.",
     {
       combatants: z.array(z.object({
         name: z.string().describe("Combatant name"),
         type: z.enum(["player", "npc", "enemy"]).describe("Combatant type"),
-        initiative: z.number().optional().describe("Pre-rolled initiative (auto-rolled if omitted)"),
-        initiativeModifier: z.number().optional().describe("Initiative modifier for auto-roll"),
+        initiativeModifier: z.number().optional().describe("Initiative modifier (Dex mod). For players, auto-read from character sheet if omitted."),
         speed: z.number().optional().describe("Movement speed in feet (default 30)"),
         maxHP: z.number().optional().describe("Maximum HP (required for NPCs/enemies)"),
         currentHP: z.number().optional().describe("Current HP (defaults to maxHP)"),
@@ -243,12 +242,11 @@ export function registerGameTools(
 
   server.tool(
     "add_combatant",
-    "Add a new combatant to active combat mid-fight (reinforcements, summoned creatures, etc.).",
+    "Add a new combatant to active combat mid-fight (reinforcements, summoned creatures, etc.). Initiative is rolled automatically.",
     {
       name: z.string().describe("Combatant name"),
       type: z.enum(["player", "npc", "enemy"]).describe("Combatant type"),
-      initiative: z.number().optional().describe("Pre-rolled initiative"),
-      initiativeModifier: z.number().optional().describe("Initiative modifier for auto-roll"),
+      initiativeModifier: z.number().optional().describe("Initiative modifier (Dex mod). For players, auto-read from character sheet if omitted."),
       speed: z.number().optional().describe("Movement speed in feet"),
       maxHP: z.number().optional().describe("Maximum HP"),
       currentHP: z.number().optional().describe("Current HP"),

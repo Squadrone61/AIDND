@@ -108,7 +108,10 @@ Just provide \`notation\` and optional \`reason\`. Roll happens immediately, res
 **Mode 2 — Player check** (interactive):
 Include \`targetCharacter\` + \`checkType\`. The player sees a "Roll d20" button, clicks it, modifiers are computed from their character sheet, and the result appears in chat.
 
-If \`targetCharacter\` is provided → Mode 2. Otherwise → Mode 1.`,
+**Mode 2b — Player damage roll** (interactive):
+Include \`targetCharacter\` + \`checkType: "damage"\` + full \`notation\`. The player sees a "Roll Damage" button and rolls the provided dice notation.
+
+If \`targetCharacter\` is provided → Mode 2/2b. Otherwise → Mode 1.`,
     {
       notation: z
         .string()
@@ -122,9 +125,9 @@ If \`targetCharacter\` is provided → Mode 2. Otherwise → Mode 1.`,
         .optional()
         .describe("Character name for interactive player check (triggers Mode 2)"),
       checkType: z
-        .enum(["ability", "skill", "saving_throw", "attack", "custom"])
+        .enum(["ability", "skill", "saving_throw", "attack", "custom", "damage"])
         .optional()
-        .describe("Type of check (required when targetCharacter is set)"),
+        .describe("Type of check (required when targetCharacter is set). Use 'damage' for interactive player damage rolls."),
       ability: z
         .string()
         .optional()
@@ -168,6 +171,7 @@ If \`targetCharacter\` is provided → Mode 2. Otherwise → Mode 1.`,
             advantage,
             disadvantage,
             reason: reason || `${checkType} check`,
+            notation: checkType === "damage" ? notation : undefined,
           });
 
           const successStr = result.dc !== undefined

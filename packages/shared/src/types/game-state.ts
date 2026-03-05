@@ -26,7 +26,7 @@ export interface RollResult {
 
 // ─── Checks ───
 
-export type CheckType = "ability" | "skill" | "saving_throw" | "attack" | "custom";
+export type CheckType = "ability" | "skill" | "saving_throw" | "attack" | "custom" | "damage";
 
 export interface CheckRequest {
   id: string;
@@ -38,6 +38,8 @@ export interface CheckRequest {
   advantage?: boolean;
   disadvantage?: boolean;
   reason: string;
+  /** Dice notation for damage rolls, e.g. "2d6+3" */
+  notation?: string;
   /** When true, this check was initiated by the DM bridge (not parsed from AI text) */
   dmInitiated?: boolean;
 }
