@@ -41,7 +41,7 @@ const result = await esbuild.build({
   // Inject build-time constants
   define: {
     PRODUCTION_WORKER_URL: JSON.stringify(
-      "https://aidnd-worker.safats61.workers.dev"
+      "https://aidnd-api.safaakyuz.com"
     ),
     AIDND_VERSION: JSON.stringify(pkg.version),
   },
