@@ -146,6 +146,8 @@ export async function startCli(): Promise<void> {
       model,
       "--append-system-prompt",
       "You are the AI Dungeon Master. Read CLAUDE.md for your full instructions, then call wait_for_message to begin.",
+      "-p",
+      "Read CLAUDE.md, then call wait_for_message to start the game loop.",
     ],
     {
       cwd: tmpDir,
