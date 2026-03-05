@@ -98,26 +98,18 @@ export async function startCli(): Promise<void> {
   fs.mkdirSync(campaignsDir, { recursive: true });
 
   // Write .mcp.json — command points to this script with --serve
+  // Note: always use "node" directly, not "cmd /c node" — cmd eats stdin
   const isWindows = process.platform === "win32";
   const mcpConfig = {
     mcpServers: {
-      "aidnd-dm": isWindows
-        ? {
-            command: "cmd",
-            args: ["/c", "node", scriptPath, "--serve"],
-            env: {
-              AIDND_ROOM_CODE: roomCode,
-              AIDND_CAMPAIGNS_DIR: campaignsDir,
-            },
-          }
-        : {
-            command: "node",
-            args: [scriptPath, "--serve"],
-            env: {
-              AIDND_ROOM_CODE: roomCode,
-              AIDND_CAMPAIGNS_DIR: campaignsDir,
-            },
-          },
+      "aidnd-dm": {
+        command: "node",
+        args: [scriptPath, "--serve"],
+        env: {
+          AIDND_ROOM_CODE: roomCode,
+          AIDND_CAMPAIGNS_DIR: campaignsDir,
+        },
+      },
     },
   };
 
@@ -134,8 +126,7 @@ export async function startCli(): Promise<void> {
   console.log(`Campaigns:  ${campaignsDir}`);
   console.log(`Temp dir:   ${tmpDir}`);
   console.log("");
-  console.log("Launching Claude Code...");
-  console.log('Type "start" to begin the game.\n');
+  console.log("Launching Claude Code...\n");
 
   // Spawn Claude Code
   const claude = spawn(
@@ -146,7 +137,7 @@ export async function startCli(): Promise<void> {
       "--model",
       model,
       "--append-system-prompt",
-      "You are the AI Dungeon Master. Read CLAUDE.md for your full instructions. When the user sends any message (like 'start'), immediately call wait_for_message to begin the game loop. Do NOT ask clarifying questions — just start.",
+      "You are the AI Dungeon Master. Read CLAUDE.md for your full instructions, then call wait_for_message to begin.",
     ],
     {
       cwd: tmpDir,
