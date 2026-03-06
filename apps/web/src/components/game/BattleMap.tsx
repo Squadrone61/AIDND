@@ -216,12 +216,6 @@ export function BattleMap({
               {movementLeft}ft remaining
             </span>
           </div>
-          <button
-            onClick={onEndTurn}
-            className="px-3 py-0.5 rounded bg-amber-700/60 hover:bg-amber-600/70 text-amber-100 text-xs font-semibold transition-colors shrink-0 cursor-pointer"
-          >
-            End Turn
-          </button>
         </div>
       )}
 

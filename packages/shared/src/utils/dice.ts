@@ -83,7 +83,7 @@ export function rollInitiative(modifier: number): number {
  */
 export function rollDamage(diceStr: string, extraModifier = 0): RollResult {
   // Parse "NdS" or "NdS+M" or "NdS-M"
-  const match = diceStr.match(/^(\d+)d(\d+)(?:([+-])(\d+))?$/i);
+  const match = diceStr.match(/^(\d*)d(\d+)(?:([+-])(\d+))?$/i);
   if (!match) {
     // Fallback: treat as flat damage
     return {
@@ -95,7 +95,7 @@ export function rollDamage(diceStr: string, extraModifier = 0): RollResult {
     };
   }
 
-  const count = parseInt(match[1], 10);
+  const count = match[1] ? parseInt(match[1], 10) : 1;
   const sides = parseInt(match[2], 10) as DieSize;
   const sign = match[3] === "-" ? -1 : 1;
   const diceModifier = match[4] ? parseInt(match[4], 10) * sign : 0;

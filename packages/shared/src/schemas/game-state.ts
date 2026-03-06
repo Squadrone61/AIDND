@@ -58,7 +58,7 @@ export const checkResultSchema = z.object({
   requestId: z.string(),
   roll: rollResultSchema,
   dc: z.number().optional(),
-  success: z.boolean(),
+  success: z.boolean().optional(),
   characterName: z.string(),
 });
 

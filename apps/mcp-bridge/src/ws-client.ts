@@ -377,6 +377,14 @@ export class WSClient {
         systemPrompt: msg.systemPrompt,
       });
 
+      // Populate players in the manifest from current room players
+      const playerNames = this.players
+        .map((p) => p.character?.name || p.name)
+        .filter(Boolean);
+      if (playerNames.length > 0) {
+        cm.updatePlayers(playerNames);
+      }
+
       // Update game state manager
       this.gameStateManager.gameState.pacingProfile = msg.pacingProfile as import("@aidnd/shared/types").PacingProfile;
       this.gameStateManager.gameState.encounterLength = msg.encounterLength as import("@aidnd/shared/types").EncounterLength;
@@ -471,6 +479,15 @@ export class WSClient {
         }
         return summary;
       });
+
+    // Keep campaign manifest players in sync
+    const cm = this.options.campaignManager;
+    if (cm.activeSlug) {
+      const playerNames = this.players
+        .map((p) => p.character?.name || p.name)
+        .filter(Boolean);
+      cm.updatePlayers(playerNames);
+    }
   }
 
   /** Send a client message to the worker. */

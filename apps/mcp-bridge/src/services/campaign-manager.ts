@@ -512,6 +512,23 @@ export class CampaignManager {
     );
   }
 
+  /** Update the players list in the manifest. */
+  updatePlayers(playerNames: string[]): void {
+    if (!this.activeDir) return;
+    const manifestPath = path.join(this.activeDir, "campaign.json");
+    if (!fs.existsSync(manifestPath)) return;
+
+    const manifest = JSON.parse(
+      fs.readFileSync(manifestPath, "utf-8")
+    ) as CampaignManifest;
+    manifest.players = playerNames;
+    fs.writeFileSync(
+      manifestPath,
+      JSON.stringify(manifest, null, 2),
+      "utf-8"
+    );
+  }
+
   /** Get the manifest for the active campaign. */
   getManifest(): CampaignManifest | null {
     if (!this.activeDir) return null;

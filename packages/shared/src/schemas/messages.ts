@@ -370,7 +370,7 @@ export const clientDMCheckResultSchema = z.object({
   type: z.literal("client:dm_check_result"),
   checkRequestId: z.string(),
   roll: rollResultSchema,
-  success: z.boolean(),
+  success: z.boolean().optional(),
   characterName: z.string(),
   dc: z.number().optional(),
   playerName: z.string(),
@@ -518,6 +518,7 @@ export const serverDiceRollSchema = z.object({
   playerName: z.string(),
   timestamp: z.number(),
   id: z.string(),
+  checkRequestId: z.string().optional(),
 });
 
 export const serverCombatUpdateSchema = z.object({

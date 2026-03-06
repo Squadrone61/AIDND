@@ -48,7 +48,7 @@ export interface CheckResult {
   requestId: string;
   roll: RollResult;
   dc?: number;
-  success: boolean;
+  success?: boolean;
   characterName: string;
 }
 

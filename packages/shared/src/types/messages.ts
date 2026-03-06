@@ -184,7 +184,7 @@ export interface ClientDMCheckResultMessage {
   type: "client:dm_check_result";
   checkRequestId: string;
   roll: RollResult;
-  success: boolean;
+  success?: boolean;
   characterName: string;
   dc?: number;
   playerName: string;
@@ -340,6 +340,8 @@ export interface ServerDiceRollMessage {
   playerName: string;
   timestamp: number;
   id: string;
+  /** Links this roll to a check_request (for merging in chat UI) */
+  checkRequestId?: string;
 }
 
 /** Combat state changed */

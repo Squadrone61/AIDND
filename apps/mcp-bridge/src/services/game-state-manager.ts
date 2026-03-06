@@ -259,6 +259,7 @@ export class GameStateManager {
         playerName,
         timestamp: Date.now(),
         id: crypto.randomUUID(),
+        checkRequestId: pendingCheck.id,
       });
 
       // Broadcast check result (success is always true for damage — it's just a roll)
@@ -296,7 +297,7 @@ export class GameStateManager {
       label: buildCheckLabel(pendingCheck),
     });
 
-    const success = pendingCheck.dc !== undefined ? roll.total >= pendingCheck.dc : true;
+    const success = pendingCheck.dc !== undefined ? roll.total >= pendingCheck.dc : undefined;
 
     // Broadcast dice roll
     this.broadcast({
@@ -305,6 +306,7 @@ export class GameStateManager {
       playerName,
       timestamp: Date.now(),
       id: crypto.randomUUID(),
+      checkRequestId: pendingCheck.id,
     });
 
     // Broadcast check result
@@ -330,7 +332,7 @@ export class GameStateManager {
     }
 
     // Inject result into conversation and trigger AI follow-up
-    const resultLabel = success ? "Success" : "Failure";
+    const resultLabel = success === true ? "Success" : success === false ? "Failure" : "Result";
     const dcStr = pendingCheck.dc !== undefined ? ` (DC ${pendingCheck.dc})` : "";
     const critStr = roll.criticalHit ? " (Critical!)" : roll.criticalFail ? " (Critical Fail!)" : "";
     const systemMsg = `[System: ${char.static.name} rolled ${roll.total} on ${pendingCheck.reason}${dcStr} — ${resultLabel}${critStr}]`;
