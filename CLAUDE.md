@@ -140,6 +140,7 @@ pnpm deploy:web     # Deploy web only
 | Tool | Description |
 |------|-------------|
 | `wait_for_message` | Blocks until a player message arrives. Returns `{ requestId, systemPrompt, messages }`. Main loop driver. |
+| `acknowledge` | Silently observe a player message without responding. Use when players are talking to each other or roleplaying among themselves. |
 | `send_response` | Sends DM narrative back, stores in conversation history, broadcasts to all players. |
 | `get_players` | Returns current player list with character summaries. |
 | `get_game_state` | Full game state snapshot (combat, encounter, checks, events, characters). |

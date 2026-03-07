@@ -36,6 +36,26 @@ export function registerGameTools(
   );
 
   server.tool(
+    "acknowledge",
+    "Silently observe player messages without sending a visible response. Use when players are talking to each other, roleplaying between characters, or having conversations that don't need DM input.",
+    {
+      requestId: z
+        .string()
+        .describe("The requestId from the dm_request to acknowledge"),
+    },
+    async ({ requestId }) => {
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: `Acknowledged request ${requestId} — no response sent to players.`,
+          },
+        ],
+      };
+    }
+  );
+
+  server.tool(
     "send_response",
     "Send the DM narrative response back to all players. This broadcasts the AI message, stores it in conversation history, and updates game state.",
     {
