@@ -46,6 +46,12 @@ function getMessageKey(msg: DisplayMessage, index: number): string {
   }
 }
 
+function formatTypingText(names: string[]): string {
+  if (names.length === 1) return `${names[0]} is typing...`;
+  if (names.length === 2) return `${names[0]} and ${names[1]} are typing...`;
+  return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]} are typing...`;
+}
+
 interface ChatPanelProps {
   messages: DisplayMessage[];
   onSend: (content: string) => void;
@@ -54,21 +60,44 @@ interface ChatPanelProps {
   myCharacterName?: string;
   isMyTurn?: boolean;
   onEndTurn?: () => void;
+  typingPlayers?: string[];
+  onTypingChange?: (isTyping: boolean) => void;
 }
 
-export function ChatPanel({ messages, onSend, connectionState, onRollDice, myCharacterName, isMyTurn, onEndTurn }: ChatPanelProps) {
+export function ChatPanel({ messages, onSend, connectionState, onRollDice, myCharacterName, isMyTurn, onEndTurn, typingPlayers, onTypingChange }: ChatPanelProps) {
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setInput(value);
+
+    if (!onTypingChange) return;
+
+    if (value.trim()) {
+      onTypingChange(true);
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = setTimeout(() => onTypingChange(false), 2000);
+    } else {
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      onTypingChange(false);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (input.trim() && connectionState === "connected") {
       onSend(input.trim());
       setInput("");
+      if (onTypingChange) {
+        if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+        onTypingChange(false);
+      }
     }
   };
 
@@ -121,13 +150,20 @@ export function ChatPanel({ messages, onSend, connectionState, onRollDice, myCha
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Typing Indicator */}
+      {typingPlayers && typingPlayers.length > 0 && (
+        <div className="px-4 py-1.5 text-sm text-gray-400 italic shrink-0">
+          {formatTypingText(typingPlayers)}
+        </div>
+      )}
+
       {/* Input */}
       <form onSubmit={handleSubmit} className="border-t border-gray-700 p-4 shrink-0">
         <div className="flex gap-2">
           <input
             type="text"
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={handleInputChange}
             placeholder={isConnected ? "What do you do?" : "Connecting..."}
             disabled={!isConnected}
             maxLength={2000}

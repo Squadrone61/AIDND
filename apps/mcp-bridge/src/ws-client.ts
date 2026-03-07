@@ -595,6 +595,15 @@ export class WSClient {
     }
   }
 
+  /** Broadcast DM typing indicator to all players */
+  sendTypingIndicator(isTyping: boolean): void {
+    this.broadcastViaWorker({
+      type: "server:typing",
+      playerName: "DM",
+      isTyping,
+    });
+  }
+
   /** Send a DM response — now goes through GameStateManager */
   sendDMResponse(requestId: string, text: string): void {
     this.gameStateManager.sendResponse(requestId, text);

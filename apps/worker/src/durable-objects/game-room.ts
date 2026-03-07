@@ -259,6 +259,17 @@ export class GameRoom extends DurableObject<Env> {
       case "client:set_character":
         await this.handleSetCharacter(ws, msg);
         break;
+      case "client:typing": {
+        const session = this.sessions.get(ws);
+        if (session?.playerName) {
+          this.broadcastToApproved({
+            type: "server:typing",
+            playerName: session.playerName,
+            isTyping: msg.isTyping,
+          }, ws);
+        }
+        break;
+      }
       case "client:chat":
       case "client:start_story":
       case "client:roll_dice":

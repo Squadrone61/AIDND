@@ -100,6 +100,7 @@ function GameContent({
   const [activeCampaignName, setActiveCampaignName] = useState<string | undefined>(undefined);
   const [campaignConfigured, setCampaignConfigured] = useState(false);
   const [showCampaignConfig, setShowCampaignConfig] = useState(false);
+  const [typingPlayers, setTypingPlayers] = useState<Map<string, number>>(new Map());
 
   // Join state — don't render game UI until successfully joined
   const [joined, setJoined] = useState(false);
@@ -286,6 +287,25 @@ function GameContent({
           setEventLog((prev) => [...prev, msg.event]);
           break;
 
+        case "server:typing": {
+          setTypingPlayers(prev => {
+            const next = new Map(prev);
+            const existing = next.get(msg.playerName);
+            if (existing) clearTimeout(existing);
+
+            if (msg.isTyping) {
+              const tid = window.setTimeout(() => {
+                setTypingPlayers(p => { const n = new Map(p); n.delete(msg.playerName); return n; });
+              }, 5000);
+              next.set(msg.playerName, tid);
+            } else {
+              next.delete(msg.playerName);
+            }
+            return next;
+          });
+          break;
+        }
+
         case "server:check_request":
           // Append as-is — shows Roll button to target player
           setStoryMessages((prev) => [...prev, msg]);
@@ -449,6 +469,10 @@ function GameContent({
     send({ type: "client:set_password", password });
   };
 
+  const handleTypingChange = useCallback((isTyping: boolean) => {
+    send({ type: "client:typing", isTyping });
+  }, [send]);
+
   const handleConfigureCampaign = (config: {
     campaignName: string;
     systemPrompt?: string;
@@ -584,6 +608,8 @@ function GameContent({
           myCharacterName={myCharacter?.static.name}
           isMyTurn={isMyTurn}
           onEndTurn={handleEndTurn}
+          typingPlayers={Array.from(typingPlayers.keys())}
+          onTypingChange={handleTypingChange}
         />
       </div>
       <Sidebar

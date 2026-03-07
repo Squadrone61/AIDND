@@ -386,6 +386,11 @@ export const clientDestroyRoomSchema = z.object({
   type: z.literal("client:destroy_room"),
 });
 
+export const clientTypingSchema = z.object({
+  type: z.literal("client:typing"),
+  isTyping: z.boolean(),
+});
+
 export const clientBroadcastSchema = z.object({
   type: z.literal("client:broadcast"),
   payload: z.any(), // ServerMessage validated at runtime
@@ -425,6 +430,7 @@ export const clientMessageSchema = z.discriminatedUnion("type", [
   clientDMCheckResultSchema,
   clientBroadcastSchema,
   clientActionResultSchema,
+  clientTypingSchema,
 ]);
 
 // === Server → Client schemas ===
@@ -612,6 +618,12 @@ export const serverPlayerActionSchema = z.object({
   requestId: z.string(),
 });
 
+export const serverTypingSchema = z.object({
+  type: z.literal("server:typing"),
+  playerName: z.string(),
+  isTyping: z.boolean(),
+});
+
 export const serverRoomDestroyedSchema = z.object({
   type: z.literal("server:room_destroyed"),
 });
@@ -641,4 +653,5 @@ export const serverMessageSchema = z.discriminatedUnion("type", [
   serverDMRollRequestSchema,
   serverPlayerActionSchema,
   serverRoomDestroyedSchema,
+  serverTypingSchema,
 ]);

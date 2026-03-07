@@ -16,6 +16,7 @@ export function registerGameTools(
     {},
     async () => {
       const msg = await messageQueue.waitForNext();
+      wsClient.sendTypingIndicator(true);
       return {
         content: [
           {
@@ -44,6 +45,7 @@ export function registerGameTools(
         .describe("The requestId from the dm_request to acknowledge"),
     },
     async ({ requestId }) => {
+      wsClient.sendTypingIndicator(false);
       return {
         content: [
           {
@@ -67,6 +69,7 @@ export function registerGameTools(
         .describe("The DM narrative text to send back to the players"),
     },
     async ({ requestId, text }) => {
+      wsClient.sendTypingIndicator(false);
       wsClient.sendDMResponse(requestId, text);
       return {
         content: [

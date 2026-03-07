@@ -200,6 +200,11 @@ export interface ClientDestroyRoomMessage {
   type: "client:destroy_room";
 }
 
+export interface ClientTypingMessage {
+  type: "client:typing";
+  isTyping: boolean;
+}
+
 /** DM Bridge → Server: broadcast a ServerMessage payload to all (or targeted) players */
 export interface ClientBroadcastMessage {
   type: "client:broadcast";
@@ -240,7 +245,8 @@ export type ClientMessage =
   | ClientDMCheckRequestMessage
   | ClientDMCheckResultMessage
   | ClientBroadcastMessage
-  | ClientActionResultMessage;
+  | ClientActionResultMessage
+  | ClientTypingMessage;
 
 // === Server → Client messages ===
 
@@ -433,6 +439,13 @@ export interface ServerPlayerActionMessage {
   requestId: string;
 }
 
+/** Typing indicator — ephemeral, not persisted */
+export interface ServerTypingMessage {
+  type: "server:typing";
+  playerName: string;
+  isTyping: boolean;
+}
+
 /** Broadcast when host destroys the room — all clients should disconnect */
 export interface ServerRoomDestroyedMessage {
   type: "server:room_destroyed";
@@ -462,4 +475,5 @@ export type ServerMessage =
   | ServerCharacterForCampaignMessage
   | ServerDMRollRequestMessage
   | ServerPlayerActionMessage
-  | ServerRoomDestroyedMessage;
+  | ServerRoomDestroyedMessage
+  | ServerTypingMessage;
