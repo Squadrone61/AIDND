@@ -439,29 +439,6 @@ export class CampaignManager {
     return { sessionNumber };
   }
 
-  /** Load all saved character JSON files from the active campaign. */
-  loadCharacters(): Record<string, unknown> {
-    if (!this.activeDir) throw new Error("No campaign loaded");
-    const charDir = path.join(this.activeDir, "characters");
-    if (!fs.existsSync(charDir)) return {};
-
-    const result: Record<string, unknown> = {};
-    const charFiles = fs.readdirSync(charDir).filter((f) => f.endsWith(".json"));
-
-    for (const file of charFiles) {
-      try {
-        const data = JSON.parse(fs.readFileSync(path.join(charDir, file), "utf-8"));
-        const charName = data?.static?.name;
-        if (charName) {
-          result[charName] = data;
-        }
-      } catch {
-        // skip invalid
-      }
-    }
-
-    return result;
-  }
 
   /** Save pacing/encounter/prompt settings to the manifest. */
   saveSettings(settings: { pacingProfile?: string; encounterLength?: string; systemPrompt?: string }): void {

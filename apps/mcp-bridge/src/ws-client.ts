@@ -351,7 +351,7 @@ export class WSClient {
         manifest = cm.loadCampaign(msg.existingCampaignSlug);
         console.error(`[ws-client] Loaded campaign: ${manifest.name} (${manifest.slug})`);
 
-        const chars = cm.loadCharacters();
+        const chars = cm.loadCharacterSnapshots();
         if (Object.keys(chars).length > 0) {
           restoredCharacters = chars;
           console.error(`[ws-client] Restored ${Object.keys(chars).length} character(s) from campaign`);
