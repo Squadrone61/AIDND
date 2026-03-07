@@ -1,5 +1,7 @@
 /** Bridge-specific types for the MCP ↔ Worker WebSocket link. */
 
+import { z } from "zod";
+
 export interface DMRequest {
   requestId: string;
   systemPrompt: string;
@@ -23,18 +25,18 @@ export interface PlayerSummary {
 
 // === Campaign types ===
 
-export interface CampaignManifest {
-  name: string;
-  slug: string;
-  players: string[];
-  sessionCount: number;
-  partyLevel: number;
-  createdAt: string;
-  lastPlayedAt: string;
-  pacingProfile?: string;
-  encounterLength?: string;
-  systemPrompt?: string;
-}
+export const campaignManifestSchema = z.object({
+  name: z.string(),
+  slug: z.string(),
+  players: z.array(z.string()),
+  sessionCount: z.number().int().min(0),
+  createdAt: z.string(),
+  lastPlayedAt: z.string(),
+  pacingProfile: z.string().optional(),
+  encounterLength: z.string().optional(),
+});
+
+export type CampaignManifest = z.infer<typeof campaignManifestSchema>;
 
 export interface CampaignSummary {
   slug: string;

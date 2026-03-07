@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
+import { campaignManifestSchema } from "../types.js";
 import type { CampaignManifest, CampaignSummary } from "../types.js";
 
 const CAMPAIGNS_ROOT = process.env.AIDND_CAMPAIGNS_DIR || path.join(process.cwd(), ".aidnd", "campaigns");
@@ -19,6 +20,8 @@ function slugify(name: string): string {
  */
 export class CampaignManager {
   private activeCampaignSlug: string | null = null;
+  private cachedManifest: CampaignManifest | null = null;
+  private manifestDirty = false;
 
   /** Get the active campaign slug (null if none loaded). */
   get activeSlug(): string | null {
@@ -49,8 +52,33 @@ export class CampaignManager {
     }
   }
 
-  /** Create a new campaign. Returns the slug. */
+  /** Read and validate a manifest from disk. Strips unknown fields (e.g. old partyLevel, systemPrompt). */
+  private readManifestFromDisk(dir: string): CampaignManifest {
+    const manifestPath = path.join(dir, "campaign.json");
+    const raw = JSON.parse(fs.readFileSync(manifestPath, "utf-8"));
+    return campaignManifestSchema.parse(raw);
+  }
+
+  /** Write the cached manifest to disk and clear dirty flag. */
+  private writeManifestToDisk(): void {
+    if (!this.activeDir || !this.cachedManifest) return;
+    const manifestPath = path.join(this.activeDir, "campaign.json");
+    fs.writeFileSync(manifestPath, JSON.stringify(this.cachedManifest, null, 2), "utf-8");
+    this.manifestDirty = false;
+  }
+
+  /** Flush manifest to disk if dirty. Call at critical checkpoints (disconnect, end session). */
+  flushManifest(): void {
+    if (this.manifestDirty) {
+      this.writeManifestToDisk();
+    }
+  }
+
+  /** Create a new campaign. Returns the manifest. */
   createCampaign(name: string): CampaignManifest {
+    // Flush any previous campaign's pending changes
+    this.flushManifest();
+
     const slug = slugify(name);
     if (!slug) throw new Error("Invalid campaign name");
 
@@ -70,16 +98,15 @@ export class CampaignManager {
       slug,
       players: [],
       sessionCount: 0,
-      partyLevel: 1,
       createdAt: new Date().toISOString(),
       lastPlayedAt: new Date().toISOString(),
     };
 
-    fs.writeFileSync(
-      path.join(dir, "campaign.json"),
-      JSON.stringify(manifest, null, 2),
-      "utf-8"
-    );
+    this.activeCampaignSlug = slug;
+    this.cachedManifest = manifest;
+    this.manifestDirty = false;
+    // Write immediately for new campaigns
+    this.writeManifestToDisk();
 
     // Create empty starter files
     fs.writeFileSync(path.join(dir, "system-prompt.md"), "", "utf-8");
@@ -114,24 +141,23 @@ export class CampaignManager {
       "utf-8"
     );
 
-    this.activeCampaignSlug = slug;
     return manifest;
   }
 
   /** Load an existing campaign by slug. Returns the manifest. */
   loadCampaign(slug: string): CampaignManifest {
-    const dir = path.join(CAMPAIGNS_ROOT, slug);
-    const manifestPath = path.join(dir, "campaign.json");
+    // Flush any previous campaign's pending changes
+    this.flushManifest();
 
-    if (!fs.existsSync(manifestPath)) {
+    const dir = path.join(CAMPAIGNS_ROOT, slug);
+    if (!fs.existsSync(path.join(dir, "campaign.json"))) {
       throw new Error(`Campaign "${slug}" not found`);
     }
 
-    const manifest = JSON.parse(
-      fs.readFileSync(manifestPath, "utf-8")
-    ) as CampaignManifest;
-
+    const manifest = this.readManifestFromDisk(dir);
     this.activeCampaignSlug = slug;
+    this.cachedManifest = manifest;
+    this.manifestDirty = false;
     return manifest;
   }
 
@@ -154,17 +180,20 @@ export class CampaignManager {
       if (!fs.existsSync(manifestPath)) continue;
 
       try {
-        const manifest = JSON.parse(
-          fs.readFileSync(manifestPath, "utf-8")
-        ) as CampaignManifest;
-        campaigns.push({
-          slug: manifest.slug,
-          name: manifest.name,
-          lastPlayedAt: manifest.lastPlayedAt,
-          sessionCount: manifest.sessionCount,
-        });
-      } catch {
-        // Skip invalid manifests
+        const raw = JSON.parse(fs.readFileSync(manifestPath, "utf-8"));
+        const result = campaignManifestSchema.safeParse(raw);
+        if (result.success) {
+          campaigns.push({
+            slug: result.data.slug,
+            name: result.data.name,
+            lastPlayedAt: result.data.lastPlayedAt,
+            sessionCount: result.data.sessionCount,
+          });
+        } else {
+          console.error(`[campaign-manager] Corrupt manifest in ${entry.name}: ${result.error.message}`);
+        }
+      } catch (e) {
+        console.error(`[campaign-manager] Failed to read manifest in ${entry.name}: ${e instanceof Error ? e.message : String(e)}`);
       }
     }
 
@@ -294,16 +323,12 @@ export class CampaignManager {
 
     const parts: string[] = [];
 
-    // 1. Campaign manifest summary
-    const manifestPath = path.join(this.activeDir, "campaign.json");
-    if (fs.existsSync(manifestPath)) {
-      const manifest = JSON.parse(
-        fs.readFileSync(manifestPath, "utf-8")
-      ) as CampaignManifest;
+    // 1. Campaign manifest summary (use cache)
+    const manifest = this.cachedManifest;
+    if (manifest) {
       parts.push(
         `## Campaign: ${manifest.name}\n` +
           `- Sessions played: ${manifest.sessionCount}\n` +
-          `- Party level: ${manifest.partyLevel}\n` +
           `- Players: ${manifest.players.length > 0 ? manifest.players.join(", ") : "none yet"}\n` +
           `- Last played: ${manifest.lastPlayedAt}\n`
       );
@@ -389,18 +414,12 @@ export class CampaignManager {
     activeContext: string,
     characters?: Record<string, { static: unknown; dynamic: unknown }>
   ): { sessionNumber: number } {
-    if (!this.activeDir) throw new Error("No campaign loaded");
+    if (!this.activeDir || !this.cachedManifest) throw new Error("No campaign loaded");
 
-    // Read manifest
-    const manifestPath = path.join(this.activeDir, "campaign.json");
-    const manifest = JSON.parse(
-      fs.readFileSync(manifestPath, "utf-8")
-    ) as CampaignManifest;
-
-    // Increment session count
-    manifest.sessionCount += 1;
-    manifest.lastPlayedAt = new Date().toISOString();
-    const sessionNumber = manifest.sessionCount;
+    // Mutate cache
+    this.cachedManifest.sessionCount += 1;
+    this.cachedManifest.lastPlayedAt = new Date().toISOString();
+    const sessionNumber = this.cachedManifest.sessionCount;
 
     // Write session summary
     const sessionsDir = path.join(this.activeDir, "sessions");
@@ -424,20 +443,16 @@ export class CampaignManager {
       this.snapshotCharacters(characters);
 
       // Update players list from characters
-      manifest.players = Object.values(characters).map(
+      this.cachedManifest.players = Object.values(characters).map(
         (c) => (c.static as { name?: string })?.name || "Unknown"
       );
     }
 
-    // Write updated manifest
-    fs.writeFileSync(
-      manifestPath,
-      JSON.stringify(manifest, null, 2),
-      "utf-8"
-    );
+    // Flush manifest (critical checkpoint)
+    this.writeManifestToDisk();
 
     // Clean up stale session state file
-    const sessionStatePath = path.join(this.activeDir!, "session-state.json");
+    const sessionStatePath = path.join(this.activeDir, "session-state.json");
     if (fs.existsSync(sessionStatePath)) {
       fs.unlinkSync(sessionStatePath);
     }
@@ -446,17 +461,15 @@ export class CampaignManager {
   }
 
 
-  /** Save pacing/encounter/prompt settings to the manifest. */
-  saveSettings(settings: { pacingProfile?: string; encounterLength?: string; systemPrompt?: string }): void {
-    if (!this.activeDir) throw new Error("No campaign loaded");
-    const manifestPath = path.join(this.activeDir, "campaign.json");
-    const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf-8")) as CampaignManifest;
+  /** Save pacing/encounter settings to the manifest. */
+  saveSettings(settings: { pacingProfile?: string; encounterLength?: string }): void {
+    if (!this.cachedManifest) throw new Error("No campaign loaded");
 
-    if (settings.pacingProfile) manifest.pacingProfile = settings.pacingProfile;
-    if (settings.encounterLength) manifest.encounterLength = settings.encounterLength;
-    if (settings.systemPrompt !== undefined) manifest.systemPrompt = settings.systemPrompt;
+    if (settings.pacingProfile) this.cachedManifest.pacingProfile = settings.pacingProfile;
+    if (settings.encounterLength) this.cachedManifest.encounterLength = settings.encounterLength;
 
-    fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2), "utf-8");
+    // Flush immediately — settings are user-initiated
+    this.writeManifestToDisk();
   }
 
   /** Read the system prompt from the active campaign. */
@@ -480,43 +493,20 @@ export class CampaignManager {
 
   /** Update the manifest's lastPlayedAt timestamp. */
   touchManifest(): void {
-    if (!this.activeDir) return;
-    const manifestPath = path.join(this.activeDir, "campaign.json");
-    if (!fs.existsSync(manifestPath)) return;
-
-    const manifest = JSON.parse(
-      fs.readFileSync(manifestPath, "utf-8")
-    ) as CampaignManifest;
-    manifest.lastPlayedAt = new Date().toISOString();
-    fs.writeFileSync(
-      manifestPath,
-      JSON.stringify(manifest, null, 2),
-      "utf-8"
-    );
+    if (!this.cachedManifest) return;
+    this.cachedManifest.lastPlayedAt = new Date().toISOString();
+    this.manifestDirty = true;
   }
 
   /** Update the players list in the manifest. */
   updatePlayers(playerNames: string[]): void {
-    if (!this.activeDir) return;
-    const manifestPath = path.join(this.activeDir, "campaign.json");
-    if (!fs.existsSync(manifestPath)) return;
-
-    const manifest = JSON.parse(
-      fs.readFileSync(manifestPath, "utf-8")
-    ) as CampaignManifest;
-    manifest.players = playerNames;
-    fs.writeFileSync(
-      manifestPath,
-      JSON.stringify(manifest, null, 2),
-      "utf-8"
-    );
+    if (!this.cachedManifest) return;
+    this.cachedManifest.players = playerNames;
+    this.manifestDirty = true;
   }
 
   /** Get the manifest for the active campaign. */
   getManifest(): CampaignManifest | null {
-    if (!this.activeDir) return null;
-    const manifestPath = path.join(this.activeDir, "campaign.json");
-    if (!fs.existsSync(manifestPath)) return null;
-    return JSON.parse(fs.readFileSync(manifestPath, "utf-8")) as CampaignManifest;
+    return this.cachedManifest;
   }
 }

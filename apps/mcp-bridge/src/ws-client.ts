@@ -402,7 +402,6 @@ export class WSClient {
       cm.saveSettings({
         pacingProfile: msg.pacingProfile,
         encounterLength: msg.encounterLength,
-        systemPrompt: msg.systemPrompt,
       });
 
       // Populate players in the manifest from current room players
@@ -474,6 +473,7 @@ export class WSClient {
         );
       }
       cm.touchManifest();
+      cm.flushManifest();
     } catch (e) {
       console.error(
         `[ws-client] Auto-snapshot error: ${e instanceof Error ? e.message : String(e)}`
