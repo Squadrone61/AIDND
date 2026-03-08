@@ -23,20 +23,9 @@ function stripMarkdown(text: string): string {
 const VOICE_KEY = "aidnd-tts-voice";
 const VOLUME_KEY = "aidnd-tts-volume";
 
-function loadVolume(): number {
-  if (typeof window === "undefined") return 1.0;
-  const stored = localStorage.getItem(VOLUME_KEY);
-  if (stored !== null) {
-    const v = parseFloat(stored);
-    if (!isNaN(v) && v >= 0 && v <= 1) return v;
-  }
-  return 1.0;
-}
-
 export function useTTS() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
-  const [volume, setVolumeState] = useState(loadVolume);
   const currentUtterance = useRef<SpeechSynthesisUtterance | null>(null);
 
   useEffect(() => {
@@ -97,7 +86,11 @@ export function useTTS() {
       }
       utterance.rate = 0.95;
       utterance.pitch = 0.9;
-      utterance.volume = volume;
+
+      // Read volume fresh from localStorage each time
+      const storedVol = localStorage.getItem(VOLUME_KEY);
+      const vol = storedVol !== null ? parseFloat(storedVol) : 1.0;
+      utterance.volume = !isNaN(vol) && vol >= 0 && vol <= 1 ? vol : 1.0;
 
       utterance.onend = () => {
         currentUtterance.current = null;
@@ -112,17 +105,8 @@ export function useTTS() {
       setIsSpeaking(true);
       speechSynthesis.speak(utterance);
     },
-    [stop, pickVoice, volume]
+    [stop, pickVoice]
   );
 
-  const setVolume = useCallback((v: number) => {
-    const clamped = Math.max(0, Math.min(1, v));
-    setVolumeState(clamped);
-    localStorage.setItem(VOLUME_KEY, String(clamped));
-    if (currentUtterance.current) {
-      currentUtterance.current.volume = clamped;
-    }
-  }, []);
-
-  return { speak, stop, isSpeaking, volume, setVolume };
+  return { speak, stop, isSpeaking };
 }

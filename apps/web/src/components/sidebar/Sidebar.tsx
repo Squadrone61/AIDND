@@ -10,6 +10,7 @@ import type {
   ServerMessage,
 } from "@aidnd/shared/types";
 import { CharacterPopover } from "@/components/character/CharacterPopover";
+import { SettingsModal } from "./SettingsModal";
 
 interface SidebarProps {
   roomCode: string;
@@ -58,12 +59,11 @@ export function Sidebar({
   onToggleNotes,
   showNotes,
 }: SidebarProps) {
+  const [showSettings, setShowSettings] = useState(false);
   const [logCollapsed, setLogCollapsed] = useState(false);
   const [eventLogCollapsed, setEventLogCollapsed] = useState(true);
   const [copied, setCopied] = useState(false);
   const [hoveredPlayer, setHoveredPlayer] = useState<string | null>(null);
-  const [passwordInput, setPasswordInput] = useState("");
-  const [passwordSet, setPasswordSet] = useState(false);
   const [confirmingRollbackId, setConfirmingRollbackId] = useState<string | null>(null);
   const logEndRef = useRef<HTMLDivElement>(null);
   const rollbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -96,19 +96,6 @@ export function Sidebar({
   const handleRollbackCancel = () => {
     if (rollbackTimeoutRef.current) clearTimeout(rollbackTimeoutRef.current);
     setConfirmingRollbackId(null);
-  };
-
-  const handleSetPassword = () => {
-    if (!passwordInput.trim() || !onSetPassword) return;
-    onSetPassword(passwordInput.trim());
-    setPasswordSet(true);
-    setPasswordInput("");
-  };
-
-  const handleRemovePassword = () => {
-    if (!onSetPassword) return;
-    onSetPassword("");
-    setPasswordSet(false);
   };
 
   // Use allPlayers if available, otherwise fall back to online-only players list
@@ -147,51 +134,6 @@ export function Sidebar({
           <span className="text-xs text-green-400 ml-2">Copied!</span>
         )}
       </div>
-
-      {/* Password Management (Host only) */}
-      {isHost && onSetPassword && (
-        <div className="p-4 border-b border-gray-700">
-          <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">
-            Room Password
-          </div>
-          {passwordSet ? (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5 text-sm text-yellow-400">
-                <span>&#128274;</span>
-                <span>Password set</span>
-              </div>
-              <button
-                onClick={handleRemovePassword}
-                className="text-xs text-red-400/60 hover:text-red-400 transition-colors"
-              >
-                Remove
-              </button>
-            </div>
-          ) : (
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={passwordInput}
-                onChange={(e) => setPasswordInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSetPassword()}
-                placeholder="Set password..."
-                className="flex-1 bg-gray-900 border border-gray-700 rounded px-2 py-1.5
-                           text-sm text-gray-100 placeholder-gray-500 focus:outline-none
-                           focus:ring-1 focus:ring-purple-500 min-w-0"
-              />
-              <button
-                onClick={handleSetPassword}
-                disabled={!passwordInput.trim()}
-                className="text-xs bg-purple-600/20 text-purple-400 hover:bg-purple-600/40
-                           disabled:opacity-30 disabled:hover:bg-purple-600/20
-                           px-2.5 py-1.5 rounded transition-colors shrink-0"
-              >
-                Set
-              </button>
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Players */}
       <div className="p-4 border-b border-gray-700">
@@ -345,6 +287,25 @@ export function Sidebar({
         </div>
       )}
 
+      {/* Settings */}
+      <div className="px-4 py-2 border-b border-gray-700">
+        <button
+          onClick={() => setShowSettings(true)}
+          className="w-full flex items-center gap-2 text-sm py-1.5 px-2 rounded-lg transition-colors text-gray-400 hover:text-gray-200 hover:bg-gray-700/50"
+        >
+          <span className="text-base">&#9881;</span>
+          <span>Settings</span>
+        </button>
+      </div>
+      {showSettings && (
+        <SettingsModal
+          onClose={() => setShowSettings(false)}
+          isHost={isHost}
+          onSetPassword={onSetPassword}
+          onDestroyRoom={onDestroyRoom}
+        />
+      )}
+
       {/* Activity Log */}
       <div className="border-b border-gray-700 flex flex-col min-h-0 flex-1">
         <button
@@ -475,25 +436,6 @@ export function Sidebar({
         )}
       </div>
 
-      {/* Destroy Room — host only */}
-      {isHost && onDestroyRoom && (
-        <div className="border-t border-red-900/30">
-          <button
-            onClick={() => {
-              if (
-                window.confirm(
-                  "Are you sure you want to destroy this room? All data will be permanently deleted and all players will be disconnected."
-                )
-              ) {
-                onDestroyRoom();
-              }
-            }}
-            className="w-full px-3 py-2 text-sm font-medium text-red-400 bg-red-950/40 border border-red-800/50 rounded-lg hover:bg-red-900/50 hover:text-red-300 transition-colors"
-          >
-            Destroy Room
-          </button>
-        </div>
-      )}
     </div>
   );
 }
