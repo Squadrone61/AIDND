@@ -77,6 +77,10 @@ export function buildCharacterContextBlock(
     lines.push(`**Conditions:** ${d.conditions.join(", ")}`);
   }
 
+  if (d.heroicInspiration) {
+    lines.push(`**Heroic Inspiration:** Yes (can spend for advantage on any d20 roll)`);
+  }
+
   const activeSpells = s.spells.filter(
     (sp) => getSpellAvailability(sp) === "active"
   );
@@ -219,6 +223,7 @@ export function createInitialDynamicData(
     inventory: [],
     currency: { cp: 0, sp: 0, ep: 0, gp: 0, pp: 0 },
     xp: 0,
+    heroicInspiration: false,
   };
 }
 
@@ -240,10 +245,6 @@ export function mergeReimport(
     const ratio = dynamic.currentHP / oldMax;
     dynamic.currentHP = Math.max(1, Math.round(ratio * newMax));
   }
-
-  // Update inventory and currency from new import (these are part of the character sheet)
-  dynamic.inventory = newDynamic.inventory;
-  dynamic.currency = newDynamic.currency;
 
   // Update spell slots structure (totals may change), but preserve used counts where possible
   const oldSlotMap = new Map(

@@ -1485,6 +1485,48 @@ export class GameStateManager {
     return `Character "${characterName}" not found`;
   }
 
+  /** Grant heroic inspiration to a character */
+  grantInspiration(characterName: string): string {
+    for (const [pName, char] of Object.entries(this.characters)) {
+      if (char.static.name.toLowerCase() === characterName.toLowerCase()) {
+        if (char.dynamic.heroicInspiration) {
+          return `${char.static.name} already has Heroic Inspiration`;
+        }
+        char.dynamic.heroicInspiration = true;
+
+        this.broadcast({
+          type: "server:character_updated",
+          playerName: pName,
+          character: char,
+        });
+
+        return `Granted Heroic Inspiration to ${char.static.name}`;
+      }
+    }
+    return `Character "${characterName}" not found`;
+  }
+
+  /** Use (spend) heroic inspiration for a character */
+  useInspiration(characterName: string): string {
+    for (const [pName, char] of Object.entries(this.characters)) {
+      if (char.static.name.toLowerCase() === characterName.toLowerCase()) {
+        if (!char.dynamic.heroicInspiration) {
+          return `${char.static.name} does not have Heroic Inspiration to spend`;
+        }
+        char.dynamic.heroicInspiration = false;
+
+        this.broadcast({
+          type: "server:character_updated",
+          playerName: pName,
+          character: char,
+        });
+
+        return `${char.static.name} spent Heroic Inspiration`;
+      }
+    }
+    return `Character "${characterName}" not found`;
+  }
+
   /** Compact conversation history — replace older messages with a summary */
   compactHistory(keepRecent: number, summary: string): string {
     const totalBefore = this.conversationHistory.length;

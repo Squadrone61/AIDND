@@ -207,6 +207,7 @@ export const characterDynamicDataSchema = z.object({
   inventory: z.array(inventoryItemSchema),
   currency: currencySchema,
   xp: z.number(),
+  heroicInspiration: z.boolean().optional().default(false),
 });
 
 export const characterDataSchema = z.object({

@@ -450,6 +450,34 @@ export function registerGameTools(
     }
   );
 
+  // ─── Heroic Inspiration ───
+
+  server.tool(
+    "grant_inspiration",
+    "Grant Heroic Inspiration to a character. The player can spend it for advantage on any d20 roll.",
+    {
+      character_name: z.string().describe("Character name"),
+    },
+    async ({ character_name }) => {
+      wsClient.sendTypingIndicator(true);
+      const result = wsClient.gameStateManager.grantInspiration(character_name);
+      return { content: [{ type: "text" as const, text: result }] };
+    }
+  );
+
+  server.tool(
+    "use_inspiration",
+    "Spend a character's Heroic Inspiration to gain advantage on a d20 roll.",
+    {
+      character_name: z.string().describe("Character name"),
+    },
+    async ({ character_name }) => {
+      wsClient.sendTypingIndicator(true);
+      const result = wsClient.gameStateManager.useInspiration(character_name);
+      return { content: [{ type: "text" as const, text: result }] };
+    }
+  );
+
   // ─── Context Management ───
 
   server.tool(

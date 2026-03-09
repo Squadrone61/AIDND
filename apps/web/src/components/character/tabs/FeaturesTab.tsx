@@ -13,7 +13,6 @@ export function FeaturesTab({ character, onFeatureClick }: FeaturesTabProps) {
   const [filter, setFilter] = useState<string>("all");
   const [traitsOpen, setTraitsOpen] = useState(false);
   const s = character.static;
-  const d = character.dynamic;
 
   const counts = useMemo(() => {
     const cls = s.features.filter((f) => f.source === "class").length;
@@ -52,13 +51,6 @@ export function FeaturesTab({ character, onFeatureClick }: FeaturesTabProps) {
       }))
       .filter((g) => g.features.length > 0);
   }, [filtered, filter]);
-
-  const hasCurrency =
-    d.currency.gp > 0 ||
-    d.currency.sp > 0 ||
-    d.currency.cp > 0 ||
-    d.currency.ep > 0 ||
-    d.currency.pp > 0;
 
   const hasTraits =
     s.traits.personalityTraits ||
@@ -111,35 +103,9 @@ export function FeaturesTab({ character, onFeatureClick }: FeaturesTabProps) {
         </div>
       )}
 
-      {/* Divider — currency and traits */}
-      {(hasCurrency || hasTraits) && (
+      {/* Divider — traits */}
+      {hasTraits && (
         <div className="border-t border-gray-700/50 pt-2 mt-2 space-y-1.5">
-          {/* Currency */}
-          {hasCurrency && (
-            <div className="px-1.5">
-              <div className="text-[10px] text-gray-500 font-medium mb-0.5">
-                Currency
-              </div>
-              <div className="flex flex-wrap gap-2 text-xs">
-                {d.currency.pp > 0 && (
-                  <span className="text-gray-300">{d.currency.pp} PP</span>
-                )}
-                {d.currency.gp > 0 && (
-                  <span className="text-yellow-400">{d.currency.gp} GP</span>
-                )}
-                {d.currency.ep > 0 && (
-                  <span className="text-gray-300">{d.currency.ep} EP</span>
-                )}
-                {d.currency.sp > 0 && (
-                  <span className="text-gray-400">{d.currency.sp} SP</span>
-                )}
-                {d.currency.cp > 0 && (
-                  <span className="text-orange-400">{d.currency.cp} CP</span>
-                )}
-              </div>
-            </div>
-          )}
-
           {/* Traits */}
           {hasTraits && (
             <div>

@@ -193,7 +193,7 @@ export function LeftSidebar({ character, onCharacterImported }: LeftSidebarProps
                 <p className="text-[10px] text-gray-500">
                   {importMode === "change"
                     ? "Import a new character. All current data will be replaced."
-                    : "Leveled up or made changes on D&D Beyond? Re-import to update your stats. Your current HP, conditions, and spell slot usage will be preserved."}
+                    : "Leveled up or made changes on D&D Beyond? Re-import to update your stats. Your current HP, conditions, spell slot usage, inventory, and currency will be preserved."}
                 </p>
                 <CharacterImport
                   importState={importState}

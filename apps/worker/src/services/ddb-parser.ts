@@ -414,6 +414,7 @@ export function parseDDBCharacter(raw: unknown): {
     inventory,
     currency,
     xp,
+    heroicInspiration: !!char.inspiration,
   };
 
   return {

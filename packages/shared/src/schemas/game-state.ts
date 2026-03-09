@@ -194,7 +194,8 @@ export const gameEventTypeSchema = z.enum([
   "death_save", "combat_start", "combat_end", "turn_start", "turn_end",
   "check_requested", "check_resolved", "initiative_rolled",
   "rest_short", "rest_long", "item_added", "item_removed",
-  "xp_gained", "ai_response", "custom",
+  "xp_gained", "inspiration_granted", "inspiration_used",
+  "ai_response", "custom",
 ]);
 
 // Note: We use z.any() for the stateBefore snapshot since it contains

@@ -24637,6 +24637,8 @@ var init_game_state2 = __esm({
       "item_added",
       "item_removed",
       "xp_gained",
+      "inspiration_granted",
+      "inspiration_used",
       "ai_response",
       "custom"
     ]);
@@ -24857,7 +24859,8 @@ var init_messages2 = __esm({
       deathSaves: deathSavesSchema,
       inventory: external_exports.array(inventoryItemSchema),
       currency: currencySchema,
-      xp: external_exports.number()
+      xp: external_exports.number(),
+      heroicInspiration: external_exports.boolean().optional().default(false)
     });
     characterDataSchema = external_exports.object({
       static: characterStaticDataSchema,
@@ -26891,6 +26894,42 @@ Resolve this combatant's turn.]`;
             });
             const { cp, sp, ep, gp, pp } = char.dynamic.currency;
             return `${char.static.name}'s currency updated \u2192 ${gp}gp, ${sp}sp, ${cp}cp, ${ep}ep, ${pp}pp`;
+          }
+        }
+        return `Character "${characterName}" not found`;
+      }
+      /** Grant heroic inspiration to a character */
+      grantInspiration(characterName) {
+        for (const [pName, char] of Object.entries(this.characters)) {
+          if (char.static.name.toLowerCase() === characterName.toLowerCase()) {
+            if (char.dynamic.heroicInspiration) {
+              return `${char.static.name} already has Heroic Inspiration`;
+            }
+            char.dynamic.heroicInspiration = true;
+            this.broadcast({
+              type: "server:character_updated",
+              playerName: pName,
+              character: char
+            });
+            return `Granted Heroic Inspiration to ${char.static.name}`;
+          }
+        }
+        return `Character "${characterName}" not found`;
+      }
+      /** Use (spend) heroic inspiration for a character */
+      useInspiration(characterName) {
+        for (const [pName, char] of Object.entries(this.characters)) {
+          if (char.static.name.toLowerCase() === characterName.toLowerCase()) {
+            if (!char.dynamic.heroicInspiration) {
+              return `${char.static.name} does not have Heroic Inspiration to spend`;
+            }
+            char.dynamic.heroicInspiration = false;
+            this.broadcast({
+              type: "server:character_updated",
+              playerName: pName,
+              character: char
+            });
+            return `${char.static.name} spent Heroic Inspiration`;
           }
         }
         return `Character "${characterName}" not found`;
@@ -46058,6 +46097,30 @@ function registerGameTools(server, messageQueue, wsClient) {
       if (gp !== void 0) changes.gp = gp;
       if (pp !== void 0) changes.pp = pp;
       const result = wsClient.gameStateManager.updateCurrency(character_name, changes);
+      return { content: [{ type: "text", text: result }] };
+    }
+  );
+  server.tool(
+    "grant_inspiration",
+    "Grant Heroic Inspiration to a character. The player can spend it for advantage on any d20 roll.",
+    {
+      character_name: external_exports.string().describe("Character name")
+    },
+    async ({ character_name }) => {
+      wsClient.sendTypingIndicator(true);
+      const result = wsClient.gameStateManager.grantInspiration(character_name);
+      return { content: [{ type: "text", text: result }] };
+    }
+  );
+  server.tool(
+    "use_inspiration",
+    "Spend a character's Heroic Inspiration to gain advantage on a d20 roll.",
+    {
+      character_name: external_exports.string().describe("Character name")
+    },
+    async ({ character_name }) => {
+      wsClient.sendTypingIndicator(true);
+      const result = wsClient.gameStateManager.useInspiration(character_name);
       return { content: [{ type: "text", text: result }] };
     }
   );

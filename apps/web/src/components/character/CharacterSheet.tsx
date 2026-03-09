@@ -192,6 +192,14 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
           )}
         </div>
 
+        {/* Heroic Inspiration */}
+        {d.heroicInspiration && (
+          <div className="flex items-center gap-1.5 bg-yellow-900/20 border border-yellow-700/40 rounded px-2 py-1">
+            <span className="text-yellow-400 text-sm">&#9733;</span>
+            <span className="text-xs text-yellow-300 font-medium">Heroic Inspiration</span>
+          </div>
+        )}
+
         {/* Conditions */}
         {d.conditions.length > 0 && (
           <div>

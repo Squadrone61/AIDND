@@ -187,6 +187,8 @@ export type GameEventType =
   | "item_added"
   | "item_removed"
   | "xp_gained"
+  | "inspiration_granted"
+  | "inspiration_used"
   | "ai_response"
   | "custom";
 

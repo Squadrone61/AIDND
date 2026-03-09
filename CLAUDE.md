@@ -91,7 +91,7 @@ pnpm deploy:web     # Deploy web only
 - `message-queue.ts` — Async queue: WS pushes player messages, wait_for_message pops
 - `services/game-state-manager.ts` — **Core game engine**: owns GameState, combat, dice, HP, conditions, spell slots, conversation history, check flow, battle map, rollback
 - `services/campaign-manager.ts` — Campaign persistence: create/load/list campaigns, save/read files, session management, character snapshots
-- `tools/game-tools.ts` — 17 MCP tools: wait_for_message, send_response, get_players, get_game_state, get_character, apply_damage, heal, set_hp, add_condition, remove_condition, start_combat, end_combat, advance_turn, add_combatant, remove_combatant, move_combatant, use_spell_slot, restore_spell_slot, update_battle_map
+- `tools/game-tools.ts` — 19 MCP tools: wait_for_message, send_response, get_players, get_game_state, get_character, apply_damage, heal, set_hp, add_condition, remove_condition, start_combat, end_combat, advance_turn, add_combatant, remove_combatant, move_combatant, use_spell_slot, restore_spell_slot, update_battle_map, grant_inspiration, use_inspiration
 - `tools/dnd-tools.ts` — roll_dice (supports interactive player checks with targetCharacter)
 - `tools/srd-tools.ts` — SRD 5.2 lookup tools: lookup_spell, lookup_monster, lookup_condition, lookup_magic_item, lookup_feat, search_rules
 - `tools/campaign-tools.ts` — create_campaign, list_campaigns, load_campaign_context, save_campaign_file, read_campaign_file, list_campaign_files, end_session
@@ -171,6 +171,12 @@ pnpm deploy:web     # Deploy web only
 |------|-------------|
 | `use_spell_slot` | Expend a spell slot at a given level. |
 | `restore_spell_slot` | Restore a slot (short rest, Arcane Recovery, etc.). |
+
+### Heroic Inspiration
+| Tool | Description |
+|------|-------------|
+| `grant_inspiration` | Grant Heroic Inspiration to a character (binary flag). |
+| `use_inspiration` | Spend a character's Heroic Inspiration for advantage on a d20 roll. |
 
 ### Battle Map
 | Tool | Description |

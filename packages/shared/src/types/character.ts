@@ -174,6 +174,7 @@ export interface CharacterDynamicData {
   inventory: InventoryItem[];
   currency: Currency;
   xp: number;
+  heroicInspiration: boolean;
 }
 
 /**
