@@ -191,6 +191,12 @@ pnpm deploy:web     # Deploy web only
 | `remove_item` | Remove an item from inventory (decrement or remove entirely). |
 | `update_currency` | Add or subtract currency (positive adds, negative subtracts). |
 
+### Class Resources
+| Tool | Description |
+|------|-------------|
+| `use_class_resource` | Expend a use of a class resource (Bardic Inspiration, Channel Divinity, Rage, Ki Points, etc.) |
+| `restore_class_resource` | Restore uses of a class resource (e.g., after rest). Use amount=999 to fully restore. |
+
 ### D&D Reference (SRD 5.2 — 2024 rules, local offline lookup)
 | Tool | Description |
 |------|-------------|

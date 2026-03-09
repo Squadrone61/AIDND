@@ -233,11 +233,17 @@ export async function startCli(): Promise<void> {
         "mcp__aidnd-dm__add_combatant",
         "mcp__aidnd-dm__remove_combatant",
         "mcp__aidnd-dm__move_combatant",
-        // Spell slots
+        // Spell slots & class resources
         "mcp__aidnd-dm__use_spell_slot",
         "mcp__aidnd-dm__restore_spell_slot",
+        "mcp__aidnd-dm__use_class_resource",
+        "mcp__aidnd-dm__restore_class_resource",
+        // Heroic Inspiration
+        "mcp__aidnd-dm__grant_inspiration",
+        "mcp__aidnd-dm__use_inspiration",
         // Inventory & currency
         "mcp__aidnd-dm__add_item",
+        "mcp__aidnd-dm__update_item",
         "mcp__aidnd-dm__remove_item",
         "mcp__aidnd-dm__update_currency",
         // Battle map
@@ -246,6 +252,9 @@ export async function startCli(): Promise<void> {
         "mcp__aidnd-dm__lookup_spell",
         "mcp__aidnd-dm__lookup_monster",
         "mcp__aidnd-dm__lookup_condition",
+        "mcp__aidnd-dm__lookup_magic_item",
+        "mcp__aidnd-dm__lookup_feat",
+        "mcp__aidnd-dm__search_rules",
         "mcp__aidnd-dm__roll_dice",
         // Context management
         "mcp__aidnd-dm__compact_history",

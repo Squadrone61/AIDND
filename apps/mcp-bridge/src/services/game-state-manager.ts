@@ -1383,6 +1383,73 @@ export class GameStateManager {
     return `Character "${characterName}" not found`;
   }
 
+  /** Use a class resource (Bardic Inspiration, Channel Divinity, Rage, etc.) */
+  useClassResource(characterName: string, resourceName: string): string {
+    for (const [pName, char] of Object.entries(this.characters)) {
+      if (char.static.name.toLowerCase() === characterName.toLowerCase()) {
+        const resource = char.static.classResources.find(
+          (r) => r.name.toLowerCase() === resourceName.toLowerCase()
+        );
+        if (!resource) {
+          return `Resource "${resourceName}" not found on ${char.static.name}. Available: ${char.static.classResources.map((r) => r.name).join(", ") || "none"}`;
+        }
+
+        const canonicalName = resource.name;
+        const used = char.dynamic.resourcesUsed[canonicalName] ?? 0;
+        if (used >= resource.maxUses) {
+          return `${char.static.name} has no ${canonicalName} uses remaining (0/${resource.maxUses})`;
+        }
+
+        char.dynamic.resourcesUsed[canonicalName] = used + 1;
+        const remaining = resource.maxUses - (used + 1);
+
+        this.broadcast({
+          type: "server:character_updated",
+          playerName: pName,
+          character: char,
+        });
+
+        return `${char.static.name} used ${canonicalName} (${remaining}/${resource.maxUses} remaining)`;
+      }
+    }
+    return `Character "${characterName}" not found`;
+  }
+
+  /** Restore a class resource. amount defaults to 1; use 999+ to fully restore. */
+  restoreClassResource(characterName: string, resourceName: string, amount = 1): string {
+    for (const [pName, char] of Object.entries(this.characters)) {
+      if (char.static.name.toLowerCase() === characterName.toLowerCase()) {
+        const resource = char.static.classResources.find(
+          (r) => r.name.toLowerCase() === resourceName.toLowerCase()
+        );
+        if (!resource) {
+          return `Resource "${resourceName}" not found on ${char.static.name}. Available: ${char.static.classResources.map((r) => r.name).join(", ") || "none"}`;
+        }
+
+        const canonicalName = resource.name;
+        const used = char.dynamic.resourcesUsed[canonicalName] ?? 0;
+
+        if (amount >= 999) {
+          char.dynamic.resourcesUsed[canonicalName] = 0;
+        } else {
+          char.dynamic.resourcesUsed[canonicalName] = Math.max(0, used - amount);
+        }
+
+        const newUsed = char.dynamic.resourcesUsed[canonicalName];
+        const remaining = resource.maxUses - newUsed;
+
+        this.broadcast({
+          type: "server:character_updated",
+          playerName: pName,
+          character: char,
+        });
+
+        return `${char.static.name} restored ${canonicalName} (${remaining}/${resource.maxUses} remaining)`;
+      }
+    }
+    return `Character "${characterName}" not found`;
+  }
+
   /** Add item to a character's inventory */
   addItem(characterName: string, item: {
     name: string;

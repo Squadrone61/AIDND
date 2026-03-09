@@ -352,6 +352,37 @@ export function registerGameTools(
     }
   );
 
+  // ─── Class Resources ───
+
+  server.tool(
+    "use_class_resource",
+    "Expend a use of a class resource (e.g., Bardic Inspiration, Channel Divinity, Rage, Ki Points, Wild Shape, Lay on Hands).",
+    {
+      character_name: z.string().describe("Character name"),
+      resource_name: z.string().describe("Resource name (e.g., 'Channel Divinity', 'Rage', 'Bardic Inspiration')"),
+    },
+    async ({ character_name, resource_name }) => {
+      wsClient.sendTypingIndicator(true);
+      const result = wsClient.gameStateManager.useClassResource(character_name, resource_name);
+      return { content: [{ type: "text" as const, text: result }] };
+    }
+  );
+
+  server.tool(
+    "restore_class_resource",
+    "Restore uses of a class resource (e.g., after a rest). Use amount=999 to fully restore.",
+    {
+      character_name: z.string().describe("Character name"),
+      resource_name: z.string().describe("Resource name (e.g., 'Channel Divinity', 'Rage')"),
+      amount: z.number().optional().describe("Number of uses to restore (default 1, use 999 to fully restore)"),
+    },
+    async ({ character_name, resource_name, amount }) => {
+      wsClient.sendTypingIndicator(true);
+      const result = wsClient.gameStateManager.restoreClassResource(character_name, resource_name, amount);
+      return { content: [{ type: "text" as const, text: result }] };
+    }
+  );
+
   // ─── Battle Map ───
 
   server.tool(

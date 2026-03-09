@@ -152,6 +152,8 @@ export type StateChange =
   | { type: "condition_remove"; target: string; condition: string }
   | { type: "spell_slot_use"; target: string; level: number }
   | { type: "spell_slot_restore"; target: string; level: number }
+  | { type: "resource_use"; target: string; resource: string }
+  | { type: "resource_restore"; target: string; resource: string; amount: number }
   | { type: "death_save"; target: string; success: boolean }
   | { type: "xp_gain"; target: string; amount: number }
   | { type: "item_add"; target: string; item: string; quantity: number }
@@ -173,6 +175,8 @@ export type GameEventType =
   | "condition_removed"
   | "spell_slot_used"
   | "spell_slot_restored"
+  | "resource_used"
+  | "resource_restored"
   | "hp_set"
   | "temp_hp_set"
   | "death_save"
