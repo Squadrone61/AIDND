@@ -18,13 +18,32 @@ export class MessageQueue {
     }
   }
 
-  /** Promise that resolves on next message. Used by wait_for_message tool. */
-  waitForNext(): Promise<DMRequest> {
+  /** Promise that resolves on next message. Used by wait_for_message tool.
+   *  Accepts an optional AbortSignal so the MCP SDK can cancel stale waiters
+   *  (e.g. after context compression) without deadlocking the queue. */
+  waitForNext(signal?: AbortSignal): Promise<DMRequest> {
     const queued = this.queue.shift();
     if (queued) return Promise.resolve(queued);
 
-    return new Promise<DMRequest>((resolve) => {
-      this.waiters.push(resolve);
+    return new Promise<DMRequest>((resolve, reject) => {
+      const waiter = (msg: DMRequest) => {
+        signal?.removeEventListener("abort", onAbort);
+        resolve(msg);
+      };
+
+      const onAbort = () => {
+        const idx = this.waiters.indexOf(waiter);
+        if (idx !== -1) this.waiters.splice(idx, 1);
+        reject(new Error("wait_for_message cancelled"));
+      };
+
+      if (signal?.aborted) {
+        reject(new Error("wait_for_message cancelled"));
+        return;
+      }
+
+      signal?.addEventListener("abort", onAbort, { once: true });
+      this.waiters.push(waiter);
     });
   }
 

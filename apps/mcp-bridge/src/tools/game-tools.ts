@@ -14,8 +14,8 @@ export function registerGameTools(
     "wait_for_message",
     "Block until a player message or DM request arrives via WebSocket. Returns the request with systemPrompt and conversation messages. This is the main loop driver — call this repeatedly to process game turns.",
     {},
-    async () => {
-      const msg = await messageQueue.waitForNext();
+    async (_args: Record<string, never>, extra: { signal: AbortSignal }) => {
+      const msg = await messageQueue.waitForNext(extra.signal);
       wsClient.sendTypingIndicator(true);
       return {
         content: [

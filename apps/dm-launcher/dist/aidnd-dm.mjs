@@ -5752,12 +5752,28 @@ var init_message_queue = __esm({
           this.queue.push(msg);
         }
       }
-      /** Promise that resolves on next message. Used by wait_for_message tool. */
-      waitForNext() {
+      /** Promise that resolves on next message. Used by wait_for_message tool.
+       *  Accepts an optional AbortSignal so the MCP SDK can cancel stale waiters
+       *  (e.g. after context compression) without deadlocking the queue. */
+      waitForNext(signal) {
         const queued = this.queue.shift();
         if (queued) return Promise.resolve(queued);
-        return new Promise((resolve3) => {
-          this.waiters.push(resolve3);
+        return new Promise((resolve3, reject) => {
+          const waiter = /* @__PURE__ */ __name((msg) => {
+            signal?.removeEventListener("abort", onAbort);
+            resolve3(msg);
+          }, "waiter");
+          const onAbort = /* @__PURE__ */ __name(() => {
+            const idx = this.waiters.indexOf(waiter);
+            if (idx !== -1) this.waiters.splice(idx, 1);
+            reject(new Error("wait_for_message cancelled"));
+          }, "onAbort");
+          if (signal?.aborted) {
+            reject(new Error("wait_for_message cancelled"));
+            return;
+          }
+          signal?.addEventListener("abort", onAbort, { once: true });
+          this.waiters.push(waiter);
         });
       }
       /** Number of queued messages waiting to be consumed. */
@@ -25759,6 +25775,9 @@ var init_game_state_manager = __esm({
       broadcast;
       messageQueue;
       lastSentIndex = 0;
+      lastPromptHash = "";
+      turnsSinceFullPrompt = 0;
+      FULL_PROMPT_INTERVAL = 10;
       campaignManager;
       /** Host player name (for permission checks) */
       hostName = "";
@@ -25801,14 +25820,9 @@ var init_game_state_manager = __esm({
       /** Compose the system prompt dynamically based on current game state */
       composeContextualPrompt() {
         const sections = [];
-        sections.push(DM_SKILL_PLAYER_IDENTITY);
-        sections.push(DM_SKILL_RULES);
         const inCombat = !!this.gameState.encounter?.combat;
-        if (inCombat) {
-          sections.push(DM_SKILL_COMBAT);
-        } else {
-          sections.push(DM_SKILL_NARRATION);
-        }
+        sections.push(inCombat ? "[MODE: COMBAT]" : "[MODE: EXPLORATION]");
+        sections.push(inCombat ? DM_SKILL_COMBAT : DM_SKILL_NARRATION);
         if (this.campaignManager.activeSlug) {
           sections.push(DM_SKILL_CAMPAIGN);
         }
@@ -25819,13 +25833,33 @@ ${this.gameState.customSystemPrompt}`);
         }
         return sections.join("\n\n");
       }
-      /** Push a DM request with only new messages since last send */
+      /** Push a DM request with only new messages since last send.
+       *  Uses hash-based delta delivery — only sends the full dynamic prompt
+       *  when it changes or every FULL_PROMPT_INTERVAL turns. */
       pushDMRequest() {
         const requestId = crypto.randomUUID();
-        const systemPrompt = this.composeContextualPrompt();
+        const fullPrompt = this.composeContextualPrompt();
+        const promptHash = this.simpleHash(fullPrompt);
+        let systemPrompt;
+        if (promptHash !== this.lastPromptHash || this.turnsSinceFullPrompt >= this.FULL_PROMPT_INTERVAL) {
+          systemPrompt = fullPrompt;
+          this.lastPromptHash = promptHash;
+          this.turnsSinceFullPrompt = 0;
+        } else {
+          systemPrompt = "[No changes to DM instructions.]";
+          this.turnsSinceFullPrompt++;
+        }
         const newMessages = this.conversationHistory.slice(this.lastSentIndex);
         this.lastSentIndex = this.conversationHistory.length;
         this.messageQueue.push({ requestId, systemPrompt, messages: newMessages, totalMessageCount: this.conversationHistory.length });
+      }
+      simpleHash(str) {
+        let hash2 = 0;
+        for (let i = 0; i < str.length; i++) {
+          hash2 = (hash2 << 5) - hash2 + str.charCodeAt(i);
+          hash2 |= 0;
+        }
+        return hash2.toString(36);
       }
       // ─── Player Action Dispatch ───
       handlePlayerAction(playerName, action, requestId) {
@@ -45625,8 +45659,8 @@ function registerGameTools(server, messageQueue, wsClient) {
     "wait_for_message",
     "Block until a player message or DM request arrives via WebSocket. Returns the request with systemPrompt and conversation messages. This is the main loop driver \u2014 call this repeatedly to process game turns.",
     {},
-    async () => {
-      const msg = await messageQueue.waitForNext();
+    async (_args, extra) => {
+      const msg = await messageQueue.waitForNext(extra.signal);
       wsClient.sendTypingIndicator(true);
       return {
         content: [
@@ -46681,9 +46715,13 @@ function checkClaudeCli() {
 function buildClaudeMd() {
   return `${DM_CORE_PROMPT}
 
+${DM_SKILL_PLAYER_IDENTITY}
+
+${DM_SKILL_RULES}
+
 ## Dynamic System Prompt
 
-The \`systemPrompt\` field in each \`wait_for_message\` response contains contextual DM instructions tailored to the current game state (combat vs exploration, campaign active, etc.). **Follow those instructions closely** \u2014 they are your primary behavioral guide.
+The \`systemPrompt\` field in each \`wait_for_message\` response contains contextual DM instructions (combat vs exploration mode, campaign notes, host overrides). These change based on game state \u2014 **follow them closely**. When it says "[No changes to DM instructions.]", continue following the last set of instructions you received.
 
 ## Slash Commands
 
@@ -46775,7 +46813,7 @@ async function startCli() {
       "--model",
       model,
       "--system-prompt",
-      DM_CORE_PROMPT,
+      "You are the AI Dungeon Master. Follow all instructions in CLAUDE.md. Begin by calling wait_for_message.",
       "--tools",
       "",
       "--allowedTools",

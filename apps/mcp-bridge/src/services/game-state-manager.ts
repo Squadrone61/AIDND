@@ -29,8 +29,6 @@ import { rollCheck, rollDamage, rollInitiative, buildCheckLabel, computeCheckMod
 import {
   DM_SKILL_COMBAT,
   DM_SKILL_NARRATION,
-  DM_SKILL_RULES,
-  DM_SKILL_PLAYER_IDENTITY,
   DM_SKILL_CAMPAIGN,
 } from "@aidnd/shared";
 import type { MessageQueue } from "../message-queue.js";
@@ -69,6 +67,9 @@ export class GameStateManager {
   private broadcast: BroadcastFn;
   private messageQueue: MessageQueue;
   private lastSentIndex = 0;
+  private lastPromptHash = "";
+  private turnsSinceFullPrompt = 0;
+  private readonly FULL_PROMPT_INTERVAL = 10;
   private campaignManager: CampaignManager;
   /** Host player name (for permission checks) */
   hostName = "";
@@ -124,17 +125,12 @@ export class GameStateManager {
   private composeContextualPrompt(): string {
     const sections: string[] = [];
 
-    // Always include: player identity + rules
-    sections.push(DM_SKILL_PLAYER_IDENTITY);
-    sections.push(DM_SKILL_RULES);
-
-    // Combat and narration are mutually exclusive
+    // Mode header
     const inCombat = !!this.gameState.encounter?.combat;
-    if (inCombat) {
-      sections.push(DM_SKILL_COMBAT);
-    } else {
-      sections.push(DM_SKILL_NARRATION);
-    }
+    sections.push(inCombat ? "[MODE: COMBAT]" : "[MODE: EXPLORATION]");
+
+    // Mode-specific skill (mutually exclusive — static skills are in CLAUDE.md)
+    sections.push(inCombat ? DM_SKILL_COMBAT : DM_SKILL_NARRATION);
 
     // Campaign skill when campaign is active
     if (this.campaignManager.activeSlug) {
@@ -149,13 +145,36 @@ export class GameStateManager {
     return sections.join("\n\n");
   }
 
-  /** Push a DM request with only new messages since last send */
+  /** Push a DM request with only new messages since last send.
+   *  Uses hash-based delta delivery — only sends the full dynamic prompt
+   *  when it changes or every FULL_PROMPT_INTERVAL turns. */
   private pushDMRequest(): void {
     const requestId = crypto.randomUUID();
-    const systemPrompt = this.composeContextualPrompt();
+    const fullPrompt = this.composeContextualPrompt();
+    const promptHash = this.simpleHash(fullPrompt);
+
+    let systemPrompt: string;
+    if (promptHash !== this.lastPromptHash || this.turnsSinceFullPrompt >= this.FULL_PROMPT_INTERVAL) {
+      systemPrompt = fullPrompt;
+      this.lastPromptHash = promptHash;
+      this.turnsSinceFullPrompt = 0;
+    } else {
+      systemPrompt = "[No changes to DM instructions.]";
+      this.turnsSinceFullPrompt++;
+    }
+
     const newMessages = this.conversationHistory.slice(this.lastSentIndex);
     this.lastSentIndex = this.conversationHistory.length;
     this.messageQueue.push({ requestId, systemPrompt, messages: newMessages, totalMessageCount: this.conversationHistory.length });
+  }
+
+  private simpleHash(str: string): string {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = ((hash << 5) - hash) + str.charCodeAt(i);
+      hash |= 0;
+    }
+    return hash.toString(36);
   }
 
   // ─── Player Action Dispatch ───

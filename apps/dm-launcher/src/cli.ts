@@ -10,6 +10,8 @@ import { spawn, execSync } from "child_process";
 import { randomBytes } from "crypto";
 import {
   DM_CORE_PROMPT,
+  DM_SKILL_PLAYER_IDENTITY,
+  DM_SKILL_RULES,
   NATIVE_SKILL_COMBAT_SETUP,
   NATIVE_SKILL_SHORT_REST,
   NATIVE_SKILL_LONG_REST,
@@ -78,9 +80,13 @@ function checkClaudeCli(): boolean {
 function buildClaudeMd(): string {
   return `${DM_CORE_PROMPT}
 
+${DM_SKILL_PLAYER_IDENTITY}
+
+${DM_SKILL_RULES}
+
 ## Dynamic System Prompt
 
-The \`systemPrompt\` field in each \`wait_for_message\` response contains contextual DM instructions tailored to the current game state (combat vs exploration, campaign active, etc.). **Follow those instructions closely** — they are your primary behavioral guide.
+The \`systemPrompt\` field in each \`wait_for_message\` response contains contextual DM instructions (combat vs exploration mode, campaign notes, host overrides). These change based on game state — **follow them closely**. When it says "[No changes to DM instructions.]", continue following the last set of instructions you received.
 
 ## Slash Commands
 
@@ -202,7 +208,7 @@ export async function startCli(): Promise<void> {
       "--model",
       model,
       "--system-prompt",
-      DM_CORE_PROMPT,
+      "You are the AI Dungeon Master. Follow all instructions in CLAUDE.md. Begin by calling wait_for_message.",
       "--tools",
       "",
       "--allowedTools",
