@@ -666,7 +666,7 @@ function GameContent({
           saveState={notesSaveState}
           onChange={updateNotes}
           onClose={() => setShowNotes(false)}
-          sidebarCollapsed={rightSidebarCollapsed}
+
         />
       )}
 
