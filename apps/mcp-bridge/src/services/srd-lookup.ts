@@ -191,6 +191,7 @@ export class SrdLookup {
   private findInDir(dir: string, name: string): string | null {
     const entries = this.listDir(dir);
     const normalized = this.normalize(name);
+    const queryWords = normalized.split(" ").filter(w => w.length > 0);
 
     // 1. Exact match
     for (const entry of entries) {
@@ -199,12 +200,55 @@ export class SrdLookup {
       }
     }
 
-    // 2. Substring match (e.g. "red dragon" matches "Adult Red Dragon")
+    // 2. Entry name contains query (e.g. "Goblin Warrior" contains "goblin")
+    //    Score by how close the lengths are (prefer tighter matches)
+    let bestMatch: { entry: typeof entries[0]; score: number } | null = null;
     for (const entry of entries) {
-      if (this.normalize(entry.name).includes(normalized) || normalized.includes(this.normalize(entry.name))) {
-        return this.readFile(entry.fullPath);
+      const entryNorm = this.normalize(entry.name);
+      if (entryNorm.includes(normalized)) {
+        // Tighter match = higher score (exact length match = 1.0)
+        const score = normalized.length / entryNorm.length;
+        if (!bestMatch || score > bestMatch.score) {
+          bestMatch = { entry, score };
+        }
       }
     }
+    if (bestMatch) return this.readFile(bestMatch.entry.fullPath);
+
+    // 3. Fuzzy word-overlap match
+    //    (e.g. "Potions of Healing" matches "Potion of Healing", "Tasha's Hideous Laughter" matches "Hideous Laughter")
+    //    Filter stop words, require significant content-word overlap
+    const STOP_WORDS = new Set(["of", "the", "a", "an", "and", "or", "in", "on", "to", "for", "with", "by"]);
+    const queryContent = queryWords.filter(w => !STOP_WORDS.has(w));
+    if (queryContent.length === 0) return null;
+
+    let bestWordMatch: { entry: typeof entries[0]; score: number } | null = null;
+    for (const entry of entries) {
+      const entryWords = this.normalize(entry.name).split(" ").filter(w => w.length > 0);
+      const entryContent = entryWords.filter(w => !STOP_WORDS.has(w));
+      if (entryContent.length === 0) continue;
+
+      // Count content words that match (allow singular/plural via startsWith)
+      const matchingEntry = entryContent.filter(ew =>
+        queryContent.some(qw => ew === qw || ew.startsWith(qw) || qw.startsWith(ew))
+      );
+      const matchingQuery = queryContent.filter(qw =>
+        entryContent.some(ew => ew === qw || ew.startsWith(qw) || qw.startsWith(ew))
+      );
+
+      // Both the entry and query must have most of their content words matched
+      const entryOverlap = matchingEntry.length / entryContent.length;
+      const queryOverlap = matchingQuery.length / queryContent.length;
+
+      // Require: all entry content words match, AND at least 50% of query content words match
+      if (entryOverlap >= 1.0 && queryOverlap >= 0.5) {
+        const score = entryOverlap + queryOverlap; // max 2.0
+        if (!bestWordMatch || score > bestWordMatch.score) {
+          bestWordMatch = { entry, score };
+        }
+      }
+    }
+    if (bestWordMatch) return this.readFile(bestWordMatch.entry.fullPath);
 
     return null;
   }
