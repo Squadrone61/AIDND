@@ -46894,7 +46894,7 @@ var init_cli = __esm({
   "src/cli.ts"() {
     "use strict";
     init_src();
-    VERSION = true ? "0.7.0" : "dev";
+    VERSION = true ? "0.8.0" : "dev";
     DEFAULT_WORKER_URL = true ? "https://aidnd-api.safaakyuz.com" : "http://127.0.0.1:8787";
     BANNER = `
 \u2554\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2557
