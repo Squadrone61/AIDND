@@ -665,6 +665,15 @@ export class WSClient {
     });
   }
 
+  /** Broadcast a system event message to all players (visible in activity log). */
+  broadcastSystemEvent(content: string): void {
+    this.broadcastViaWorker({
+      type: "server:system",
+      content,
+      timestamp: Date.now(),
+    });
+  }
+
   /** Send a DM response — now goes through GameStateManager */
   sendDMResponse(requestId: string, text: string): void {
     this.gameStateManager.sendResponse(requestId, text);

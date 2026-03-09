@@ -92,9 +92,10 @@ pnpm deploy:web     # Deploy web only
 - `services/game-state-manager.ts` — **Core game engine**: owns GameState, combat, dice, HP, conditions, spell slots, conversation history, check flow, battle map, rollback
 - `services/campaign-manager.ts` — Campaign persistence: create/load/list campaigns, save/read files, session management, character snapshots
 - `tools/game-tools.ts` — 17 MCP tools: wait_for_message, send_response, get_players, get_game_state, get_character, apply_damage, heal, set_hp, add_condition, remove_condition, start_combat, end_combat, advance_turn, add_combatant, remove_combatant, move_combatant, use_spell_slot, restore_spell_slot, update_battle_map
-- `tools/dnd-tools.ts` — lookup_spell, lookup_monster, lookup_condition, roll_dice (now supports interactive player checks with targetCharacter)
+- `tools/dnd-tools.ts` — roll_dice (supports interactive player checks with targetCharacter)
+- `tools/srd-tools.ts` — SRD 5.2 lookup tools: lookup_spell, lookup_monster, lookup_condition, lookup_magic_item, lookup_feat, search_rules
 - `tools/campaign-tools.ts` — create_campaign, list_campaigns, load_campaign_context, save_campaign_file, read_campaign_file, list_campaign_files, end_session
-- `services/dnd-api.ts` — D&D 5e SRD API client (in-memory cache)
+- `services/srd-lookup.ts` — Local SRD 5.2 rules lookup service (reads markdown files from data/srd-5.2/)
 - `types.ts` — Bridge message types, CampaignManifest, CampaignSummary
 
 ### DM Launcher (apps/dm-launcher/src/)
@@ -176,12 +177,15 @@ pnpm deploy:web     # Deploy web only
 |------|-------------|
 | `update_battle_map` | Set/update grid with dimensions, terrain tiles, name. |
 
-### D&D Reference
+### D&D Reference (SRD 5.2 — 2024 rules, local offline lookup)
 | Tool | Description |
 |------|-------------|
-| `lookup_spell` | Look up spell details from D&D 5e SRD API |
-| `lookup_monster` | Look up monster stats |
-| `lookup_condition` | Look up condition effects |
+| `lookup_spell` | Look up spell details from 2024 D&D rules (SRD 5.2) |
+| `lookup_monster` | Look up monster stat block from 2024 rules |
+| `lookup_condition` | Look up condition effects from 2024 rules |
+| `lookup_magic_item` | Look up a magic item from SRD 5.2 |
+| `lookup_feat` | Look up a feat from SRD 5.2 |
+| `search_rules` | Search all 2024 rules for any topic (combat, class features, equipment, etc.) |
 | `roll_dice` | Roll dice — direct DM rolls (notation only) or interactive player checks (with targetCharacter, checkType, ability, skill, dc) |
 
 ### Campaign Persistence

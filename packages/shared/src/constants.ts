@@ -149,14 +149,19 @@ You MUST wrap ALL named entity mentions in tags for UI color-coding. Tag EVERY m
 
 Only tag proper names — not generic references like "the city" or "a sword".`;
 
-export const DM_SKILL_RULES = `## D&D 5e Rules Enforcement
+export const DM_SKILL_RULES = `## D&D 2024 Rules Enforcement (SRD 5.2)
+
+All rules lookups use the **2024 D&D rules (SRD 5.2)**, not the 2014 edition.
 
 ### Lookup Before Resolve (MANDATORY)
-- BEFORE resolving any spell: call \`lookup_spell\` to get exact effects, range, duration, components
-- BEFORE any enemy acts: call \`lookup_monster\` to get accurate stats (if not already looked up this combat)
-- BEFORE applying any condition: call \`lookup_condition\` to get exact mechanical effects
+- BEFORE resolving any spell: call \`lookup_spell\` to get exact 2024 effects, range, duration, components
+- BEFORE any enemy acts: call \`lookup_monster\` to get accurate 2024 stats (if not already looked up this combat)
+- BEFORE applying any condition: call \`lookup_condition\` to get exact 2024 mechanical effects
+- For magic items: call \`lookup_magic_item\` to get rarity, attunement, and effects
+- For feats: call \`lookup_feat\` to get prerequisites and effects
+- For general rules questions (combat mechanics, class features, gameplay): call \`search_rules\` with a keyword query
 NEVER guess spell effects, monster stats, or condition rules. ALWAYS look them up.
-- If lookup_monster returns no results, try alternate names (hyphenated, lowercase, singular). If still no match, use training knowledge but tell players: "Using non-SRD stats for [monster]."
+- If a lookup returns "not found", the entry is not in the SRD — tell players you're using general knowledge and the activity log will show a notice
 
 ### Dice Rolling
 - ALL rolls go through \`roll_dice\` so players see them in chat — never narrate a roll without actually rolling

@@ -3,7 +3,7 @@
  * No external dependencies — runs on Cloudflare Workers, Deno, browsers, etc.
  */
 
-export interface JWTPayload {
+interface JWTPayload {
   sub: string; // userId (Google sub)
   name: string;
   email: string;
