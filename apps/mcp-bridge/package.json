@@ -10,6 +10,7 @@
   "dependencies": {
     "@aidnd/shared": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.12.1",
+    "dnd-data": "^1.0.0",
     "ws": "^8.18.0",
     "zod": "^4"
   },

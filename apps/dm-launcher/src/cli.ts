@@ -254,6 +254,9 @@ export async function startCli(): Promise<void> {
         "mcp__aidnd-dm__lookup_condition",
         "mcp__aidnd-dm__lookup_magic_item",
         "mcp__aidnd-dm__lookup_feat",
+        "mcp__aidnd-dm__lookup_class",
+        "mcp__aidnd-dm__lookup_species",
+        "mcp__aidnd-dm__lookup_background",
         "mcp__aidnd-dm__search_rules",
         "mcp__aidnd-dm__roll_dice",
         // Context management

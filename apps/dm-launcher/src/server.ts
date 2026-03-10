@@ -37,7 +37,7 @@ export async function startServer(): Promise<void> {
     campaignManager,
   });
 
-  const mcpServer = createMcpServer(messageQueue, wsClient, campaignManager);
+  const mcpServer = await createMcpServer(messageQueue, wsClient, campaignManager);
 
   wsClient.connect();
 

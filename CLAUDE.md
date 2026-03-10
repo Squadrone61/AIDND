@@ -96,6 +96,7 @@ pnpm deploy:web     # Deploy web only
 - `tools/srd-tools.ts` — SRD 5.2 lookup tools: lookup_spell, lookup_monster, lookup_condition, lookup_magic_item, lookup_feat, search_rules
 - `tools/campaign-tools.ts` — create_campaign, list_campaigns, load_campaign_context, save_campaign_file, read_campaign_file, list_campaign_files, end_session
 - `services/srd-lookup.ts` — Local SRD 5.2 rules lookup service (reads markdown files from data/srd-5.2/)
+- `services/dnd-data-lookup.ts` — Extended D&D database fallback (dnd-data package: 5,849 spells, 11,463 monsters, 15,749 items, 134 classes, 383 species, 405 backgrounds)
 - `types.ts` — Bridge message types, CampaignManifest, CampaignSummary
 
 ### DM Launcher (apps/dm-launcher/src/)
@@ -197,14 +198,17 @@ pnpm deploy:web     # Deploy web only
 | `use_class_resource` | Expend a use of a class resource (Bardic Inspiration, Channel Divinity, Rage, Ki Points, etc.) |
 | `restore_class_resource` | Restore uses of a class resource (e.g., after rest). Use amount=999 to fully restore. |
 
-### D&D Reference (SRD 5.2 — 2024 rules, local offline lookup)
+### D&D Reference (SRD 5.2 → Extended Database → SRD 5.1 fallback chain)
 | Tool | Description |
 |------|-------------|
-| `lookup_spell` | Look up spell details from 2024 D&D rules (SRD 5.2) |
-| `lookup_monster` | Look up monster stat block from 2024 rules |
-| `lookup_condition` | Look up condition effects from 2024 rules |
-| `lookup_magic_item` | Look up a magic item from SRD 5.2 |
-| `lookup_feat` | Look up a feat from SRD 5.2 |
+| `lookup_spell` | Look up spell details. SRD 5.2 → extended DB (5,849 spells) → SRD 5.1. Accepts optional `source` filter. |
+| `lookup_monster` | Look up monster stat block. SRD 5.2 → extended DB (11,463 monsters) → SRD 5.1. Accepts optional `source` filter. |
+| `lookup_condition` | Look up condition effects from SRD 5.2/5.1 |
+| `lookup_magic_item` | Look up a magic item. SRD 5.2 → extended DB (15,749 items) → SRD 5.1. Accepts optional `source` filter. |
+| `lookup_feat` | Look up a feat from SRD 5.2/5.1 |
+| `lookup_class` | Look up class/subclass from extended DB (134 entries). Accepts optional `source` filter. |
+| `lookup_species` | Look up species/race from extended DB (383 entries). Accepts optional `source` filter. |
+| `lookup_background` | Look up background from extended DB (405 entries). Accepts optional `source` filter. |
 | `search_rules` | Search all 2024 rules for any topic (combat, class features, equipment, etc.) |
 | `roll_dice` | Roll dice — direct DM rolls (notation only) or interactive player checks (with targetCharacter, checkType, ability, skill, dc) |
 

@@ -27,8 +27,8 @@ const wsClient = new WSClient({
   campaignManager,
 });
 
-// Create MCP server with all tools
-const mcpServer = createMcpServer(messageQueue, wsClient, campaignManager);
+// Create MCP server with all tools (async — loads extended D&D database)
+const mcpServer = await createMcpServer(messageQueue, wsClient, campaignManager);
 
 // Connect WebSocket to worker room
 wsClient.connect();
