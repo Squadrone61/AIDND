@@ -131,12 +131,12 @@ const KNOWN_CASTER_CLASSES = new Set([
 
 // DDB limitedUse resetType IDs → rest type
 const DDB_RESET_TYPES: Record<number, "short" | "long" | null> = {
-  1: null,    // other/special
+  1: "long",  // other/special → default to long rest (Bardic Inspiration, Action Surge, Ki, etc.)
   2: "short", // short rest
   3: "long",  // long rest
   4: "long",  // dawn (effectively long rest)
-  5: null,    // day (treat as special)
-  6: null,    // unknown
+  5: "long",  // day → treat as long rest
+  6: null,    // truly unknown
 };
 
 // DDB activation type IDs → human-readable
@@ -603,9 +603,28 @@ function computeHP(
     0
   );
 
-  // Base HP = hit die rolls + CON modifier per level
+  // Per-level HP bonuses (e.g. Draconic Resilience: +1 HP per sorcerer level).
+  // These modifiers are class-specific — trace each back to its source class level
+  // via componentId rather than applying to totalLevel.
+  const hpPerLevelMods = getModifiers(char, { type: "bonus", subType: "hit-points-per-level" });
+  let hpPerLevelBonus = 0;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const classFeatureMap = new Map<number, number>(); // componentId → class level
+  for (const cls of char.classes || []) {
+    for (const f of cls.classFeatures || []) {
+      if (f.definition?.id) {
+        classFeatureMap.set(f.definition.id, cls.level || 1);
+      }
+    }
+  }
+  for (const mod of hpPerLevelMods) {
+    const classLevel = (mod.componentId && classFeatureMap.get(mod.componentId)) || totalLevel;
+    hpPerLevelBonus += (mod.value || 0) * classLevel;
+  }
+
+  // Base HP = hit die rolls + CON modifier per level + class-specific per-level bonuses
   const baseHp: number =
-    (char.baseHitPoints ?? 10) + conMod * totalLevel;
+    (char.baseHitPoints ?? 10) + conMod * totalLevel + hpPerLevelBonus;
 
   // DDB pre-computes all bonus HP (Tough feat, etc.) into bonusHitPoints
   const bonusHP: number = char.bonusHitPoints || 0;
@@ -672,23 +691,36 @@ function computeArmorClass(char: any, abilities: AbilityScores): number {
       baseAC = armor.armorClass;
     }
   } else {
-    // Unarmored: base 10 + DEX
-    baseAC = 10 + dexMod;
-
-    // Unarmored Defense (Barbarian: +CON, Monk: +WIS when no shield)
-    const classNames = (char.classes || []).map(
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (c: any) => ((c.definition?.name as string) || "").toLowerCase()
-    );
+    // Unarmored: compute all applicable formulas, pick the best
+    let unarmoredAC = 10 + dexMod;
 
     const conMod = getAbilityMod(abilities.constitution);
     const wisMod = getAbilityMod(abilities.wisdom);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const classes = char.classes || [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const classNames = classes.map((c: any) => ((c.definition?.name as string) || "").toLowerCase());
+
+    // Barbarian Unarmored Defense: 10 + DEX + CON
     if (classNames.includes("barbarian")) {
-      baseAC = 10 + dexMod + conMod;
-    } else if (classNames.includes("monk") && shieldAC === 0) {
-      baseAC = 10 + dexMod + wisMod;
+      unarmoredAC = Math.max(unarmoredAC, 10 + dexMod + conMod);
     }
+    // Monk Unarmored Defense: 10 + DEX + WIS (no shield)
+    if (classNames.includes("monk") && shieldAC === 0) {
+      unarmoredAC = Math.max(unarmoredAC, 10 + dexMod + wisMod);
+    }
+    // Draconic Resilience (Sorcerer, Draconic subclass): 13 + DEX
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const hasDraconicResilience = classes.some(
+      (c: any) => c.definition?.name?.toLowerCase() === "sorcerer" &&
+        c.subclassDefinition?.name?.toLowerCase()?.includes("draconic")
+    );
+    if (hasDraconicResilience) {
+      unarmoredAC = Math.max(unarmoredAC, 13 + dexMod);
+    }
+
+    baseAC = unarmoredAC;
   }
 
   // Flat AC bonuses (magic items, feats, etc.)
@@ -1049,9 +1081,13 @@ function extractProficiencies(char: any): ProficiencyGroup {
     } else {
       // Skip saving throws and skill proficiencies (handled elsewhere)
       const lower = name.toLowerCase();
+      // SKILL_ABILITY_MAP uses slugs ("sleight-of-hand") but friendlySubtypeName
+      // uses display names ("Sleight of Hand"), so check both formats
+      const slug = lower.replace(/\s+/g, "-");
       if (
         lower.includes("saving") ||
         SKILL_ABILITY_MAP[lower] ||
+        SKILL_ABILITY_MAP[slug] ||
         lower.includes("-saving-throws")
       ) {
         continue;
@@ -1246,11 +1282,29 @@ function extractClassResources(char: any, abilities: AbilityScores): ClassResour
 
       const name: string = feature.definition.name;
 
-      // Try feature limitedUse first, then fall back to action lookup
-      let limitedUse = feature.definition.limitedUse ?? feature.limitedUse;
-      const actionLU = actionLimitedUseMap.get(name);
-      if (!limitedUse && !actionLU) continue;
-      if (!limitedUse) limitedUse = actionLU;
+      // DDB stores limitedUse in two places:
+      // 1. Feature's limitedUse — sometimes an array [{level, uses}] (progression table), not usable
+      // 2. Action's limitedUse — object with {maxUses, resetType, statModifierUsesId} (runtime values)
+      // The action data has the real computed maxUses, so prefer it when available.
+      // DDB actions often have different names than features:
+      //   Feature "Rage" → Action "Rage (Enter)"
+      //   Feature "Lay On Hands" → Action "Lay On Hands: Healing Pool"
+      //   Feature "Font of Magic" → Action "Font of Magic: Sorcery Points"
+      const actionEntry = actionLimitedUseMap.has(name)
+        ? [name, actionLimitedUseMap.get(name)] as const
+        : [...actionLimitedUseMap.entries()].find(
+            ([actionName]) => actionName.startsWith(name + " ") ||
+              actionName.startsWith(name + ":") ||
+              actionName.startsWith(name + "(")
+          );
+      const actionLU = actionEntry?.[1];
+      const matchedActionName = actionEntry?.[0];
+      // Feature limitedUse: skip if it's an array (level progression table, not runtime data)
+      const featureLU = feature.definition.limitedUse ?? feature.limitedUse;
+      const featureLUObj = featureLU && !Array.isArray(featureLU) ? featureLU : null;
+      // Prefer action limitedUse (has real maxUses), fall back to feature object
+      let limitedUse = actionLU ?? featureLUObj;
+      if (!limitedUse) continue;
 
       // Compute effective maxUses, resolving stat-modifier-based values
       let maxUses: number = limitedUse.maxUses ?? 0;
@@ -1268,9 +1322,30 @@ function extractClassResources(char: any, abilities: AbilityScores): ClassResour
 
       if (seen.has(name)) continue;
       seen.add(name);
+      // Also mark the matched action name to prevent duplicates in second pass
+      if (matchedActionName) seen.add(matchedActionName);
 
       resources.push({ name, maxUses, resetType, source: className });
     }
+  }
+
+  // Second pass: pick up class actions with limitedUse that weren't matched to any feature
+  // (e.g. "Focus Points" which has no matching classFeature name)
+  for (const action of char.actions?.class || []) {
+    if (!action.name || !action.limitedUse || seen.has(action.name)) continue;
+    const lu = action.limitedUse;
+    if (!lu.maxUses) continue;
+    const resetType = DDB_RESET_TYPES[lu.resetType] ?? null;
+    if (!resetType) continue;
+
+    let maxUses: number = lu.maxUses ?? 0;
+    if (lu.statModifierUsesId && STAT_ID_MAP[lu.statModifierUsesId]) {
+      maxUses += getAbilityMod(abilities[STAT_ID_MAP[lu.statModifierUsesId]]);
+    }
+    if (maxUses <= 0) continue;
+
+    seen.add(action.name);
+    resources.push({ name: action.name, maxUses, resetType, source: "Class" });
   }
 
   return resources;
