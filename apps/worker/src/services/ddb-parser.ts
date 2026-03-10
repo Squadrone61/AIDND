@@ -21,6 +21,7 @@ import type {
   AbilityScores,
   Currency,
   CharacterTraits,
+  CharacterAppearance,
   SkillProficiency,
   SavingThrowProficiency,
 } from "@aidnd/shared/types";
@@ -327,8 +328,8 @@ export function parseDDBCharacter(raw: unknown): {
     }
   }
 
-  // === Class Resources (Channel Divinity, Ki, Rage, etc.) ===
-  const classResources = extractClassResources(char);
+  // === Class Resources (Channel Divinity, Ki, Rage, Bardic Inspiration, etc.) ===
+  const classResources = extractClassResources(char, abilities);
 
   // === Proficiencies (ddb2alchemy entityTypeId approach) ===
   const proficiencies = extractProficiencies(char);
@@ -360,6 +361,9 @@ export function parseDDBCharacter(raw: unknown): {
   // === Traits ===
   const traits = extractTraits(char);
 
+  // === Appearance ===
+  const appearance = extractAppearance(char);
+
   // === XP ===
   const xp: number = char.currentXp || 0;
 
@@ -385,6 +389,7 @@ export function parseDDBCharacter(raw: unknown): {
     spellAttackBonus: spellcasting.spellAttackBonus,
     advantages,
     traits,
+    appearance,
     importedAt: Date.now(),
     ddbId: char.id || undefined,
   };
@@ -1210,12 +1215,24 @@ function extractFeatures(
 }
 
 /**
- * Extract class resources with limited uses (Channel Divinity, Ki, Rage, etc.)
+ * Extract class resources with limited uses (Channel Divinity, Ki, Rage, Bardic Inspiration, etc.)
+ * Some resources (e.g. Bardic Inspiration) store maxUses: 0 with a statModifierUsesId
+ * that references an ability modifier. We resolve these using the computed ability scores.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function extractClassResources(char: any): ClassResource[] {
+function extractClassResources(char: any, abilities: AbilityScores): ClassResource[] {
   const resources: ClassResource[] = [];
   const seen = new Set<string>();
+
+  // Build a lookup from char.actions.class[] for limitedUse data that may not
+  // appear on classFeatures (DDB stores runtime limitedUse on actions for some features)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const actionLimitedUseMap = new Map<string, any>();
+  for (const action of char.actions?.class || []) {
+    if (action.name && action.limitedUse) {
+      actionLimitedUseMap.set(action.name, action.limitedUse);
+    }
+  }
 
   for (const cls of char.classes || []) {
     const className: string = cls.definition?.name || "Unknown";
@@ -1227,16 +1244,28 @@ function extractClassResources(char: any): ClassResource[] {
         feature.requiredLevel ?? feature.definition?.requiredLevel;
       if (requiredLevel != null && requiredLevel > classLevel) continue;
 
-      const limitedUse = feature.definition.limitedUse ?? feature.limitedUse;
-      if (!limitedUse) continue;
+      const name: string = feature.definition.name;
 
-      const maxUses: number = limitedUse.maxUses;
-      if (!maxUses || maxUses <= 0) continue;
+      // Try feature limitedUse first, then fall back to action lookup
+      let limitedUse = feature.definition.limitedUse ?? feature.limitedUse;
+      const actionLU = actionLimitedUseMap.get(name);
+      if (!limitedUse && !actionLU) continue;
+      if (!limitedUse) limitedUse = actionLU;
 
-      const resetType = DDB_RESET_TYPES[limitedUse.resetType] ?? null;
+      // Compute effective maxUses, resolving stat-modifier-based values
+      let maxUses: number = limitedUse.maxUses ?? 0;
+      const statModId: number | undefined =
+        limitedUse.statModifierUsesId ?? actionLU?.statModifierUsesId;
+      if (statModId && STAT_ID_MAP[statModId]) {
+        const abilityKey = STAT_ID_MAP[statModId];
+        maxUses = maxUses + getAbilityMod(abilities[abilityKey]);
+      }
+      if (maxUses <= 0) maxUses = Math.max(1, maxUses); // at least 1 use
+      if (maxUses <= 0) continue;
+
+      const resetType = DDB_RESET_TYPES[limitedUse.resetType ?? actionLU?.resetType] ?? null;
       if (!resetType) continue; // skip resources with special/unknown reset
 
-      const name: string = feature.definition.name;
       if (seen.has(name)) continue;
       seen.add(name);
 
@@ -1603,6 +1632,19 @@ function extractTraits(char: any): CharacterTraits {
   };
 }
 
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function extractAppearance(char: any): CharacterAppearance | undefined {
+  const a: CharacterAppearance = {};
+  if (char.gender) a.gender = String(char.gender);
+  if (char.age) a.age = String(char.age);
+  if (char.height) a.height = String(char.height);
+  if (char.weight) a.weight = String(char.weight);
+  if (char.hair) a.hair = String(char.hair);
+  if (char.eyes) a.eyes = String(char.eyes);
+  if (char.skin) a.skin = String(char.skin);
+  return Object.keys(a).length > 0 ? a : undefined;
+}
 
 function stripHtml(html: string): string {
   return html

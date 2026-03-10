@@ -12,6 +12,7 @@ type FeatureFilter = "all" | "class" | "race" | "feat" | "background";
 export function FeaturesTab({ character, onFeatureClick }: FeaturesTabProps) {
   const [filter, setFilter] = useState<string>("all");
   const [traitsOpen, setTraitsOpen] = useState(false);
+  const [appearanceOpen, setAppearanceOpen] = useState(false);
   const s = character.static;
 
   const counts = useMemo(() => {
@@ -103,8 +104,8 @@ export function FeaturesTab({ character, onFeatureClick }: FeaturesTabProps) {
         </div>
       )}
 
-      {/* Divider — traits */}
-      {hasTraits && (
+      {/* Divider — traits & appearance */}
+      {(hasTraits || s.appearance) && (
         <div className="border-t border-gray-700/50 pt-2 mt-2 space-y-1.5">
           {/* Traits */}
           {hasTraits && (
@@ -152,6 +153,67 @@ export function FeaturesTab({ character, onFeatureClick }: FeaturesTabProps) {
                       <div className="text-xs text-gray-300">
                         {s.traits.flaws}
                       </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Appearance */}
+          {s.appearance && (
+            <div>
+              <button
+                onClick={() => setAppearanceOpen(!appearanceOpen)}
+                className="flex items-center justify-between w-full text-xs text-gray-400 font-medium px-1.5"
+              >
+                <span>Appearance</span>
+                <span className="text-gray-600">
+                  {appearanceOpen ? "\u2212" : "+"}
+                </span>
+              </button>
+              {appearanceOpen && (
+                <div className="mt-1 grid grid-cols-2 gap-x-3 gap-y-0.5 px-1.5">
+                  {s.appearance.gender && (
+                    <div>
+                      <span className="text-[10px] text-gray-500">Gender </span>
+                      <span className="text-xs text-gray-300">{s.appearance.gender}</span>
+                    </div>
+                  )}
+                  {s.appearance.age && (
+                    <div>
+                      <span className="text-[10px] text-gray-500">Age </span>
+                      <span className="text-xs text-gray-300">{s.appearance.age}</span>
+                    </div>
+                  )}
+                  {s.appearance.height && (
+                    <div>
+                      <span className="text-[10px] text-gray-500">Height </span>
+                      <span className="text-xs text-gray-300">{s.appearance.height}</span>
+                    </div>
+                  )}
+                  {s.appearance.weight && (
+                    <div>
+                      <span className="text-[10px] text-gray-500">Weight </span>
+                      <span className="text-xs text-gray-300">{s.appearance.weight}</span>
+                    </div>
+                  )}
+                  {s.appearance.hair && (
+                    <div>
+                      <span className="text-[10px] text-gray-500">Hair </span>
+                      <span className="text-xs text-gray-300">{s.appearance.hair}</span>
+                    </div>
+                  )}
+                  {s.appearance.eyes && (
+                    <div>
+                      <span className="text-[10px] text-gray-500">Eyes </span>
+                      <span className="text-xs text-gray-300">{s.appearance.eyes}</span>
+                    </div>
+                  )}
+                  {s.appearance.skin && (
+                    <div>
+                      <span className="text-[10px] text-gray-500">Skin </span>
+                      <span className="text-xs text-gray-300">{s.appearance.skin}</span>
                     </div>
                   )}
                 </div>

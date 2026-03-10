@@ -74,6 +74,16 @@ export interface CharacterTraits {
   flaws?: string;
 }
 
+export interface CharacterAppearance {
+  gender?: string;
+  age?: string;
+  height?: string;
+  weight?: string;
+  hair?: string;
+  eyes?: string;
+  skin?: string;
+}
+
 export interface DeathSaves {
   successes: number;
   failures: number;
@@ -154,6 +164,7 @@ export interface CharacterStaticData {
   spellAttackBonus?: number;
   advantages: AdvantageEntry[];
   traits: CharacterTraits;
+  appearance?: CharacterAppearance;
   importedAt: number; // timestamp
   sourceUrl?: string; // DDB URL if imported from URL
   ddbId?: number; // DDB character ID
