@@ -479,11 +479,27 @@ export function Sidebar({
           <div className="text-sm text-green-400 flex items-center gap-1.5">
             <div className="w-2 h-2 rounded-full bg-green-500" />
             <span>DM Connected</span>
+            <a
+              href="https://github.com/Squadrone61/AIDND/releases"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-gray-500 hover:text-gray-300 underline ml-auto"
+            >
+              Get Launcher ↗
+            </a>
           </div>
         ) : (
           <div className="text-sm text-yellow-400 flex items-center gap-1.5">
             <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" />
             <span>Waiting for DM...</span>
+            <a
+              href="https://github.com/Squadrone61/AIDND/releases"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-gray-500 hover:text-gray-300 underline ml-auto"
+            >
+              Get Launcher ↗
+            </a>
           </div>
         )}
         {connectionState && (
