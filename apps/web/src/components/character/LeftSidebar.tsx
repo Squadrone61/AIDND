@@ -1,44 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import type { CharacterData } from "@aidnd/shared/types";
 import { formatClassString, getTotalLevel } from "@aidnd/shared/utils";
 import { CharacterSheet } from "./CharacterSheet";
-import { CharacterImport } from "./CharacterImport";
 import { HPBar } from "./HPBar";
-import { useCharacterImport } from "@/hooks/useCharacterImport";
+import { useCharacterLibrary } from "@/hooks/useCharacterLibrary";
+import Link from "next/link";
 
 interface LeftSidebarProps {
   character: CharacterData | null;
   onCharacterImported: (character: CharacterData) => void;
 }
 
-type ImportMode = "closed" | "update" | "change";
-
 export function LeftSidebar({ character, onCharacterImported }: LeftSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
-  const [importMode, setImportMode] = useState<ImportMode>("closed");
-
-  const {
-    importState,
-    character: importedCharacter,
-    warnings,
-    error: importError,
-    fallbackHint,
-    importFromUrl,
-    importFromJson,
-    clearCharacter,
-    resetForReimport,
-    setFreshImport,
-  } = useCharacterImport({ existingCharacter: character });
-
-  // When import succeeds, bubble up to GameContent and close import panel
-  useEffect(() => {
-    if (importedCharacter && importState === "success") {
-      onCharacterImported(importedCharacter);
-      setImportMode("closed");
-    }
-  }, [importedCharacter, importState, onCharacterImported]);
+  const { characters, touchCharacter } = useCharacterLibrary();
 
   if (collapsed) {
     return (
@@ -66,13 +43,10 @@ export function LeftSidebar({ character, onCharacterImported }: LeftSidebarProps
     );
   }
 
-  const panelOpen = importMode !== "closed";
-
   return (
     <div className="w-80 bg-gray-800 border-r border-gray-700 flex flex-col shrink-0 relative">
       {/* Header */}
       <div className="p-3 border-b border-gray-700 space-y-1.5 shrink-0">
-        {/* Row 1: Name (or "Character") + buttons */}
         <div className="flex items-center justify-between">
           {character ? (
             <h2
@@ -85,49 +59,6 @@ export function LeftSidebar({ character, onCharacterImported }: LeftSidebarProps
             <h2 className="text-sm font-medium text-gray-300">Character</h2>
           )}
           <div className="flex items-center gap-1 shrink-0">
-            {character && (
-              <>
-                <button
-                  onClick={() => {
-                    if (importMode === "update") {
-                      setImportMode("closed");
-                    } else {
-                      setImportMode("update");
-                      setFreshImport(false);
-                      resetForReimport();
-                    }
-                  }}
-                  className={`text-xs px-2 py-0.5 rounded transition-colors ${
-                    importMode === "update"
-                      ? "bg-purple-600/20 text-purple-400"
-                      : "text-gray-500 hover:text-gray-300"
-                  }`}
-                  title="Re-import character after leveling up or making changes on D&D Beyond"
-                >
-                  Update
-                </button>
-                <button
-                  onClick={() => {
-                    if (importMode === "change") {
-                      setImportMode("closed");
-                      setFreshImport(false);
-                    } else {
-                      setImportMode("change");
-                      setFreshImport(true);
-                      resetForReimport();
-                    }
-                  }}
-                  className={`text-xs px-2 py-0.5 rounded transition-colors ${
-                    importMode === "change"
-                      ? "bg-purple-600/20 text-purple-400"
-                      : "text-gray-500 hover:text-gray-300"
-                  }`}
-                  title="Import a different character from scratch"
-                >
-                  Change
-                </button>
-              </>
-            )}
             <button
               onClick={() => setCollapsed(true)}
               className="text-gray-500 hover:text-gray-300 transition-colors p-1"
@@ -149,7 +80,6 @@ export function LeftSidebar({ character, onCharacterImported }: LeftSidebarProps
             </button>
           </div>
         </div>
-        {/* Row 2: Race · Class · Level */}
         {character && (
           <div className="text-[11px] text-gray-400 truncate">
             {character.static.race} &middot;{" "}
@@ -157,7 +87,6 @@ export function LeftSidebar({ character, onCharacterImported }: LeftSidebarProps
             {getTotalLevel(character.static.classes)}
           </div>
         )}
-        {/* Row 3: HP bar */}
         {character && (
           <HPBar
             current={character.dynamic.currentHP}
@@ -171,68 +100,97 @@ export function LeftSidebar({ character, onCharacterImported }: LeftSidebarProps
       <div className="flex-1 overflow-hidden flex flex-col">
         {character ? (
           <div className="flex flex-col flex-1 min-h-0">
-            {/* Import panel (shown when Update or Change is clicked) */}
-            {panelOpen && (
-              <div className="bg-gray-900/50 border border-gray-700 rounded-lg p-3 mx-3 mt-3 space-y-2 shrink-0">
-                <div className="flex items-center justify-between">
-                  <div className="text-xs text-gray-400 font-medium">
-                    {importMode === "change"
-                      ? "Change Character"
-                      : "Re-import Character"}
-                  </div>
-                  <button
-                    onClick={() => {
-                      setImportMode("closed");
-                      setFreshImport(false);
-                    }}
-                    className="text-gray-600 hover:text-gray-400 transition-colors text-xs"
-                  >
-                    Cancel
-                  </button>
-                </div>
-                <p className="text-[10px] text-gray-500">
-                  {importMode === "change"
-                    ? "Import a new character. All current data will be replaced."
-                    : "Leveled up or made changes on D&D Beyond? Re-import to update your stats. Your current HP, conditions, spell slot usage, inventory, and currency will be preserved."}
-                </p>
-                <CharacterImport
-                  importState={importState}
-                  character={importedCharacter}
-                  error={importError}
-                  fallbackHint={fallbackHint}
-                  warnings={warnings}
-                  onImportUrl={importFromUrl}
-                  onImportJson={importFromJson}
-                  onClear={clearCharacter}
-                />
-              </div>
-            )}
-
             <CharacterSheet character={character} />
+            {/* Link to library */}
+            <div className="p-2 border-t border-gray-700 shrink-0">
+              <Link
+                href="/characters"
+                target="_blank"
+                className="text-[10px] text-gray-500 hover:text-purple-400 transition-colors"
+              >
+                View in library &rarr;
+              </Link>
+            </div>
           </div>
         ) : (
-          <div className="space-y-4 overflow-y-auto p-3">
-            <div className="text-center pt-4 pb-2">
-              <div className="text-gray-400 text-sm font-medium mb-1">
-                Import Character
-              </div>
-              <p className="text-gray-600 text-xs">
-                Import from D&D Beyond to see your character sheet and share
-                stats with the party.
-              </p>
-            </div>
-            <CharacterImport
-              importState={importState}
-              character={importedCharacter}
-              error={importError}
-              fallbackHint={fallbackHint}
-              warnings={warnings}
-              onImportUrl={importFromUrl}
-              onImportJson={importFromJson}
-              onClear={clearCharacter}
-            />
-          </div>
+          <CharacterPicker
+            characters={characters}
+            onSelect={(saved) => {
+              touchCharacter(saved.id);
+              onCharacterImported(saved.character);
+            }}
+          />
         )}
+      </div>
+    </div>
+  );
+}
+
+function CharacterPicker({
+  characters,
+  onSelect,
+}: {
+  characters: import("@/types/saved-character").SavedCharacter[];
+  onSelect: (saved: import("@/types/saved-character").SavedCharacter) => void;
+}) {
+  if (characters.length === 0) {
+    return (
+      <div className="p-4 text-center space-y-3">
+        <div className="text-gray-500 text-sm">No characters</div>
+        <p className="text-gray-600 text-xs">
+          Import a character to get started.
+        </p>
+        <Link
+          href="/characters/create"
+          target="_blank"
+          className="inline-block bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-xs font-medium transition-colors"
+        >
+          Import Character
+        </Link>
+        <div>
+          <Link
+            href="/characters"
+            target="_blank"
+            className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+          >
+            Manage Characters &rarr;
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-3 space-y-2 overflow-y-auto">
+      <div className="text-xs text-gray-400 font-medium mb-1">
+        Select a character
+      </div>
+      {characters.map((saved) => {
+        const s = saved.character.static;
+        return (
+          <button
+            key={saved.id}
+            onClick={() => onSelect(saved)}
+            className="w-full text-left bg-gray-900/50 hover:bg-gray-700/50 border border-gray-700 hover:border-gray-600 rounded-lg p-2.5 transition-colors"
+          >
+            <div className="text-sm font-medium text-purple-400 truncate">
+              {s.name}
+            </div>
+            <div className="text-[11px] text-gray-400 truncate">
+              {s.race} &middot; {formatClassString(s.classes)} &middot; Lvl{" "}
+              {getTotalLevel(s.classes)}
+            </div>
+          </button>
+        );
+      })}
+      <div className="pt-1">
+        <Link
+          href="/characters"
+          target="_blank"
+          className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+        >
+          Manage Characters &rarr;
+        </Link>
       </div>
     </div>
   );

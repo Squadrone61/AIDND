@@ -10,6 +10,8 @@ import { BattleMap } from "@/components/game/BattleMap";
 import { CampaignConfigModal } from "@/components/sidebar/CampaignConfigModal";
 import { PlayerNotesPanel } from "@/components/notes/PlayerNotesPanel";
 import { usePlayerNotes } from "@/hooks/usePlayerNotes";
+import { useCharacterLibrary } from "@/hooks/useCharacterLibrary";
+import { mergeReimport } from "@aidnd/shared/utils";
 import type {
   BattleMapState,
   CharacterData,
@@ -127,6 +129,17 @@ function GameContent({
   // Ref for player notes loaded callback (set after useWebSocket)
   const playerNotesLoadedRef = useRef<((content: string) => void) | null>(null);
 
+  // Character library for auto-sync and reconciliation
+  const {
+    findByName: libFindByName,
+    saveCharacter: libSaveCharacter,
+    updateCharacter: libUpdateCharacter,
+    bindToCampaign: libBindToCampaign,
+    touchCharacter: libTouchCharacter,
+  } = useCharacterLibrary();
+  const libFindByNameRef = useRef(libFindByName);
+  libFindByNameRef.current = libFindByName;
+
   // Load all browser storage values after mount (avoids hydration mismatch)
   useEffect(() => {
     setAuthToken(localStorage.getItem("auth_token") || undefined);
@@ -148,6 +161,48 @@ function GameContent({
     setClientReady(true);
   }, []);
 
+  // Refs for reconciliation (avoid stale closures in handleMessage)
+  const sendRef = useRef<(msg: import("@aidnd/shared/types").ClientMessage) => void>(() => {});
+  const myCharacterRef = useRef<CharacterData | null>(null);
+  myCharacterRef.current = myCharacter;
+
+  // Reconcile a server-restored character with the local library
+  const reconcileWithLibrary = useCallback(
+    (restoredChar: CharacterData, campaignSlug?: string) => {
+      const libEntry = libFindByNameRef.current(restoredChar.static.name);
+      if (libEntry) {
+        // Check if library version is newer (level-up between sessions)
+        const libImportedAt = libEntry.character.static.importedAt ?? 0;
+        const restoredImportedAt = restoredChar.static.importedAt ?? 0;
+        if (libImportedAt > restoredImportedAt) {
+          // Merge: new static from library + dynamic from campaign
+          const merged = mergeReimport(
+            restoredChar,
+            libEntry.character.static,
+            libEntry.character.dynamic
+          );
+          setMyCharacter(merged);
+          sendRef.current({ type: "client:set_character", character: merged });
+          libUpdateCharacter(libEntry.id, merged);
+        } else {
+          // Campaign is truth — update library with server version
+          libUpdateCharacter(libEntry.id, restoredChar);
+        }
+        if (campaignSlug) {
+          libBindToCampaign(libEntry.id, campaignSlug, roomCode);
+        }
+        libTouchCharacter(libEntry.id);
+      } else {
+        // Character not in library — add it (different browser scenario)
+        libSaveCharacter(restoredChar, {
+          campaignSlug,
+          roomCode,
+        });
+      }
+    },
+    [roomCode, libUpdateCharacter, libBindToCampaign, libTouchCharacter, libSaveCharacter]
+  );
+
   const handleMessage = useCallback(
     (msg: ServerMessage) => {
       switch (msg.type) {
@@ -164,7 +219,10 @@ function GameContent({
             setPartyCharacters(msg.characters);
             // Restore own character from server (reconnect after days/weeks)
             if (msg.characters[playerName]) {
-              setMyCharacter(msg.characters[playerName]);
+              const restoredChar = msg.characters[playerName];
+              setMyCharacter(restoredChar);
+              // Reconcile with library
+              reconcileWithLibrary(restoredChar);
             }
           }
           if (msg.storyStarted !== undefined) setStoryStarted(msg.storyStarted);
@@ -192,9 +250,13 @@ function GameContent({
             ...prev,
             [msg.playerName]: msg.character,
           }));
-          // If it's our own character being echoed back, update local state
+          // If it's our own character being echoed back, update local state + library
           if (msg.playerName === playerName) {
             setMyCharacter(msg.character);
+            const libEntry = libFindByNameRef.current(msg.character.static.name);
+            if (libEntry) {
+              libUpdateCharacter(libEntry.id, msg.character);
+            }
           }
           break;
 
@@ -284,7 +346,9 @@ function GameContent({
           if (msg.restoredCharacters) {
             setPartyCharacters((prev) => ({ ...prev, ...msg.restoredCharacters }));
             if (msg.restoredCharacters[playerName]) {
-              setMyCharacter(msg.restoredCharacters[playerName]);
+              const restoredChar = msg.restoredCharacters[playerName];
+              setMyCharacter(restoredChar);
+              reconcileWithLibrary(restoredChar, msg.campaignSlug);
             }
           }
           break;
@@ -407,6 +471,36 @@ function GameContent({
     onMessage: handleMessage,
     enabled: clientReady,
   });
+  sendRef.current = send;
+
+  // Cross-tab storage listener for mid-session level-ups
+  useEffect(() => {
+    const handler = (e: StorageEvent) => {
+      if (e.key !== "character_library" || !myCharacterRef.current) return;
+      try {
+        const lib = e.newValue ? JSON.parse(e.newValue) : [];
+        const entry = lib.find(
+          (c: { character: CharacterData }) =>
+            c.character.static.name.toLowerCase() ===
+            myCharacterRef.current!.static.name.toLowerCase()
+        );
+        if (!entry) return;
+        const libImportedAt = entry.character.static.importedAt ?? 0;
+        const currentImportedAt = myCharacterRef.current.static.importedAt ?? 0;
+        if (libImportedAt > currentImportedAt) {
+          const merged = mergeReimport(
+            myCharacterRef.current,
+            entry.character.static,
+            entry.character.dynamic
+          );
+          setMyCharacter(merged);
+          send({ type: "client:set_character", character: merged });
+        }
+      } catch { /* ignore parse errors */ }
+    };
+    window.addEventListener("storage", handler);
+    return () => window.removeEventListener("storage", handler);
+  }, [send]);
 
   // Player notes hook
   const { notes: playerNotes, saveState: notesSaveState, updateNotes, handleNotesLoaded } =

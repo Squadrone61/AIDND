@@ -166,8 +166,10 @@ export interface CharacterStaticData {
   traits: CharacterTraits;
   appearance?: CharacterAppearance;
   importedAt: number; // timestamp
+  source?: "ddb" | "aidedd"; // import source
   sourceUrl?: string; // DDB URL if imported from URL
   ddbId?: number; // DDB character ID
+  aideddRawData?: string; // raw AideDD XML string for lossless re-export
 }
 
 /**

@@ -23,7 +23,7 @@ apps/web/          → Next.js 16.1 frontend (React 19, Tailwind CSS 4)
 apps/worker/       → Cloudflare Worker (Durable Objects, KV) — pure multiplayer relay + auth
 apps/mcp-bridge/   → Game engine: GameStateManager + MCP tools + WebSocket client
 apps/dm-launcher/  → CLI to launch Claude Code as DM (writes .mcp.json, spawns claude)
-packages/shared/   → Shared types (Zod 4 schemas), constants, utils, dice, check helpers
+packages/shared/   → Shared types (Zod 4 schemas), constants, utils, dice, check helpers, D&D 2024 database
 ```
 
 ### Tech Stack
@@ -93,10 +93,8 @@ pnpm deploy:web     # Deploy web only
 - `services/campaign-manager.ts` — Campaign persistence: create/load/list campaigns, save/read files, session management, character snapshots
 - `tools/game-tools.ts` — MCP tools: wait_for_message, send_response, get_players, get_game_state, get_character, apply_damage, heal, set_hp, add_condition, remove_condition, start_combat, end_combat, advance_turn, add_combatant, remove_combatant, move_combatant, use_spell_slot, restore_spell_slot, update_battle_map, add_item, update_item, remove_item, update_currency, grant_inspiration, use_inspiration, compact_history
 - `tools/dnd-tools.ts` — roll_dice (supports interactive player checks with targetCharacter)
-- `tools/srd-tools.ts` — SRD 5.2 lookup tools: lookup_spell, lookup_monster, lookup_condition, lookup_magic_item, lookup_feat, search_rules
+- `tools/srd-tools.ts` — D&D 2024 database lookup tools: lookup_spell, lookup_monster, lookup_condition, lookup_magic_item, lookup_feat, lookup_class, lookup_species, lookup_background, search_rules
 - `tools/campaign-tools.ts` — create_campaign, list_campaigns, load_campaign_context, save_campaign_file, read_campaign_file, list_campaign_files, end_session
-- `services/srd-lookup.ts` — Local SRD 5.2 rules lookup service (reads markdown files from data/srd-5.2/)
-- `services/dnd-data-lookup.ts` — Extended D&D database fallback (dnd-data package: 5,849 spells, 11,463 monsters, 15,749 items, 134 classes, 383 species, 405 backgrounds)
 - `types.ts` — Bridge message types, CampaignManifest, CampaignSummary
 
 ### DM Launcher (apps/dm-launcher/src/)
@@ -135,6 +133,9 @@ pnpm deploy:web     # Deploy web only
 - `constants.ts` — DM_SYSTEM_PROMPT (single source of truth), room limits, token limits
 - `utils/dice.ts` — Shared dice rolling (rollDie, rollDice, rollCheck, rollInitiative, rollDamage)
 - `utils/check-helpers.ts` — Check modifier computation, label building from character sheets
+- `data/index.ts` — D&D 2024 database: type-safe lookup maps + helpers (getSpell, getMonster, getClass, getClassSpellSlots, getCasterMultiplier, etc.)
+- `data/types.ts` — Database types (SpellData, MonsterData, ClassData, etc.)
+- `data/*.json` — Generated database files (490 spells, 580 monsters, 12 classes, 103 feats, 563 magic items, etc.)
 
 ## MCP Tools (exposed to Claude Code)
 
@@ -198,18 +199,18 @@ pnpm deploy:web     # Deploy web only
 | `use_class_resource` | Expend a use of a class resource (Bardic Inspiration, Channel Divinity, Rage, Ki Points, etc.) |
 | `restore_class_resource` | Restore uses of a class resource (e.g., after rest). Use amount=999 to fully restore. |
 
-### D&D Reference (SRD 5.2 → Extended Database → SRD 5.1 fallback chain)
+### D&D Reference (Unified 2024 Database)
 | Tool | Description |
 |------|-------------|
-| `lookup_spell` | Look up spell details. SRD 5.2 → extended DB (5,849 spells) → SRD 5.1. Accepts optional `source` filter. |
-| `lookup_monster` | Look up monster stat block. SRD 5.2 → extended DB (11,463 monsters) → SRD 5.1. Accepts optional `source` filter. |
-| `lookup_condition` | Look up condition effects from SRD 5.2/5.1 |
-| `lookup_magic_item` | Look up a magic item. SRD 5.2 → extended DB (15,749 items) → SRD 5.1. Accepts optional `source` filter. |
-| `lookup_feat` | Look up a feat from SRD 5.2/5.1 |
-| `lookup_class` | Look up class/subclass from extended DB (134 entries). Accepts optional `source` filter. |
-| `lookup_species` | Look up species/race from extended DB (383 entries). Accepts optional `source` filter. |
-| `lookup_background` | Look up background from extended DB (405 entries). Accepts optional `source` filter. |
-| `search_rules` | Search all 2024 rules for any topic (combat, class features, equipment, etc.) |
+| `lookup_spell` | Look up spell details from D&D 2024 database (490 spells). |
+| `lookup_monster` | Look up monster stat block from D&D 2024 database (580 monsters). |
+| `lookup_condition` | Look up condition effects from D&D 2024 database (15 conditions). |
+| `lookup_magic_item` | Look up a magic item from D&D 2024 database (563 items). |
+| `lookup_feat` | Look up a feat from D&D 2024 database (103 feats). |
+| `lookup_class` | Look up class details from D&D 2024 database (12 classes with subclasses). |
+| `lookup_species` | Look up species from D&D 2024 database (28 species). |
+| `lookup_background` | Look up background from D&D 2024 database (27 backgrounds). |
+| `search_rules` | Search across all D&D data categories by keyword. |
 | `roll_dice` | Roll dice — direct DM rolls (notation only) or interactive player checks (with targetCharacter, checkType, ability, skill, dc) |
 
 ### Campaign Persistence
@@ -249,7 +250,6 @@ pnpm deploy:web     # Deploy web only
 - **Automated tests** (Playwright) live in `tests/` and `playwright.config.ts` at the repo root — these are committed to the repo.
 - **Temporary test artifacts** (snapshots, reports, screenshots, DDB JSON dumps) go in `.testing/` which is gitignored. Always place disposable/generated test-related files here so they stay out of git.
 - `pnpm test` — starts dev servers, runs all tests, then stops servers
-- `pnpm test:only` — runs tests without starting servers (use when `pnpm dev:all` is already running)
 - `pnpm test:ui` — opens Playwright UI runner (servers must be running)
 
 ## Coding Conventions

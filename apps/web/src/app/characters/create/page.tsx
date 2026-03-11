@@ -1,0 +1,71 @@
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { CharacterImport } from "@/components/character/CharacterImport";
+import { useCharacterImport } from "@/hooks/useCharacterImport";
+import { useCharacterLibrary } from "@/hooks/useCharacterLibrary";
+
+export default function CreateCharacterPage() {
+  const router = useRouter();
+  const { saveCharacter } = useCharacterLibrary();
+
+  const {
+    importState,
+    character,
+    warnings,
+    error,
+    fallbackHint,
+    importFromUrl,
+    importFromJson,
+    importFromAideDD,
+    clearCharacter,
+  } = useCharacterImport();
+
+  // On successful import, save to library and redirect
+  useEffect(() => {
+    if (importState === "success" && character) {
+      const saved = saveCharacter(character);
+      router.push(`/characters/${saved.id}`);
+    }
+  }, [importState, character, saveCharacter, router]);
+
+  return (
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-purple-400 mb-1">
+            Import Character
+          </h1>
+          <p className="text-sm text-gray-500">
+            Import from D&D Beyond or AideDD to add to your character library.
+          </p>
+        </div>
+
+        <div className="bg-gray-800 rounded-xl p-5 space-y-4">
+          <CharacterImport
+            importState={importState}
+            character={character}
+            error={error}
+            fallbackHint={fallbackHint}
+            warnings={warnings}
+            onImportUrl={importFromUrl}
+            onImportJson={importFromJson}
+            onImportAideDD={importFromAideDD}
+            onClear={clearCharacter}
+          />
+        </div>
+
+        <div className="mt-4 text-center">
+          <Link
+            href="/characters"
+            className="text-sm text-gray-500 hover:text-gray-300 transition-colors"
+          >
+            Back to Characters
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}

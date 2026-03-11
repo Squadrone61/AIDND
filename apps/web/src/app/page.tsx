@@ -281,14 +281,22 @@ function HomePageInner() {
             </div>
           </div>
 
-          {/* Browse Rooms */}
-          <div className="pt-2 border-t border-gray-700">
+          {/* Browse Rooms & Characters */}
+          <div className="pt-2 border-t border-gray-700 flex items-center justify-center gap-4">
             <Link
               href="/rooms"
-              className="block text-center text-sm text-purple-400 hover:text-purple-300
+              className="text-sm text-purple-400 hover:text-purple-300
                          transition-colors py-2"
             >
               Browse Rooms
+            </Link>
+            <span className="text-gray-700">&middot;</span>
+            <Link
+              href="/characters"
+              className="text-sm text-purple-400 hover:text-purple-300
+                         transition-colors py-2"
+            >
+              My Characters
             </Link>
           </div>
         </div>

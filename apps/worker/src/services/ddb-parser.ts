@@ -4,17 +4,16 @@
  *
  * Computation logic based on ddb2alchemy (MIT license) by Alchemy RPG:
  * https://github.com/alchemyrpg/ddb2alchemy
+ *
+ * Extraction logic lives here (DDB's modifier system is parser-specific).
+ * D&D mechanics computation is delegated to the shared character builder.
  */
 
 import type {
   CharacterData,
-  CharacterStaticData,
-  CharacterDynamicData,
   CharacterClass,
   CharacterSpell,
   CharacterFeature,
-  ClassResource,
-  ProficiencyGroup,
   AdvantageEntry,
   SpellSlotLevel,
   InventoryItem,
@@ -22,9 +21,9 @@ import type {
   Currency,
   CharacterTraits,
   CharacterAppearance,
-  SkillProficiency,
-  SavingThrowProficiency,
 } from "@aidnd/shared/types";
+import { buildCharacter } from "@aidnd/shared/builders";
+import type { CharacterIdentifiers } from "@aidnd/shared/builders";
 
 
 // DDB stat IDs → ability score keys
@@ -91,52 +90,19 @@ const PROF_ENTITY_ARMOR = 174869515;
 const PROF_ENTITY_WEAPON = 1782728300;
 const PROF_ENTITY_TOOL = 2103445194;
 
-// Multiclass spell slot table (caster levels 1-20) — from PHB. From ddb2alchemy.
-// Each row: [1st, 2nd, 3rd, 4th, 5th, 6th, 7th, 8th, 9th]
-const MULTICLASS_SPELL_SLOTS: number[][] = [
-  [2, 0, 0, 0, 0, 0, 0, 0, 0], //  1
-  [3, 0, 0, 0, 0, 0, 0, 0, 0], //  2
-  [4, 2, 0, 0, 0, 0, 0, 0, 0], //  3
-  [4, 3, 0, 0, 0, 0, 0, 0, 0], //  4
-  [4, 3, 2, 0, 0, 0, 0, 0, 0], //  5
-  [4, 3, 3, 0, 0, 0, 0, 0, 0], //  6
-  [4, 3, 3, 1, 0, 0, 0, 0, 0], //  7
-  [4, 3, 3, 2, 0, 0, 0, 0, 0], //  8
-  [4, 3, 3, 3, 1, 0, 0, 0, 0], //  9
-  [4, 3, 3, 3, 2, 0, 0, 0, 0], // 10
-  [4, 3, 3, 3, 2, 1, 0, 0, 0], // 11
-  [4, 3, 3, 3, 2, 1, 0, 0, 0], // 12
-  [4, 3, 3, 3, 2, 1, 1, 0, 0], // 13
-  [4, 3, 3, 3, 2, 1, 1, 0, 0], // 14
-  [4, 3, 3, 3, 2, 1, 1, 1, 0], // 15
-  [4, 3, 3, 3, 2, 1, 1, 1, 0], // 16
-  [4, 3, 3, 3, 2, 1, 1, 1, 1], // 17
-  [4, 3, 3, 3, 3, 1, 1, 1, 1], // 18
-  [4, 3, 3, 3, 3, 2, 1, 1, 1], // 19
-  [4, 3, 3, 3, 3, 2, 2, 1, 1], // 20
-];
-
-// Class → caster level multiplier for multiclass computation. From ddb2alchemy.
-const CASTER_LEVEL_MULTIPLIER: Record<string, number> = {
-  bard: 1, cleric: 1, druid: 1, sorcerer: 1, wizard: 1,       // full casters
-  artificer: 0.5, paladin: 0.5, ranger: 0.5,                    // half casters
-  // Warlock uses Pact Magic (handled separately)
-};
-
 // Known/spontaneous casters: all learned spells are always available (no daily preparation).
-// Prepared casters (cleric, druid, paladin, wizard, artificer) select spells daily.
 const KNOWN_CASTER_CLASSES = new Set([
   "bard", "sorcerer", "ranger", "warlock",
 ]);
 
 // DDB limitedUse resetType IDs → rest type
 const DDB_RESET_TYPES: Record<number, "short" | "long" | null> = {
-  1: "long",  // other/special → default to long rest (Bardic Inspiration, Action Surge, Ki, etc.)
-  2: "short", // short rest
-  3: "long",  // long rest
-  4: "long",  // dawn (effectively long rest)
-  5: "long",  // day → treat as long rest
-  6: null,    // truly unknown
+  1: "long",
+  2: "short",
+  3: "long",
+  4: "long",
+  5: "long",
+  6: null,
 };
 
 // DDB activation type IDs → human-readable
@@ -202,7 +168,6 @@ interface DDBClassInfo {
 
 /**
  * Filter all character modifiers by matching criteria.
- * Usage: getModifiers(char, { type: 'bonus', subType: 'armor-class' })
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getModifiers(char: any, criteria: Record<string, unknown>): DDBModifier[] {
@@ -238,7 +203,7 @@ function maxModifier(char: any, criteria: Record<string, unknown>): number {
 }
 
 /**
- * Gather all modifiers into a flat array (for functions that need the full list).
+ * Gather all modifiers into a flat array.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function gatherModifiers(char: any): DDBModifier[] {
@@ -293,32 +258,32 @@ export function parseDDBCharacter(raw: unknown): {
     warnings.push("No class data found");
   }
 
-  // === Ability Scores (ddb2alchemy getStatValue approach) ===
+  // === Ability Scores ===
   const abilities = computeAbilityScores(char, warnings);
 
   // === Proficiency Bonus ===
   const totalLevel = classes.reduce((sum, c) => sum + c.level, 0);
   const proficiencyBonus = Math.ceil(totalLevel / 4) + 1;
 
-  // === HP (ddb2alchemy getBaseHp/getMaxHp/getCurrentHp approach) ===
+  // === HP ===
   const { maxHP, currentHP, tempHP } = computeHP(char, abilities);
 
-  // === AC (ddb2alchemy getArmorClass approach) ===
+  // === AC ===
   const armorClass = computeArmorClass(char, abilities);
 
-  // === Speed (ddb2alchemy getSpeed approach) ===
+  // === Speed ===
   const speed = computeSpeed(char);
 
-  // === Skills (ddb2alchemy getSkills approach) ===
-  const skills = extractSkills(char, proficiencyBonus);
+  // === Skills (extract proficiencies, expertise, bonuses) ===
+  const { skillProficiencies, skillExpertise, skillBonuses } = extractSkillIdentifiers(char, proficiencyBonus);
 
   // === Saving Throws ===
-  const savingThrows = extractSavingThrows(char);
+  const { saveProficiencies, saveBonuses } = extractSaveIdentifiers(char);
 
   // === Features ===
   const features = extractFeatures(char, classes);
 
-  // === Actions (DDB stores activated abilities separately from class features) ===
+  // === Actions ===
   const actionFeatures = extractActions(char);
   const featureNames = new Set(features.map((f) => f.name));
   for (const af of actionFeatures) {
@@ -328,25 +293,26 @@ export function parseDDBCharacter(raw: unknown): {
     }
   }
 
-  // === Class Resources (Channel Divinity, Ki, Rage, Bardic Inspiration, etc.) ===
+  // === Class Resources ===
+  // DDB class resources are extracted from the source data directly,
+  // not computed from the DB, because DDB has precise runtime values
   const classResources = extractClassResources(char, abilities);
 
-  // === Proficiencies (ddb2alchemy entityTypeId approach) ===
+  // === Proficiencies ===
   const proficiencies = extractProficiencies(char);
 
   // === Languages ===
   const languages = extractLanguages(gatherModifiers(char));
 
   // === Senses ===
-  const senses = extractSenses(char, abilities, proficiencyBonus, skills);
+  const senses = extractSenses(char, abilities, proficiencyBonus,
+    // Compute skills inline for senses (need proficiency data)
+    extractSkillsForSenses(char, proficiencyBonus));
 
   // === Spells ===
   const spells = extractSpells(char);
 
-  // === Spellcasting (ddb2alchemy getSpellcastingAbility approach) ===
-  const spellcasting = computeSpellcasting(char, abilities, proficiencyBonus);
-
-  // === Spell Slots (ddb2alchemy convertSpellSlots approach) ===
+  // === Spell Slots (DDB-specific: uses DDB's own slot tables) ===
   const { regularSlots, pactSlots } = extractSpellSlots(char);
 
   // === Inventory ===
@@ -367,34 +333,7 @@ export function parseDDBCharacter(raw: unknown): {
   // === XP ===
   const xp: number = char.currentXp || 0;
 
-  const staticData: CharacterStaticData = {
-    name,
-    race,
-    classes,
-    abilities,
-    maxHP,
-    armorClass,
-    proficiencyBonus,
-    speed,
-    features,
-    classResources,
-    proficiencies,
-    skills,
-    savingThrows,
-    senses,
-    languages,
-    spells,
-    spellcastingAbility: spellcasting.spellcastingAbility,
-    spellSaveDC: spellcasting.spellSaveDC,
-    spellAttackBonus: spellcasting.spellAttackBonus,
-    advantages,
-    traits,
-    appearance,
-    importedAt: Date.now(),
-    ddbId: char.id || undefined,
-  };
-
-  // Extract initial resource usage from DDB
+  // === Initial resource usage from DDB ===
   const initialResourcesUsed: Record<string, number> = {};
   for (const cls of char.classes || []) {
     for (const feature of cls.classFeatures || []) {
@@ -405,36 +344,71 @@ export function parseDDBCharacter(raw: unknown): {
     }
   }
 
-  const dynamicData: CharacterDynamicData = {
-    currentHP,
-    tempHP,
-    spellSlotsUsed: regularSlots,
-    pactMagicSlots: pactSlots,
-    resourcesUsed: initialResourcesUsed,
-    conditions: [],
-    deathSaves: {
-      successes: char.deathSaves?.successCount ?? 0,
-      failures: char.deathSaves?.failCount ?? 0,
-    },
-    inventory,
+  // Build CharacterIdentifiers and delegate to shared builder
+  const identifiers: CharacterIdentifiers = {
+    name,
+    race,
+    classes,
+    abilities,
+    maxHP,
+    skillProficiencies,
+    skillExpertise,
+    skillBonuses: skillBonuses.size > 0 ? skillBonuses : undefined,
+    saveProficiencies,
+    saveBonuses: saveBonuses.size > 0 ? saveBonuses : undefined,
+    spells,
+    additionalFeatures: features,
+    equipment: inventory,
+    languages,
+    traits,
+    appearance,
     currency,
-    xp,
-    heroicInspiration: !!char.inspiration,
+    advantages,
+    senses,
+    // DDB provides accurate proficiencies via entityTypeId
+    armorProficiencies: proficiencies.armor,
+    weaponProficiencies: proficiencies.weapons,
+    toolProficiencies: proficiencies.tools,
+    otherProficiencies: proficiencies.other,
+    // DDB computes AC and speed with its modifier system (more accurate)
+    armorClass,
+    speed,
+    source: "ddb",
+    ddbId: char.id || undefined,
+    initialDynamic: {
+      currentHP,
+      tempHP,
+      spellSlotsUsed: regularSlots,
+      pactMagicSlots: pactSlots,
+      resourcesUsed: initialResourcesUsed,
+      deathSaves: {
+        successes: char.deathSaves?.successCount ?? 0,
+        failures: char.deathSaves?.failCount ?? 0,
+      },
+      inventory,
+      currency,
+      xp,
+      heroicInspiration: !!char.inspiration,
+    },
   };
 
-  return {
-    character: { static: staticData, dynamic: dynamicData },
-    warnings,
-  };
+  const result = buildCharacter(identifiers);
+
+  // The builder computes class resources from DB, but DDB has more precise
+  // runtime values. Override with DDB-extracted resources.
+  if (classResources.length > 0) {
+    result.character.static.classResources = classResources;
+  }
+
+  // Merge builder warnings with parser warnings
+  result.warnings.unshift(...warnings);
+
+  return result;
 }
 
 
 /**
- * Compute ability scores using ddb2alchemy's getStatValue pattern:
- * 1. Base from stats[] (default 10)
- * 2. Override from overrideStats[] (replaces if non-null)
- * 3. Bonus from bonusStats[] (added on top)
- * 4. Modifiers: "set-base" → use highest, "bonus" → sum
+ * Compute ability scores using ddb2alchemy's getStatValue pattern.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function computeAbilityScores(char: any, warnings: string[]): AbilityScores {
@@ -455,7 +429,7 @@ function computeAbilityScores(char: any, warnings: string[]): AbilityScores {
     }
   }
 
-  // Step 2: Override stats (replace entirely if set)
+  // Step 2: Override stats
   for (const stat of char.overrideStats || []) {
     const key = STAT_ID_MAP[stat.id];
     if (key && stat.value != null) {
@@ -463,7 +437,7 @@ function computeAbilityScores(char: any, warnings: string[]): AbilityScores {
     }
   }
 
-  // Step 3: Bonus stats (user-entered bonuses, added on top)
+  // Step 3: Bonus stats
   for (const stat of char.bonusStats || []) {
     const key = STAT_ID_MAP[stat.id];
     if (key && stat.value != null) {
@@ -471,19 +445,7 @@ function computeAbilityScores(char: any, warnings: string[]): AbilityScores {
     }
   }
 
-  // Step 4: Modifiers — "set-base" overrides and "bonus" additions
-  // Following ddb2alchemy: iterate all modifier categories, apply set-base
-  // (use highest), then add bonuses.
-  //
-  // 2024 PHB detection: In 2024 D&D, background ability score bonuses are
-  // placed in the "race" modifier category (via the "Ability Score Increases"
-  // species trait). stats[] already includes these bonuses, so we must skip
-  // race-sourced ability score modifiers to avoid double-counting.
-  // For 2014 characters, race modifiers are genuine racial bonuses that
-  // need to be applied on top of stats[] base values.
-  // NOTE: Only check for plural "Ability Score Increases" (2024 species).
-  // Singular "Ability Score Increase" is the 2014 racial trait — those
-  // modifiers must be applied since stats[] only has base point-buy values.
+  // Step 4: Modifiers
   const hasAbilityScoreIncreasesTrait = (char.race?.racialTraits || []).some(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (t: any) => {
@@ -492,13 +454,8 @@ function computeAbilityScores(char: any, warnings: string[]): AbilityScores {
     }
   );
 
-  // Collect ability score modifier componentIds to skip (2024 double-counting).
-  // In 2024, stats[] already includes bonuses from:
-  //   1. Race modifiers (in char.modifiers.race)
-  //   2. Background ASI feats like "Acolyte Ability Score Improvements" (in char.modifiers.feat)
   const skipAbilityModComponentIds = new Set<number>();
   if (hasAbilityScoreIncreasesTrait) {
-    // Skip race-sourced ability score modifiers
     for (const mod of (char.modifiers?.race || []) as DDBModifier[]) {
       if (
         mod.type === "bonus" &&
@@ -509,7 +466,6 @@ function computeAbilityScores(char: any, warnings: string[]): AbilityScores {
       }
     }
 
-    // Skip background ASI feat modifiers ("[Background] Ability Score Improvements")
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const bgAsiFeatIds = new Set<number>();
     for (const feat of (char.feats || []) as any[]) {
@@ -538,7 +494,6 @@ function computeAbilityScores(char: any, warnings: string[]): AbilityScores {
     const key = STAT_ID_MAP[statId];
     if (!key) continue;
 
-    // "set-base" overrides (e.g., Headband of Intellect sets INT to 19)
     const setBase = maxModifier(char, {
       type: "set",
       subType: `${key}-score`,
@@ -547,9 +502,6 @@ function computeAbilityScores(char: any, warnings: string[]): AbilityScores {
       setValues[key] = setBase;
     }
 
-    // "bonus" modifiers (racial, class, feat, item bonuses)
-    // For 2024 characters, skip race-sourced ability score modifiers
-    // (from "Ability Score Increases" trait) since stats[] already includes them
     const bonusMods = getModifiers(char, {
       type: "bonus",
       subType: `${key}-score`,
@@ -561,7 +513,7 @@ function computeAbilityScores(char: any, warnings: string[]): AbilityScores {
         mod.componentId != null &&
         skipAbilityModComponentIds.has(mod.componentId)
       ) {
-        continue; // skip double-applied 2024 ASI modifiers (race + background feat)
+        continue;
       }
       bonus += mod.value || 0;
     }
@@ -570,7 +522,6 @@ function computeAbilityScores(char: any, warnings: string[]): AbilityScores {
     }
   }
 
-  // Apply "set" values: only if higher than computed score
   for (const [key, setValue] of Object.entries(setValues)) {
     const abilityKey = key as keyof AbilityScores;
     if (setValue! > abilities[abilityKey]) {
@@ -578,7 +529,6 @@ function computeAbilityScores(char: any, warnings: string[]): AbilityScores {
     }
   }
 
-  // Validate
   for (const [key, val] of Object.entries(abilities)) {
     if (val < 1 || val > 30) {
       warnings.push(`${key} score ${val} is unusual (expected 1-30)`);
@@ -603,13 +553,10 @@ function computeHP(
     0
   );
 
-  // Per-level HP bonuses (e.g. Draconic Resilience: +1 HP per sorcerer level).
-  // These modifiers are class-specific — trace each back to its source class level
-  // via componentId rather than applying to totalLevel.
   const hpPerLevelMods = getModifiers(char, { type: "bonus", subType: "hit-points-per-level" });
   let hpPerLevelBonus = 0;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const classFeatureMap = new Map<number, number>(); // componentId → class level
+  const classFeatureMap = new Map<number, number>();
   for (const cls of char.classes || []) {
     for (const f of cls.classFeatures || []) {
       if (f.definition?.id) {
@@ -622,20 +569,14 @@ function computeHP(
     hpPerLevelBonus += (mod.value || 0) * classLevel;
   }
 
-  // Base HP = hit die rolls + CON modifier per level + class-specific per-level bonuses
   const baseHp: number =
     (char.baseHitPoints ?? 10) + conMod * totalLevel + hpPerLevelBonus;
-
-  // DDB pre-computes all bonus HP (Tough feat, etc.) into bonusHitPoints
   const bonusHP: number = char.bonusHitPoints || 0;
-
-  // Override takes precedence
   const maxHP = Math.max(
     1,
     char.overrideHitPoints || baseHp + bonusHP
   );
 
-  // Current HP
   const removedHP: number = char.removedHitPoints || 0;
   const tempHP: number = char.temporaryHitPoints || 0;
   const currentHP = Math.max(0, maxHP - removedHP);
@@ -648,14 +589,12 @@ function computeHP(
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function computeArmorClass(char: any, abilities: AbilityScores): number {
-  // Manual override
   if (char.overrideArmorClass) {
     return char.overrideArmorClass;
   }
 
   const dexMod = getAbilityMod(abilities.dexterity);
 
-  // Find equipped armor and shields
   const equippedArmor: Array<{
     armorClass: number;
     armorTypeId: number;
@@ -675,25 +614,19 @@ function computeArmorClass(char: any, abilities: AbilityScores): number {
   }
 
   let baseAC: number;
-  let hasArmor = false;
 
   if (equippedArmor.length > 0) {
-    // Use the first equipped armor (characters should only have one)
     const armor = equippedArmor[0];
-    hasArmor = true;
 
     if (armor.armorTypeId === ARMOR_TYPE_LIGHT) {
       baseAC = armor.armorClass + dexMod;
     } else if (armor.armorTypeId === ARMOR_TYPE_MEDIUM) {
       baseAC = armor.armorClass + Math.min(dexMod, 2);
     } else {
-      // Heavy armor
       baseAC = armor.armorClass;
     }
   } else {
-    // Unarmored: compute all applicable formulas, pick the best
     let unarmoredAC = 10 + dexMod;
-
     const conMod = getAbilityMod(abilities.constitution);
     const wisMod = getAbilityMod(abilities.wisdom);
 
@@ -702,15 +635,12 @@ function computeArmorClass(char: any, abilities: AbilityScores): number {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const classNames = classes.map((c: any) => ((c.definition?.name as string) || "").toLowerCase());
 
-    // Barbarian Unarmored Defense: 10 + DEX + CON
     if (classNames.includes("barbarian")) {
       unarmoredAC = Math.max(unarmoredAC, 10 + dexMod + conMod);
     }
-    // Monk Unarmored Defense: 10 + DEX + WIS (no shield)
     if (classNames.includes("monk") && shieldAC === 0) {
       unarmoredAC = Math.max(unarmoredAC, 10 + dexMod + wisMod);
     }
-    // Draconic Resilience (Sorcerer, Draconic subclass): 13 + DEX
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const hasDraconicResilience = classes.some(
       (c: any) => c.definition?.name?.toLowerCase() === "sorcerer" &&
@@ -723,7 +653,6 @@ function computeArmorClass(char: any, abilities: AbilityScores): number {
     baseAC = unarmoredAC;
   }
 
-  // Flat AC bonuses (magic items, feats, etc.)
   const bonusAC = sumModifiers(char, {
     type: "bonus",
     subType: "armor-class",
@@ -734,15 +663,12 @@ function computeArmorClass(char: any, abilities: AbilityScores): number {
 
 /**
  * Compute speed using ddb2alchemy's getSpeed approach.
- * Includes base racial speed + modifier bonuses.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function computeSpeed(char: any): number {
   let baseSpeed: number =
     char.race?.weightSpeeds?.normal?.walk ?? 30;
 
-  // Check for set-type speed modifiers (2024 races like Wood Elf use
-  // "innate-speed-walking" to override the default 30 ft base speed)
   const setSpeed = maxModifier(char, {
     type: "set",
     subType: "innate-speed-walking",
@@ -751,7 +677,6 @@ function computeSpeed(char: any): number {
     baseSpeed = Math.max(baseSpeed, setSpeed);
   }
 
-  // Speed bonuses from modifiers (e.g., Monk Unarmored Movement, Longstrider)
   const speedBonus = sumModifiers(char, { type: "bonus", subType: "speed" });
   const unarmoredBonus = sumModifiers(char, {
     type: "bonus",
@@ -762,20 +687,20 @@ function computeSpeed(char: any): number {
 }
 
 /**
- * Extract skills using ddb2alchemy's getSkills approach with entityTypeId.
- * Also detects Jack of All Trades (half-proficiency on ability checks)
- * which adds floor(profBonus/2) to all non-proficient skills.
+ * Extract skill proficiency/expertise/bonus identifiers for the builder.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function extractSkills(char: any, proficiencyBonus: number): SkillProficiency[] {
-  // Get skill proficiencies using entityTypeId (more reliable than string matching)
+function extractSkillIdentifiers(char: any, proficiencyBonus: number): {
+  skillProficiencies: string[];
+  skillExpertise: string[];
+  skillBonuses: Map<string, number>;
+} {
   const profMods = getModifiers(char, { type: "proficiency" });
   const expertiseMods = getModifiers(char, { type: "expertise" });
   const bonusMods = gatherModifiers(char).filter(
     (m) => m.type === "bonus" && m.subType && SKILL_ABILITY_MAP[m.subType]
   );
 
-  // Detect Jack of All Trades: half-proficiency on "ability-checks"
   const hasHalfProfOnChecks = getModifiers(char, {
     type: "half-proficiency",
     subType: "ability-checks",
@@ -795,7 +720,7 @@ function extractSkills(char: any, proficiencyBonus: number): SkillProficiency[] 
   for (const mod of expertiseMods) {
     if (mod.subType && SKILL_ABILITY_MAP[mod.subType]) {
       expertiseSet.add(mod.subType);
-      profSet.add(mod.subType); // expertise implies proficiency
+      profSet.add(mod.subType);
     }
   }
 
@@ -808,37 +733,33 @@ function extractSkills(char: any, proficiencyBonus: number): SkillProficiency[] 
     }
   }
 
-  const skills: SkillProficiency[] = [];
-  for (const [skillSlug, ability] of Object.entries(SKILL_ABILITY_MAP)) {
-    const isProficient = profSet.has(skillSlug);
-    const isExpertise = expertiseSet.has(skillSlug);
-    let bonus = bonusMap.get(skillSlug) || 0;
-
-    // Jack of All Trades: add half-prof to non-proficient skills
-    if (halfProfBonus > 0 && !isProficient) {
-      bonus += halfProfBonus;
+  // Jack of All Trades: add half-prof to non-proficient skills
+  if (halfProfBonus > 0) {
+    for (const skillSlug of Object.keys(SKILL_ABILITY_MAP)) {
+      if (!profSet.has(skillSlug)) {
+        bonusMap.set(
+          skillSlug,
+          (bonusMap.get(skillSlug) || 0) + halfProfBonus
+        );
+      }
     }
-
-    skills.push({
-      name: skillSlug,
-      ability,
-      proficient: isProficient,
-      expertise: isExpertise,
-      bonus: bonus || undefined,
-    });
   }
 
-  return skills;
+  return {
+    skillProficiencies: [...profSet],
+    skillExpertise: [...expertiseSet],
+    skillBonuses: bonusMap,
+  };
 }
 
 /**
- * Extract saving throw proficiencies.
- * D&D 5e multiclass rule: only the starting class grants save proficiencies.
- * We use DDB's componentId on class modifiers to identify which class they
- * came from, and only include saves from the starting class.
+ * Extract saving throw proficiency identifiers for the builder.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function extractSavingThrows(char: any): SavingThrowProficiency[] {
+function extractSaveIdentifiers(char: any): {
+  saveProficiencies: (keyof AbilityScores)[];
+  saveBonuses: Map<keyof AbilityScores, number>;
+} {
   const profSet = new Set<keyof AbilityScores>();
   const bonusMap = new Map<keyof AbilityScores, number>();
 
@@ -852,24 +773,21 @@ function extractSavingThrows(char: any): SavingThrowProficiency[] {
     }
   }
 
-  // Process class modifiers: only starting class grants save proficiencies
+  // Class modifiers: only starting class grants save proficiencies
   for (const mod of (char.modifiers?.class || []) as DDBModifier[]) {
     if (!mod.subType) continue;
 
     if (mod.type === "proficiency" && SAVE_SUBTYPE_MAP[mod.subType]) {
-      // Only include if componentId matches a starting class feature
       if (mod.componentId != null && startingClassFeatureIds.has(mod.componentId)) {
         profSet.add(SAVE_SUBTYPE_MAP[mod.subType]);
       }
     } else if (mod.type === "bonus" && SAVE_SUBTYPE_MAP[mod.subType] && mod.value) {
-      // Bonuses are additive from all sources
       const ability = SAVE_SUBTYPE_MAP[mod.subType];
       bonusMap.set(ability, (bonusMap.get(ability) || 0) + mod.value);
     }
   }
 
-  // Process non-class modifiers (race, feat, item, background, condition)
-  // These are not class-specific and always apply
+  // Non-class modifiers
   const nonClassCategories = ["race", "feat", "item", "background", "condition"];
   for (const category of nonClassCategories) {
     for (const mod of (char.modifiers?.[category] || []) as DDBModifier[]) {
@@ -884,289 +802,28 @@ function extractSavingThrows(char: any): SavingThrowProficiency[] {
     }
   }
 
-  const abilityList: (keyof AbilityScores)[] = [
-    "strength", "dexterity", "constitution",
-    "intelligence", "wisdom", "charisma",
-  ];
+  return {
+    saveProficiencies: [...profSet],
+    saveBonuses: bonusMap,
+  };
+}
 
-  return abilityList.map((ability) => ({
-    ability,
-    proficient: profSet.has(ability),
-    bonus: bonusMap.get(ability) || undefined,
+/**
+ * Helper: extract skills for senses computation (need SkillProficiency[]).
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function extractSkillsForSenses(char: any, proficiencyBonus: number): { name: string; proficient: boolean; expertise: boolean; bonus?: number }[] {
+  const { skillProficiencies, skillExpertise, skillBonuses } = extractSkillIdentifiers(char, proficiencyBonus);
+  const profSet = new Set(skillProficiencies);
+  const expertiseSet = new Set(skillExpertise);
+
+  return Object.entries(SKILL_ABILITY_MAP).map(([skillSlug]) => ({
+    name: skillSlug,
+    proficient: profSet.has(skillSlug),
+    expertise: expertiseSet.has(skillSlug),
+    bonus: skillBonuses.get(skillSlug) || undefined,
   }));
 }
-
-/**
- * Compute spellcasting stats using ddb2alchemy's getSpellcastingAbility approach.
- * Uses the highest-level caster class's spellcasting ability.
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function computeSpellcasting(
-  char: any,
-  abilities: AbilityScores,
-  proficiencyBonus: number
-): {
-  spellcastingAbility?: keyof AbilityScores;
-  spellSaveDC?: number;
-  spellAttackBonus?: number;
-} {
-  // Find the highest-level class that can cast spells
-  let bestCaster: { abilityId: number; level: number } | null = null;
-
-  for (const cls of char.classes || []) {
-    const abilityId = cls.definition?.spellCastingAbilityId;
-    const canCast = cls.definition?.canCastSpells;
-    if (!canCast || abilityId == null) continue;
-
-    if (!bestCaster || cls.level > bestCaster.level) {
-      bestCaster = { abilityId, level: cls.level };
-    }
-  }
-
-  if (!bestCaster || !STAT_ID_MAP[bestCaster.abilityId]) return {};
-
-  const ability = STAT_ID_MAP[bestCaster.abilityId];
-  const mod = getAbilityMod(abilities[ability]);
-
-  return {
-    spellcastingAbility: ability,
-    spellSaveDC: 8 + proficiencyBonus + mod,
-    spellAttackBonus: proficiencyBonus + mod,
-  };
-}
-
-/**
- * Extract spell slots using ddb2alchemy's convertSpellSlots approach.
- * Handles single-class, multiclass, and Pact Magic.
- * Returns regular slots and pact magic slots separately.
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function extractSpellSlots(char: any): {
-  regularSlots: SpellSlotLevel[];
-  pactSlots: SpellSlotLevel[];
-} {
-  const slots: SpellSlotLevel[] = [];
-
-  // Build a map of used counts from char.spellSlots
-  const usedByLevel = new Map<number, number>();
-  for (const slot of char.spellSlots || []) {
-    if (slot.level >= 1 && slot.level <= 9 && (slot.used ?? 0) > 0) {
-      usedByLevel.set(slot.level, slot.used);
-    }
-  }
-
-  // Identify caster classes (excluding Warlock which uses Pact Magic)
-  const rawClasses: DDBClassInfo[] = char.classes || [];
-  const casterClasses = rawClasses.filter(
-    (c) => c.definition?.canCastSpells &&
-      c.definition.name.toLowerCase() !== "warlock"
-  );
-  const isMultiCaster = casterClasses.length > 1;
-
-  if (casterClasses.length > 0) {
-    let slotRow: number[] | undefined;
-
-    if (isMultiCaster) {
-      // Multiclass: compute weighted caster level, use MULTICLASS_SPELL_SLOTS
-      let multiCasterLevel = 0;
-      for (const cls of casterClasses) {
-        const className = (cls.definition?.name || "").toLowerCase();
-        const multiplier = CASTER_LEVEL_MULTIPLIER[className] ?? 0;
-        multiCasterLevel += cls.level * multiplier;
-      }
-      const casterLevel = Math.min(
-        Math.max(Math.floor(multiCasterLevel), 1),
-        20
-      );
-      slotRow = MULTICLASS_SPELL_SLOTS[casterLevel - 1];
-    } else {
-      // Single class: use class's own levelSpellSlots table
-      const cls = casterClasses[0];
-      const table = cls.definition?.spellRules?.levelSpellSlots;
-      if (table && cls.level >= 1 && cls.level < table.length) {
-        slotRow = table[cls.level];
-      } else {
-        // Fallback to multiclass table using class multiplier
-        const className = (cls.definition?.name || "").toLowerCase();
-        const multiplier = CASTER_LEVEL_MULTIPLIER[className] ?? 1;
-        const casterLevel = Math.min(
-          Math.max(Math.floor(cls.level * multiplier), 1),
-          20
-        );
-        slotRow = MULTICLASS_SPELL_SLOTS[casterLevel - 1];
-      }
-    }
-
-    if (slotRow) {
-      for (let i = 0; i < slotRow.length; i++) {
-        if (slotRow[i] > 0) {
-          slots.push({
-            level: i + 1,
-            total: slotRow[i],
-            used: usedByLevel.get(i + 1) || 0,
-          });
-        }
-      }
-    }
-  }
-
-  // Pact Magic (Warlock) — tracked separately from regular slots
-  const pactSlots: SpellSlotLevel[] = [];
-  const warlockClass = rawClasses.find(
-    (c) =>
-      c.definition?.canCastSpells &&
-      c.definition.name.toLowerCase() === "warlock"
-  );
-  if (warlockClass) {
-    const pactTable = warlockClass.definition?.spellRules?.levelSpellSlots;
-    if (pactTable && warlockClass.level >= 1 && warlockClass.level < pactTable.length) {
-      const pactRow = pactTable[warlockClass.level];
-      const pactUsed = new Map<number, number>();
-      for (const slot of char.pactMagic || []) {
-        if (slot.level >= 1 && (slot.used ?? 0) > 0) {
-          pactUsed.set(slot.level, slot.used);
-        }
-      }
-      if (pactRow) {
-        for (let i = 0; i < pactRow.length; i++) {
-          if (pactRow[i] > 0) {
-            pactSlots.push({
-              level: i + 1,
-              total: pactRow[i],
-              used: pactUsed.get(i + 1) || 0,
-            });
-          }
-        }
-      }
-    }
-  }
-
-  return {
-    regularSlots: slots.sort((a, b) => a.level - b.level),
-    pactSlots: pactSlots.sort((a, b) => a.level - b.level),
-  };
-}
-
-/**
- * Extract proficiencies using ddb2alchemy's entityTypeId approach.
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function extractProficiencies(char: any): ProficiencyGroup {
-  const group: ProficiencyGroup = {
-    armor: [],
-    weapons: [],
-    tools: [],
-    other: [],
-  };
-  const seen = new Set<string>();
-
-  const profMods = getModifiers(char, { type: "proficiency" });
-
-  for (const mod of profMods) {
-    const name = mod.friendlySubtypeName;
-    if (!name || seen.has(name)) continue;
-
-    // Skip "Choose a ..." placeholders from DDB character builder
-    if (/^choose\s+an?\s+/i.test(name)) continue;
-
-    seen.add(name);
-
-    // Use entityTypeId for reliable categorization
-    if (mod.entityTypeId === PROF_ENTITY_ARMOR) {
-      group.armor.push(name);
-    } else if (mod.entityTypeId === PROF_ENTITY_WEAPON) {
-      group.weapons.push(name);
-    } else if (mod.entityTypeId === PROF_ENTITY_TOOL) {
-      group.tools.push(name);
-    } else {
-      // Skip saving throws and skill proficiencies (handled elsewhere)
-      const lower = name.toLowerCase();
-      // SKILL_ABILITY_MAP uses slugs ("sleight-of-hand") but friendlySubtypeName
-      // uses display names ("Sleight of Hand"), so check both formats
-      const slug = lower.replace(/\s+/g, "-");
-      if (
-        lower.includes("saving") ||
-        SKILL_ABILITY_MAP[lower] ||
-        SKILL_ABILITY_MAP[slug] ||
-        lower.includes("-saving-throws")
-      ) {
-        continue;
-      }
-      // Catch weapon proficiencies by name (2024 characters may lack entityTypeId)
-      if (lower.includes("weapon")) {
-        group.weapons.push(name);
-      } else {
-        group.other.push(name);
-      }
-    }
-  }
-
-  return group;
-}
-
-/**
- * Extract languages from modifiers.
- */
-function extractLanguages(modifiers: DDBModifier[]): string[] {
-  const languages = new Set<string>();
-  for (const mod of modifiers) {
-    if (mod.type === "language" && mod.friendlySubtypeName) {
-      languages.add(mod.friendlySubtypeName);
-    }
-  }
-  return [...languages].sort();
-}
-
-/**
- * Extract senses (darkvision, passive perception).
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function extractSenses(
-  char: any,
-  abilities: AbilityScores,
-  proficiencyBonus: number,
-  skills: SkillProficiency[]
-): string[] {
-  const senses: string[] = [];
-
-  // Check for darkvision from racial traits
-  for (const trait of char.race?.racialTraits || []) {
-    const traitName: string = trait.definition?.name || "";
-    if (traitName.toLowerCase().includes("darkvision")) {
-      const desc: string = trait.definition?.description || "";
-      const match = desc.match(/(\d+)\s*(?:feet|ft)/i);
-      const range = match ? match[1] : "60";
-      senses.push(`Darkvision ${range} ft.`);
-    }
-  }
-
-  // Also check modifiers for darkvision
-  const darkvisionSet = maxModifier(char, {
-    type: "set",
-    subType: "darkvision",
-  });
-  if (darkvisionSet > 0 && !senses.some((s) => s.startsWith("Darkvision"))) {
-    senses.push(`Darkvision ${darkvisionSet} ft.`);
-  }
-
-  // Passive Perception
-  const wisMod = getAbilityMod(abilities.wisdom);
-  const perceptionSkill = skills.find((s) => s.name === "perception");
-  let passivePerception = 10 + wisMod;
-  if (perceptionSkill?.proficient) {
-    passivePerception += proficiencyBonus;
-    if (perceptionSkill.expertise) {
-      passivePerception += proficiencyBonus;
-    }
-  }
-  if (perceptionSkill?.bonus) {
-    passivePerception += perceptionSkill.bonus;
-  }
-  senses.push(`Passive Perception ${passivePerception}`);
-
-  return senses;
-}
-
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function extractFeatures(
@@ -1183,7 +840,7 @@ function extractFeatures(
     }
   };
 
-  // Class features — filter by level
+  // Class features
   for (const cls of char.classes || []) {
     const className: string = cls.definition?.name || "Unknown";
     const classLevel: number = cls.level || 1;
@@ -1215,7 +872,6 @@ function extractFeatures(
     "Race";
   for (const trait of char.race?.racialTraits || []) {
     if (!trait.definition?.name) continue;
-    // Skip 2024 "Ability Score Increases" species trait (bonuses come from background)
     if (trait.definition.name === "Ability Score Increases") continue;
     addFeature({
       name: trait.definition.name,
@@ -1232,9 +888,7 @@ function extractFeatures(
   for (const feat of char.feats || []) {
     if (!feat.definition?.name) continue;
     const featName: string = feat.definition.name;
-    // Skip campaign option artifacts
     if (featName === "Dark Bargain") continue;
-    // Skip "[Background] Ability Score Improvements" (bonuses already in ability scores)
     if (featName.endsWith("Ability Score Improvements")) continue;
     addFeature({
       name: featName,
@@ -1251,17 +905,13 @@ function extractFeatures(
 }
 
 /**
- * Extract class resources with limited uses (Channel Divinity, Ki, Rage, Bardic Inspiration, etc.)
- * Some resources (e.g. Bardic Inspiration) store maxUses: 0 with a statModifierUsesId
- * that references an ability modifier. We resolve these using the computed ability scores.
+ * Extract class resources with limited uses.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function extractClassResources(char: any, abilities: AbilityScores): ClassResource[] {
-  const resources: ClassResource[] = [];
+function extractClassResources(char: any, abilities: AbilityScores): { name: string; maxUses: number; resetType: "short" | "long"; source: string }[] {
+  const resources: { name: string; maxUses: number; resetType: "short" | "long"; source: string }[] = [];
   const seen = new Set<string>();
 
-  // Build a lookup from char.actions.class[] for limitedUse data that may not
-  // appear on classFeatures (DDB stores runtime limitedUse on actions for some features)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const actionLimitedUseMap = new Map<string, any>();
   for (const action of char.actions?.class || []) {
@@ -1282,14 +932,6 @@ function extractClassResources(char: any, abilities: AbilityScores): ClassResour
 
       const name: string = feature.definition.name;
 
-      // DDB stores limitedUse in two places:
-      // 1. Feature's limitedUse — sometimes an array [{level, uses}] (progression table), not usable
-      // 2. Action's limitedUse — object with {maxUses, resetType, statModifierUsesId} (runtime values)
-      // The action data has the real computed maxUses, so prefer it when available.
-      // DDB actions often have different names than features:
-      //   Feature "Rage" → Action "Rage (Enter)"
-      //   Feature "Lay On Hands" → Action "Lay On Hands: Healing Pool"
-      //   Feature "Font of Magic" → Action "Font of Magic: Sorcery Points"
       const actionEntry = actionLimitedUseMap.has(name)
         ? [name, actionLimitedUseMap.get(name)] as const
         : [...actionLimitedUseMap.entries()].find(
@@ -1299,14 +941,11 @@ function extractClassResources(char: any, abilities: AbilityScores): ClassResour
           );
       const actionLU = actionEntry?.[1];
       const matchedActionName = actionEntry?.[0];
-      // Feature limitedUse: skip if it's an array (level progression table, not runtime data)
       const featureLU = feature.definition.limitedUse ?? feature.limitedUse;
       const featureLUObj = featureLU && !Array.isArray(featureLU) ? featureLU : null;
-      // Prefer action limitedUse (has real maxUses), fall back to feature object
       let limitedUse = actionLU ?? featureLUObj;
       if (!limitedUse) continue;
 
-      // Compute effective maxUses, resolving stat-modifier-based values
       let maxUses: number = limitedUse.maxUses ?? 0;
       const statModId: number | undefined =
         limitedUse.statModifierUsesId ?? actionLU?.statModifierUsesId;
@@ -1314,23 +953,21 @@ function extractClassResources(char: any, abilities: AbilityScores): ClassResour
         const abilityKey = STAT_ID_MAP[statModId];
         maxUses = maxUses + getAbilityMod(abilities[abilityKey]);
       }
-      if (maxUses <= 0) maxUses = Math.max(1, maxUses); // at least 1 use
+      if (maxUses <= 0) maxUses = Math.max(1, maxUses);
       if (maxUses <= 0) continue;
 
       const resetType = DDB_RESET_TYPES[limitedUse.resetType ?? actionLU?.resetType] ?? null;
-      if (!resetType) continue; // skip resources with special/unknown reset
+      if (!resetType) continue;
 
       if (seen.has(name)) continue;
       seen.add(name);
-      // Also mark the matched action name to prevent duplicates in second pass
       if (matchedActionName) seen.add(matchedActionName);
 
       resources.push({ name, maxUses, resetType, source: className });
     }
   }
 
-  // Second pass: pick up class actions with limitedUse that weren't matched to any feature
-  // (e.g. "Focus Points" which has no matching classFeature name)
+  // Second pass: class actions not matched to features
   for (const action of char.actions?.class || []) {
     if (!action.name || !action.limitedUse || seen.has(action.name)) continue;
     const lu = action.limitedUse;
@@ -1353,9 +990,6 @@ function extractClassResources(char: any, abilities: AbilityScores): ClassResour
 
 /**
  * Extract actions from DDB's char.actions object.
- * DDB stores activated abilities (Breath Weapon, Lay on Hands, etc.) separately
- * from class features. The actions object is keyed by source (race, class, feat, etc.)
- * and each entry has its own activation, description, and limitedUse data.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function extractActions(char: any): CharacterFeature[] {
@@ -1377,7 +1011,7 @@ function extractActions(char: any): CharacterFeature[] {
     for (const action of value as any[]) {
       if (!action.name) continue;
       const activationType = formatCastingTime(action.activation);
-      if (!activationType) continue; // skip passive/no-activation entries
+      if (!activationType) continue;
       actions.push({
         name: action.name,
         description: action.description
@@ -1396,7 +1030,7 @@ function extractActions(char: any): CharacterFeature[] {
 }
 
 /**
- * Extract advantage and disadvantage modifiers from all modifier categories.
+ * Extract advantage and disadvantage modifiers.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function extractAdvantages(char: any): AdvantageEntry[] {
@@ -1469,8 +1103,6 @@ function extractSpells(char: any): CharacterSpell[] {
     };
   }
 
-  // Build class ID → name lookup (original casing for sourceClass, lowercase for known-caster check)
-  // DDB uses different ID fields: cls.id (join-table ID) and cls.definition.id (class definition ID)
   const classNameById = new Map<number, string>();
   for (const cls of char.classes || []) {
     const name = cls.definition?.name;
@@ -1481,7 +1113,6 @@ function extractSpells(char: any): CharacterSpell[] {
 
   // Class spells
   for (const classSpellBlock of char.classSpells || []) {
-    // Resolve class name to detect known casters (bard, sorcerer, ranger, warlock)
     const className = classNameById.get(classSpellBlock.characterClassId) || "";
     const isKnownCaster = KNOWN_CASTER_CLASSES.has(className.toLowerCase());
 
@@ -1504,8 +1135,7 @@ function extractSpells(char: any): CharacterSpell[] {
     }
   }
 
-  // Class feature spells (e.g. Evocation Savant, subclass grants)
-  // These live in char.spells.class, separate from char.classSpells
+  // Class feature spells
   for (const spell of char.spells?.class || []) {
     const def = spell.definition;
     if (!def?.name || seen.has(def.name)) continue;
@@ -1566,6 +1196,219 @@ function extractSpells(char: any): CharacterSpell[] {
   );
 }
 
+/**
+ * Extract spell slots from DDB's own slot tables.
+ * DDB has precise slot data including current usage.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function extractSpellSlots(char: any): {
+  regularSlots: SpellSlotLevel[];
+  pactSlots: SpellSlotLevel[];
+} {
+  const slots: SpellSlotLevel[] = [];
+
+  const usedByLevel = new Map<number, number>();
+  for (const slot of char.spellSlots || []) {
+    if (slot.level >= 1 && slot.level <= 9 && (slot.used ?? 0) > 0) {
+      usedByLevel.set(slot.level, slot.used);
+    }
+  }
+
+  const rawClasses: DDBClassInfo[] = char.classes || [];
+  const casterClasses = rawClasses.filter(
+    (c) => c.definition?.canCastSpells &&
+      c.definition.name.toLowerCase() !== "warlock"
+  );
+
+  if (casterClasses.length > 0) {
+    let slotRow: number[] | undefined;
+
+    if (casterClasses.length > 1) {
+      // Multiclass: use DDB's own multiclass slot table
+      let multiCasterLevel = 0;
+      for (const cls of casterClasses) {
+        const divisor = cls.definition?.spellRules?.multiClassSpellSlotDivisor;
+        if (divisor) {
+          multiCasterLevel += cls.level / divisor;
+        }
+      }
+      const casterLevel = Math.min(
+        Math.max(Math.floor(multiCasterLevel), 1),
+        20
+      );
+      // Use the first caster class's table at the multiclass level
+      const table = casterClasses[0].definition?.spellRules?.levelSpellSlots;
+      if (table && casterLevel < table.length) {
+        slotRow = table[casterLevel];
+      }
+    } else {
+      const cls = casterClasses[0];
+      const table = cls.definition?.spellRules?.levelSpellSlots;
+      if (table && cls.level >= 1 && cls.level < table.length) {
+        slotRow = table[cls.level];
+      }
+    }
+
+    if (slotRow) {
+      for (let i = 0; i < slotRow.length; i++) {
+        if (slotRow[i] > 0) {
+          slots.push({
+            level: i + 1,
+            total: slotRow[i],
+            used: usedByLevel.get(i + 1) || 0,
+          });
+        }
+      }
+    }
+  }
+
+  // Pact Magic (Warlock)
+  const pactSlots: SpellSlotLevel[] = [];
+  const warlockClass = rawClasses.find(
+    (c) =>
+      c.definition?.canCastSpells &&
+      c.definition.name.toLowerCase() === "warlock"
+  );
+  if (warlockClass) {
+    const pactTable = warlockClass.definition?.spellRules?.levelSpellSlots;
+    if (pactTable && warlockClass.level >= 1 && warlockClass.level < pactTable.length) {
+      const pactRow = pactTable[warlockClass.level];
+      const pactUsed = new Map<number, number>();
+      for (const slot of char.pactMagic || []) {
+        if (slot.level >= 1 && (slot.used ?? 0) > 0) {
+          pactUsed.set(slot.level, slot.used);
+        }
+      }
+      if (pactRow) {
+        for (let i = 0; i < pactRow.length; i++) {
+          if (pactRow[i] > 0) {
+            pactSlots.push({
+              level: i + 1,
+              total: pactRow[i],
+              used: pactUsed.get(i + 1) || 0,
+            });
+          }
+        }
+      }
+    }
+  }
+
+  return {
+    regularSlots: slots.sort((a, b) => a.level - b.level),
+    pactSlots: pactSlots.sort((a, b) => a.level - b.level),
+  };
+}
+
+/**
+ * Extract proficiencies using ddb2alchemy's entityTypeId approach.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function extractProficiencies(char: any): { armor: string[]; weapons: string[]; tools: string[]; other: string[] } {
+  const group = {
+    armor: [] as string[],
+    weapons: [] as string[],
+    tools: [] as string[],
+    other: [] as string[],
+  };
+  const seen = new Set<string>();
+
+  const profMods = getModifiers(char, { type: "proficiency" });
+
+  for (const mod of profMods) {
+    const name = mod.friendlySubtypeName;
+    if (!name || seen.has(name)) continue;
+    if (/^choose\s+an?\s+/i.test(name)) continue;
+
+    seen.add(name);
+
+    if (mod.entityTypeId === PROF_ENTITY_ARMOR) {
+      group.armor.push(name);
+    } else if (mod.entityTypeId === PROF_ENTITY_WEAPON) {
+      group.weapons.push(name);
+    } else if (mod.entityTypeId === PROF_ENTITY_TOOL) {
+      group.tools.push(name);
+    } else {
+      const lower = name.toLowerCase();
+      const slug = lower.replace(/\s+/g, "-");
+      if (
+        lower.includes("saving") ||
+        SKILL_ABILITY_MAP[lower] ||
+        SKILL_ABILITY_MAP[slug] ||
+        lower.includes("-saving-throws")
+      ) {
+        continue;
+      }
+      if (lower.includes("weapon")) {
+        group.weapons.push(name);
+      } else {
+        group.other.push(name);
+      }
+    }
+  }
+
+  return group;
+}
+
+/**
+ * Extract languages from modifiers.
+ */
+function extractLanguages(modifiers: DDBModifier[]): string[] {
+  const languages = new Set<string>();
+  for (const mod of modifiers) {
+    if (mod.type === "language" && mod.friendlySubtypeName) {
+      languages.add(mod.friendlySubtypeName);
+    }
+  }
+  return [...languages].sort();
+}
+
+/**
+ * Extract senses (darkvision, passive perception).
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function extractSenses(
+  char: any,
+  abilities: AbilityScores,
+  proficiencyBonus: number,
+  skills: { name: string; proficient: boolean; expertise: boolean; bonus?: number }[]
+): string[] {
+  const senses: string[] = [];
+
+  for (const trait of char.race?.racialTraits || []) {
+    const traitName: string = trait.definition?.name || "";
+    if (traitName.toLowerCase().includes("darkvision")) {
+      const desc: string = trait.definition?.description || "";
+      const match = desc.match(/(\d+)\s*(?:feet|ft)/i);
+      const range = match ? match[1] : "60";
+      senses.push(`Darkvision ${range} ft.`);
+    }
+  }
+
+  const darkvisionSet = maxModifier(char, {
+    type: "set",
+    subType: "darkvision",
+  });
+  if (darkvisionSet > 0 && !senses.some((s) => s.startsWith("Darkvision"))) {
+    senses.push(`Darkvision ${darkvisionSet} ft.`);
+  }
+
+  const wisMod = getAbilityMod(abilities.wisdom);
+  const perceptionSkill = skills.find((s) => s.name === "perception");
+  let passivePerception = 10 + wisMod;
+  if (perceptionSkill?.proficient) {
+    passivePerception += proficiencyBonus;
+    if (perceptionSkill.expertise) {
+      passivePerception += proficiencyBonus;
+    }
+  }
+  if (perceptionSkill?.bonus) {
+    passivePerception += perceptionSkill.bonus;
+  }
+  senses.push(`Passive Perception ${passivePerception}`);
+
+  return senses;
+}
+
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function extractInventory(
@@ -1598,7 +1441,6 @@ function extractInventory(
       .map((p: any) => p.name)
       .filter(Boolean);
 
-    // Weapon range
     let range: string | undefined;
     const isWeapon =
       def.filterType === "Weapon" || def.attackType === 1 || def.attackType === 2;
@@ -1612,7 +1454,6 @@ function extractInventory(
       );
 
       if (isRanged) {
-        // Ranged weapon: range/longRange (e.g. "80/320 ft.")
         const short = def.range || 0;
         const long = def.longRange || 0;
         if (short > 0 && long > 0) {
@@ -1621,17 +1462,14 @@ function extractInventory(
           range = `${short} ft.`;
         }
       } else if (hasThrown) {
-        // Thrown melee weapon (e.g. javelin): "20/60 ft."
         const short = def.range || 20;
         const long = def.longRange || short * 3;
         range = `${short}/${long} ft.`;
       } else {
-        // Melee weapon
         range = hasReach ? "10 ft." : "5 ft.";
       }
     }
 
-    // Attack bonus and damage modifier for weapons
     let attackBonus: number | undefined;
     if (isWeapon && damage) {
       const isRanged = def.attackType === 2;
@@ -1648,11 +1486,9 @@ function extractInventory(
         abilityMod = strMod;
       }
 
-      // Magic bonus from item itself (e.g. +1 weapon)
       const magicBonus = def.magicBonus || 0;
       attackBonus = proficiencyBonus + abilityMod + magicBonus;
 
-      // Append ability + magic modifier to damage string (e.g. "1d12" → "1d12+3")
       const damageMod = abilityMod + magicBonus;
       if (damageMod > 0) {
         damage = `${damage}+${damageMod}`;

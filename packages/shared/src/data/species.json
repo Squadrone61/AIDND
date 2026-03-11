@@ -1,0 +1,843 @@
+[
+  {
+    "name": "Aarakocra",
+    "size": [
+      "Medium"
+    ],
+    "speed": 20,
+    "traits": [
+      {
+        "name": "Dive Attack",
+        "description": "If you are flying and dive at least 30 ft. straight toward a target and then hit it with a melee weapon attack, the attack deals an extra 1d6 damage to the target."
+      },
+      {
+        "name": "Talons",
+        "description": "You are proficient with your unarmed strikes, which deal 1d4 slashing damage on a hit."
+      },
+      {
+        "name": "Language",
+        "description": "You can speak, read, and write Auran."
+      }
+    ],
+    "languages": [
+      "Auran"
+    ],
+    "source": "DMG 2014"
+  },
+  {
+    "name": "Aasimar",
+    "size": [
+      "Small",
+      "Medium"
+    ],
+    "speed": 30,
+    "darkvision": 60,
+    "traits": [
+      {
+        "name": "Celestial Resistance",
+        "description": "You have Resistance to Necrotic damage and Radiant damage."
+      },
+      {
+        "name": "Darkvision",
+        "description": "You have Darkvision with a range of 60 feet."
+      },
+      {
+        "name": "Healing Hands",
+        "description": "As a Magic action, you touch a creature and roll a number of d4s equal to your Proficiency. The creature regains a number of Hit Points equal to the total rolled. Once you use this trait, you can't use it again until you finish a Long Rest.",
+        "activationType": "action"
+      },
+      {
+        "name": "Light Bearer",
+        "description": "You know the Light cantrip. Charisma is your spellcasting ability for it."
+      },
+      {
+        "name": "Celestial Revelation",
+        "description": "When you reach character level 3, you can transform as a Bonus Action using one of the options below (choose the option each time you transform). The transformation lasts for 1 minute or until you end it (no action required). Once you transform, you can't do so again until you finish a Long Rest.\nOnce on each of your turns before the transformation ends, you can deal extra damage to one target when you deal damage to it with an attack or a spell. The extra damage equals your Proficiency, and the extra damage's type is either Necrotic for Necrotic Shroud or Radiant for Heavenly Wings and Inner Radiance.\nHere are the transformation options:\n• **Heavenly Wings.** Two spectral wings sprout from your back temporarily. Until the transformation ends, you have a Fly Speed equal to your Speed.\n• **Inner Radiance.** Searing light temporarily radiates from your eyes and mouth. For the duration, you shed Bright Light in a 10-foot radius and Dim Light for an additional 10 feet, and at the end of each of your turns, each creature within 10 feet of you takes Radiant damage equal to your Proficiency.\n• **Necrotic Shroud.** Your eyes briefly become pools of darkness, and flightless wings sprout from your back temporarily. Creatures other than your allies within 10 feet of you must succeed on a Charisma saving throw (8 plus your Charisma modifier and Proficiency) or have the Frightened condition until the end of your next turn.",
+        "activationType": "bonus action"
+      }
+    ],
+    "resistances": [
+      "necrotic",
+      "radiant"
+    ],
+    "source": "PHB 2024"
+  },
+  {
+    "name": "Bullywug",
+    "size": [
+      "Medium"
+    ],
+    "speed": 20,
+    "traits": [
+      {
+        "name": "Amphibious",
+        "description": "You can breathe air and water."
+      },
+      {
+        "name": "Speak with Frogs and Toads",
+        "description": "You can communicate simple concepts to frogs and toads when you speak in Bullywug."
+      },
+      {
+        "name": "Swamp Camouflage",
+        "description": "You have advantage on Dexterity (Stealth) checks made to hide in swampy terrain."
+      },
+      {
+        "name": "Standing Leap",
+        "description": "Your long jump is up to 20 feet and your high jump is up to 10 feet, with or without a running start."
+      },
+      {
+        "name": "Languages",
+        "description": "You can speak, read, and write Bullywug."
+      }
+    ],
+    "languages": [
+      "Other"
+    ],
+    "source": "DMG 2014"
+  },
+  {
+    "name": "Custom Lineage",
+    "size": [
+      "Small",
+      "Medium"
+    ],
+    "speed": 30,
+    "darkvision": 60,
+    "traits": [
+      {
+        "name": "Creature Type",
+        "description": "You are a humanoid. You determine your appearance and whether you resemble any of your kin."
+      },
+      {
+        "name": "Size",
+        "description": "You are Small or Medium (your choice)."
+      },
+      {
+        "name": "Feat",
+        "description": "You gain one feat of your choice for which you qualify."
+      },
+      {
+        "name": "Variable Trait",
+        "description": "You gain one of the following options of your choice: (a) darkvision with a range of 60 feet or (b) proficiency in one skill of your choice."
+      },
+      {
+        "name": "Languages",
+        "description": "You can speak, read, and write Common and one other language that you and your DM agree is appropriate for your character."
+      }
+    ],
+    "languages": [
+      "Common"
+    ],
+    "source": "Tasha's"
+  },
+  {
+    "name": "Dragonborn",
+    "size": [
+      "Medium"
+    ],
+    "speed": 30,
+    "darkvision": 60,
+    "traits": [
+      {
+        "name": "Draconic Ancestry",
+        "description": "Your lineage stems from a dragon progenitor. Choose the kind of dragon from the Draconic Ancestors table. Your choice affects your Breath Weapon and Damage Resistance traits as well as your appearance.\nDragon | Damage Type\nBlack | Acid\nBlue | Lightning\nBrass | Fire\nBronze | Lightning\nCopper | Acid\nGold | Fire\nGreen | Poison\nRed | Fire\nSilver | Cold\nWhite | Cold"
+      },
+      {
+        "name": "Breath Weapon",
+        "description": "When you take the Attack action on your turn, you can replace one of your attacks with an exhalation of magical energy in either a 15-foot Cone [Area of Effect] or a 30-foot Line [Area of Effect] that is 5 feet wide (choose the shape each time). Each creature in that area must make a Dexterity saving throw (8 plus your Constitution modifier and Proficiency). On a failed save, a creature takes 1d10 damage of the type determined by your Draconic Ancestry trait. On a successful save, a creature takes half as much damage. This damage increases by 1d10 when you reach character levels 5 (2d10), 11 (3d10), and 17 (4d10).\nYou can use this Breath Weapon a number of times equal to your Proficiency, and you regain all expended uses when you finish a Long Rest.",
+        "activationType": "action"
+      },
+      {
+        "name": "Damage Resistance",
+        "description": "You have Resistance to the damage type determined by your Draconic Ancestry trait."
+      },
+      {
+        "name": "Darkvision",
+        "description": "You have Darkvision with a range of 60 feet."
+      },
+      {
+        "name": "Draconic Flight",
+        "description": "When you reach character level 5, you can channel draconic magic to give yourself temporary flight. As a Bonus Action, you sprout spectral wings on your back that last for 10 minutes or until you retract the wings (no action required) or have the Incapacitated condition. During that time, you have a Fly Speed equal to your Speed. Your wings appear to be made of the same energy as your Breath Weapon. Once you use this trait, you can't use it again until you finish a Long Rest.",
+        "activationType": "bonus action"
+      }
+    ],
+    "source": "PHB 2024"
+  },
+  {
+    "name": "Dwarf",
+    "size": [
+      "Medium"
+    ],
+    "speed": 30,
+    "darkvision": 120,
+    "traits": [
+      {
+        "name": "Darkvision",
+        "description": "You have Darkvision with a range of 120 feet."
+      },
+      {
+        "name": "Dwarven Resilience",
+        "description": "You have Resistance to Poison damage. You also have Advantage on saving throws you make to avoid or end the Poisoned condition."
+      },
+      {
+        "name": "Dwarven Toughness",
+        "description": "Your Hit Points maximum increases by 1, and it increases by 1 again whenever you gain a level."
+      },
+      {
+        "name": "Stonecunning",
+        "description": "As a Bonus Action, you gain Tremorsense with a range of 60 feet for 10 minutes. You must be on a stone surface or touching a stone surface to use this Tremorsense. The stone can be natural or worked.\nYou can use this Bonus Action a number of times equal to your Proficiency, and you regain all expended uses when you finish a Long Rest.",
+        "activationType": "bonus action"
+      }
+    ],
+    "resistances": [
+      "poison"
+    ],
+    "source": "PHB 2024"
+  },
+  {
+    "name": "Elf",
+    "size": [
+      "Medium"
+    ],
+    "speed": 30,
+    "darkvision": 60,
+    "traits": [
+      {
+        "name": "Darkvision",
+        "description": "You have Darkvision with a range of 60 feet."
+      },
+      {
+        "name": "Elven Lineage",
+        "description": "You are part of a lineage that grants you supernatural abilities. Choose a lineage from the Elven Lineages table. You gain the level 1 benefit of that lineage.\nWhen you reach character levels 3 and 5, you learn a higher-level spell, as shown on the table. You always have that spell prepared. You can cast it once without a spell slot, and you regain the ability to cast it in that way when you finish a Long Rest. You can also cast the spell using any spell slots you have of the appropriate level.\nIntelligence, Wisdom, or Charisma is your spellcasting ability for the spells you cast with this trait (choose the ability when you select the lineage).\nLineage | Level 1 | Level 3 | Level 5\nDrow | The range of your Darkvision increases to 120 feet. You also know the Dancing Lights cantrip. | Faerie Fire | Darkness\nHigh Elf | You know the Prestidigitation cantrip. Whenever you finish a Long Rest, you can replace that cantrip with a different cantrip from the Wizard spell list. | Detect Magic | Misty Step\nWood Elf | Your Speed increases to 35 feet. You also know the Druidcraft cantrip. | Longstrider | Pass without Trace"
+      },
+      {
+        "name": "Fey Ancestry",
+        "description": "You have Advantage on saving throws you make to avoid or end the Charmed condition."
+      },
+      {
+        "name": "Keen Senses",
+        "description": "You have proficiency in the Insight, Perception, or Survival skill."
+      },
+      {
+        "name": "Trance",
+        "description": "You don't need to sleep, and magic can't put you to sleep. You can finish a Long Rest in 4 hours if you spend those hours in a trancelike meditation, during which you retain consciousness."
+      }
+    ],
+    "source": "PHB 2024"
+  },
+  {
+    "name": "Gnoll",
+    "size": [
+      "Medium"
+    ],
+    "speed": 30,
+    "darkvision": 60,
+    "traits": [
+      {
+        "name": "Bite",
+        "description": "Your fanged maw is a natural weapon, which you can use to make unarmed strikes. If you hit with it, you deal piercing damage equal to 1d4 + your Strength modifier, instead of the bludgeoning damage normal for an unarmed strike."
+      },
+      {
+        "name": "Darkvision",
+        "description": "You can see in dim light within 60 feet of you as if it were bright light, and in darkness as if it were dim light. You can't discern color in darkness, only shades of gray."
+      },
+      {
+        "name": "Rampage",
+        "description": "When you reduce a creature to 0 hit points with a melee attack on your turn, you can take a bonus action to move up to half your speed and make a bite attack.",
+        "activationType": "bonus action"
+      }
+    ],
+    "source": "DMG 2014"
+  },
+  {
+    "name": "Gnome",
+    "size": [
+      "Small"
+    ],
+    "speed": 30,
+    "darkvision": 60,
+    "traits": [
+      {
+        "name": "Darkvision",
+        "description": "You have Darkvision with a range of 60 feet."
+      },
+      {
+        "name": "Gnomish Cunning",
+        "description": "You have Advantage on Intelligence, Wisdom, and Charisma saving throws."
+      },
+      {
+        "name": "Gnomish Lineage",
+        "description": "You are part of a lineage that grants you supernatural abilities. Choose one of the following options; whichever one you choose, Intelligence, Wisdom, or Charisma is your spellcasting ability for the spells you cast with this trait (choose the ability when you select the lineage):\n• **Forest Gnome.** You know the Minor Illusion cantrip. You also always have the Speak with Animals spell prepared. You can cast it without a spell slot a number of times equal to your Proficiency, and you regain all expended uses when you finish a Long Rest. You can also use any spell slots you have to cast the spell.\n• **Rock Gnome.** You know the Mending and Prestidigitation cantrips. In addition, you can spend 10 minutes casting Prestidigitation to create a Tiny clockwork device (AC 5, 1 HP), such as a toy, fire starter, or music box. When you create the device, you determine its function by choosing one effect from Prestidigitation; the device produces that effect whenever you or another creature takes a Bonus Action to activate it with a touch. If the chosen effect has options within it, you choose one of those options for the device when you create it. For example, if you choose the spell's ignite-extinguish effect, you determine whether the device ignites or extinguishes fire; the device doesn't do both. You can have three such devices in existence at a time, and each falls apart 8 hours after its creation or when you dismantle it with a touch as a Utilize action.",
+        "activationType": "bonus action"
+      }
+    ],
+    "source": "PHB 2024"
+  },
+  {
+    "name": "Gnome (Deep)",
+    "size": [
+      "Small"
+    ],
+    "speed": 20,
+    "darkvision": 120,
+    "traits": [
+      {
+        "name": "Innate Spellcasting",
+        "description": "You have an innate ability to cast the following spells, requiring no material components:\n• nondetection (self only)\n• blindness/deafness, blur, disguise self\nIntelligence is your spellcasting ability for these spells."
+      },
+      {
+        "name": "Stone Camouflage",
+        "description": "You have advantage on Dexterity (Stealth) checks to hide in rocky terrain."
+      },
+      {
+        "name": "Gnome Cunning",
+        "description": "You have advantage on Intelligence, Wisdom, and Charisma saving throws against magic."
+      },
+      {
+        "name": "Superior Darkvision",
+        "description": "Accustomed to life underground, you have superior vision in dark and dim conditions. You can see in dim light within 120 feet of you as if it were bright light, and in darkness as if it were dim light. You can't discern color in darkness, only shades of gray."
+      },
+      {
+        "name": "Languages",
+        "description": "You can speak, read, and write Gnomish, Terran, and Undercommon."
+      }
+    ],
+    "languages": [
+      "Gnomish",
+      "Terran",
+      "Undercommon"
+    ],
+    "source": "DMG 2014"
+  },
+  {
+    "name": "Goblin",
+    "size": [
+      "Small"
+    ],
+    "speed": 30,
+    "darkvision": 60,
+    "traits": [
+      {
+        "name": "Nimble Escape",
+        "description": "You can take the Disengage or Hide action as a bonus action on each of your turns.",
+        "activationType": "bonus action"
+      },
+      {
+        "name": "Darkvision",
+        "description": "Accustomed to life underground, you have superior vision in dark and dim conditions. You can see in dim light within 60 feet of you as if it were bright light, and in darkness as if it were dim light. You can't discern color in darkness, only shades of gray."
+      },
+      {
+        "name": "Languages",
+        "description": "You can speak, read, and write Common and Goblin."
+      }
+    ],
+    "languages": [
+      "Common",
+      "Goblin"
+    ],
+    "source": "DMG 2014"
+  },
+  {
+    "name": "Goliath",
+    "size": [
+      "Medium"
+    ],
+    "speed": 35,
+    "traits": [
+      {
+        "name": "Giant Ancestry",
+        "description": "You are descended from Giants. Choose one of the following benefits—a supernatural boon from your ancestry; you can use the chosen benefit a number of times equal to your Proficiency, and you regain all expended uses when you finish a Long Rest:\n• **Cloud's Jaunt (Cloud Giant).** As a Bonus Action, you magically teleport up to 30 feet to an unoccupied space you can see.\n• **Fire's Burn (Fire Giant).** When you hit a target with an attack roll and deal damage to it, you can also deal 1d10 Fire damage to that target.\n• **Frost's Chill (Frost Giant).** When you hit a target with an attack roll and deal damage to it, you can also deal 1d6 Cold damage to that target and reduce its Speed by 10 feet until the start of your next turn.\n• **Hill's Tumble (Hill Giant).** When you hit a Large or smaller creature with an attack roll and deal damage to it, you can give that target the Prone condition.\n• **Stone's Endurance (Stone Giant).** When you take damage, you can take a Reaction to roll 1d12. Add your Constitution modifier to the number rolled and reduce the damage by that total.\n• **Storm's Thunder (Storm Giant).** When you take damage from a creature within 60 feet of you, you can take a Reaction to deal 1d8 Thunder damage to that creature.",
+        "activationType": "reaction"
+      },
+      {
+        "name": "Large Form",
+        "description": "Starting at character level 5, you can change your size to Large as a Bonus Action if you're in a big enough space. This transformation lasts for 10 minutes or until you end it (no action required). For that duration, you have Advantage on Strength checks, and your Speed increases by 10 feet. Once you use this trait, you can't use it again until you finish a Long Rest.",
+        "activationType": "bonus action"
+      },
+      {
+        "name": "Powerful Build",
+        "description": "You have Advantage on any ability check you make to end the Grappled condition. You also count as one size larger when determining your carrying capacity."
+      }
+    ],
+    "source": "PHB 2024"
+  },
+  {
+    "name": "Grimlock",
+    "size": [
+      "Medium"
+    ],
+    "speed": 30,
+    "traits": [
+      {
+        "name": "Blindsight",
+        "description": "You have no eyes, and cannot be blinded. You can perceive your surroundings within 30 ft., or 10 ft. while deafened. You are considered blind beyond this radius."
+      },
+      {
+        "name": "Keen Hearing and Smell",
+        "description": "You have advantage on Wisdom (Perception) checks that rely on hearing or smell."
+      },
+      {
+        "name": "Stone Camouflage",
+        "description": "You have advantage on Dexterity (Stealth) checks made to hide in rocky terrain."
+      },
+      {
+        "name": "Languages",
+        "description": "You can speak, read, and write Undercommon."
+      }
+    ],
+    "languages": [
+      "Undercommon"
+    ],
+    "source": "DMG 2014"
+  },
+  {
+    "name": "Half-Elf",
+    "size": [
+      "Medium"
+    ],
+    "speed": 30,
+    "darkvision": 60,
+    "traits": [
+      {
+        "name": "Age",
+        "description": "Half-elves mature at the same rate humans do and reach adulthood around the age of 20. They live much longer than humans, however, often exceeding 180 years."
+      },
+      {
+        "name": "Size",
+        "description": "Half-elves are about the same size as humans, ranging from 5 to 6 feet tall. Your size is Medium."
+      },
+      {
+        "name": "Darkvision",
+        "description": "Thanks to your elf blood, you have superior vision in dark and dim conditions. You can see in dim light within 60 feet of you as if it were bright light, and in darkness as if it were dim light. You can't discern color in darkness, only shades of gray."
+      },
+      {
+        "name": "Fey Ancestry",
+        "description": "You have advantage on saving throws against being charmed, and magic can't put you to sleep."
+      },
+      {
+        "name": "Skill Versatility",
+        "description": "You gain proficiency in two skills of your choice."
+      },
+      {
+        "name": "Languages",
+        "description": "You can speak, read, and write Common, Elvish, and one extra language of your choice."
+      }
+    ],
+    "languages": [
+      "Common",
+      "Elvish"
+    ],
+    "source": "PHB 2014"
+  },
+  {
+    "name": "Half-Orc",
+    "size": [
+      "Medium"
+    ],
+    "speed": 30,
+    "darkvision": 60,
+    "traits": [
+      {
+        "name": "Age",
+        "description": "Half-orcs mature a little faster than humans, reaching adulthood around age 14. They age noticeably faster and rarely live longer than 75 years."
+      },
+      {
+        "name": "Size",
+        "description": "Half-orcs are somewhat larger and bulkier than humans, and they range from 5 to well over 6 feet tall. Your size is Medium."
+      },
+      {
+        "name": "Darkvision",
+        "description": "Thanks to your orc blood, you have superior vision in dark and dim conditions. You can see in dim light within 60 feet of you as if it were bright light, and in darkness as if it were dim light. You can't discern color in darkness, only shades of gray."
+      },
+      {
+        "name": "Menacing",
+        "description": "You gain proficiency in the Intimidation skill."
+      },
+      {
+        "name": "Relentless Endurance",
+        "description": "When you are reduced to 0 hit points but not killed outright, you can drop to 1 hit point instead. You can't use this feature again until you finish a long rest."
+      },
+      {
+        "name": "Savage Attacks",
+        "description": "When you score a critical hit with a melee weapon attack, you can roll one of the weapon's damage dice one additional time and add it to the extra damage of the critical hit."
+      },
+      {
+        "name": "Languages",
+        "description": "You can speak, read, and write Common and Orc. Orc is a harsh, grating language with hard consonants. It has no script of its own but is written in the Dwarvish script."
+      }
+    ],
+    "languages": [
+      "Common",
+      "Orc"
+    ],
+    "source": "PHB 2014"
+  },
+  {
+    "name": "Halfling",
+    "size": [
+      "Small"
+    ],
+    "speed": 30,
+    "traits": [
+      {
+        "name": "Brave",
+        "description": "You have Advantage on saving throws you make to avoid or end the Frightened condition."
+      },
+      {
+        "name": "Halfling Nimbleness",
+        "description": "You can move through the space of any creature that is a size larger than you, but you can't stop in the same space."
+      },
+      {
+        "name": "Luck",
+        "description": "When you roll a 1 on the d20 of a D20 Test, you can reroll the die, and you must use the new roll."
+      },
+      {
+        "name": "Naturally Stealthy",
+        "description": "You can take the Hide action even when you are obscured only by a creature that is at least one size larger than you.",
+        "activationType": "action"
+      }
+    ],
+    "source": "PHB 2024"
+  },
+  {
+    "name": "Hobgoblin",
+    "size": [
+      "Medium"
+    ],
+    "speed": 30,
+    "darkvision": 60,
+    "traits": [
+      {
+        "name": "Martial Advantage",
+        "description": "Once per turn, you can deal an extra 2d6 damage to a creature you hit with a weapon attack if that creature is within 5 ft. of an ally of yours that isn't incapacitated."
+      },
+      {
+        "name": "Darkvision",
+        "description": "You can see in dim light within 60 feet of you as if it were bright light, and in darkness as if it were dim light. You can't discern color in darkness, only shades of gray."
+      },
+      {
+        "name": "Languages",
+        "description": "You can speak, read, and write Common and Goblin."
+      }
+    ],
+    "languages": [
+      "Common",
+      "Goblin"
+    ],
+    "source": "DMG 2014"
+  },
+  {
+    "name": "Human",
+    "size": [
+      "Small",
+      "Medium"
+    ],
+    "speed": 30,
+    "traits": [
+      {
+        "name": "Resourceful",
+        "description": "You gain Heroic Inspiration whenever you finish a Long Rest."
+      },
+      {
+        "name": "Skillful",
+        "description": "You gain proficiency in one skill of your choice."
+      },
+      {
+        "name": "Versatile",
+        "description": "You gain an Origin feat of your choice."
+      }
+    ],
+    "source": "PHB 2024"
+  },
+  {
+    "name": "Kenku",
+    "size": [
+      "Medium"
+    ],
+    "speed": 30,
+    "darkvision": 60,
+    "traits": [
+      {
+        "name": "Ambusher",
+        "description": "In the first round of a combat, you have advantage on attack rolls against any creature who is surprised."
+      },
+      {
+        "name": "Mimicry",
+        "description": "You can mimic any sounds you have heard, including voices. A creature that hears the sounds can tell they are imitations with a successful 14 Wisdom (Insight) check."
+      },
+      {
+        "name": "Languages",
+        "description": "You can read and write Common and Auran, but you can only speak using your Mimicry trait."
+      }
+    ],
+    "languages": [
+      "Common",
+      "Auran"
+    ],
+    "source": "DMG 2014"
+  },
+  {
+    "name": "Kobold",
+    "size": [
+      "Small"
+    ],
+    "speed": 30,
+    "darkvision": 60,
+    "traits": [
+      {
+        "name": "Pack Tactics",
+        "description": "You have advantage on an attack roll against a creature if at least one of your allies is within 5 feet of the creature and the ally isn't incapacitated."
+      },
+      {
+        "name": "Sunlight Sensitivity",
+        "description": "You have disadvantage on attack rolls and on Wisdom (Perception) checks that rely on sight when you, the target of your attack, or whatever you are trying to perceive is in direct sunlight."
+      },
+      {
+        "name": "Darkvision",
+        "description": "Accustomed to life underground, you have superior vision in dark and dim conditions. You can see in dim light within 60 feet of you as if it were bright light, and in darkness as if it were dim light. You can't discern color in darkness, only shades of gray."
+      },
+      {
+        "name": "Languages",
+        "description": "You can speak, read, and write Common and Draconic."
+      }
+    ],
+    "languages": [
+      "Common",
+      "Draconic"
+    ],
+    "source": "DMG 2014"
+  },
+  {
+    "name": "Kuo-Toa",
+    "size": [
+      "Medium"
+    ],
+    "speed": 30,
+    "darkvision": 120,
+    "traits": [
+      {
+        "name": "Amphibious",
+        "description": "You can breathe air and water."
+      },
+      {
+        "name": "Otherworldly Perception",
+        "description": "You can sense the presence of any creature within 30 feet of you that is invisible or on the Ethereal Plane. You can pinpoint such a creature that is moving."
+      },
+      {
+        "name": "Slippery",
+        "description": "You have advantage on ability checks and saving throws made to escape a grapple."
+      },
+      {
+        "name": "Sunlight Sensitivity",
+        "description": "While in sunlight, you have disadvantage on attack rolls, as well as on Wisdom (Perception) checks that rely on sight."
+      },
+      {
+        "name": "Superior Darkvision",
+        "description": "You have superior vision in dark and dim conditions. You can see in dim light within 120 feet of you as if it were bright light, and in darkness as if it were dim light. You can't discern color in darkness, only shades of gray."
+      },
+      {
+        "name": "Languages",
+        "description": "You can speak, read, and write Undercommon."
+      }
+    ],
+    "languages": [
+      "Undercommon"
+    ],
+    "source": "DMG 2014"
+  },
+  {
+    "name": "Lizardfolk",
+    "size": [
+      "Medium"
+    ],
+    "speed": 30,
+    "traits": [
+      {
+        "name": "Hold Breath",
+        "description": "You can hold your breath for up to 15 minutes at a time."
+      },
+      {
+        "name": "Natural Armor",
+        "description": "Your scales function as natural armor, granting you a +3 bonus to Armor Class."
+      },
+      {
+        "name": "Languages",
+        "description": "You can speak, read, and write Draconic."
+      }
+    ],
+    "languages": [
+      "Draconic"
+    ],
+    "source": "DMG 2014"
+  },
+  {
+    "name": "Merfolk",
+    "size": [
+      "Medium"
+    ],
+    "speed": 10,
+    "traits": [
+      {
+        "name": "Amphibious",
+        "description": "You can breathe air and water."
+      },
+      {
+        "name": "Languages",
+        "description": "You can speak, read, and write Common and Aquan."
+      }
+    ],
+    "languages": [
+      "Common",
+      "Aquan"
+    ],
+    "source": "DMG 2014"
+  },
+  {
+    "name": "Orc",
+    "size": [
+      "Medium"
+    ],
+    "speed": 30,
+    "darkvision": 120,
+    "traits": [
+      {
+        "name": "Adrenaline Rush",
+        "description": "You can take the Dash action as a Bonus Action. When you do so, you gain a number of Temporary Hit Points equal to your Proficiency.\nYou can use this trait a number of times equal to your Proficiency, and you regain all expended uses when you finish a Short Rest or Long Rest.",
+        "activationType": "bonus action"
+      },
+      {
+        "name": "Darkvision",
+        "description": "You have Darkvision with a range of 120 feet."
+      },
+      {
+        "name": "Relentless Endurance",
+        "description": "When you are reduced to 0 Hit Points but not killed outright, you can drop to 1 Hit Points instead. Once you use this trait, you can't do so again until you finish a Long Rest."
+      }
+    ],
+    "source": "PHB 2024"
+  },
+  {
+    "name": "Skeleton",
+    "size": [
+      "Medium"
+    ],
+    "speed": 30,
+    "darkvision": 60,
+    "traits": [
+      {
+        "name": "Creature Type",
+        "description": "You are Undead."
+      },
+      {
+        "name": "Brittle Bones",
+        "description": "You are vulnerable to bludgeoning damage."
+      },
+      {
+        "name": "Undead Nature",
+        "description": "You are immune to poison damage and exhaustion, and you can't be poisoned. You don't require air, food, drink, or sleep."
+      },
+      {
+        "name": "Darkvision",
+        "description": "You can see in dim light within 60 feet of you as if it were bright light, and in darkness as if it were dim light. You can't discern color in darkness, only shades of gray."
+      },
+      {
+        "name": "Languages",
+        "description": "You can't speak, but you can understand the languages you knew in life."
+      }
+    ],
+    "source": "DMG 2014"
+  },
+  {
+    "name": "Tiefling",
+    "size": [
+      "Small",
+      "Medium"
+    ],
+    "speed": 30,
+    "darkvision": 60,
+    "traits": [
+      {
+        "name": "Darkvision",
+        "description": "You have Darkvision with a range of 60 feet."
+      },
+      {
+        "name": "Fiendish Legacy",
+        "description": "You are the recipient of a legacy that grants you supernatural abilities. Choose a legacy from the Fiendish Legacies table. You gain the level 1 benefit of the chosen legacy.\nWhen you reach character levels 3 and 5, you learn a higher-level spell, as shown on the table. You always have that spell prepared. You can cast it once without a spell slot, and you regain the ability to cast it in that way when you finish a Long Rest. You can also cast the spell using any spell slots you have of the appropriate level. Intelligence, Wisdom, or Charisma is your spellcasting ability for the spells you cast with this trait (choose the ability when you select the legacy).\nLegacy | Level 1 | Level 3 | Level 5\nAbyssal | You have Resistance to Poison damage. You also know the Poison Spray cantrip. | Ray of Sickness | Hold Person\nChthonic | You have Resistance to Necrotic damage. You also know the Chill Touch cantrip. | False Life | Ray of Enfeeblement\nInfernal | You have Resistance to Fire damage. You also know the Fire Bolt cantrip. | Hellish Rebuke | Darkness"
+      },
+      {
+        "name": "Otherworldly Presence",
+        "description": "You know the Thaumaturgy cantrip. When you cast it with this trait, the spell uses the same spellcasting ability you use for your Fiendish Legacy Trait."
+      }
+    ],
+    "source": "PHB 2024"
+  },
+  {
+    "name": "Troglodyte",
+    "size": [
+      "Medium"
+    ],
+    "speed": 30,
+    "darkvision": 60,
+    "traits": [
+      {
+        "name": "Chameleon Skin",
+        "description": "You have advantage on Dexterity (Stealth) checks made to hide."
+      },
+      {
+        "name": "Stench",
+        "description": "Any creature other than a troglodyte that starts its turn within 5 ft. of you must succeed on a 12 Constitution saving throw or be poisoned until the start of the creature's next turn. On a successful saving throw, the creature is immune to the stench of all troglodytes for 1 hour."
+      },
+      {
+        "name": "Sunlight Sensitivity",
+        "description": "While in sunlight, you have disadvantage on attack rolls, as well as on Wisdom (Perception) checks that rely on sight."
+      },
+      {
+        "name": "Natural Armor",
+        "description": "Your thick hide grants you a +1 bonus to Armor Class."
+      },
+      {
+        "name": "Darkvision",
+        "description": "You can see in dim light within 60 feet of you as if it were bright light, and in darkness as if it were dim light. You can't discern color in darkness, only shades of gray."
+      },
+      {
+        "name": "Languages",
+        "description": "You can speak, read, and write Troglodyte."
+      }
+    ],
+    "languages": [
+      "Other"
+    ],
+    "source": "DMG 2014"
+  },
+  {
+    "name": "Zombie",
+    "size": [
+      "Medium"
+    ],
+    "speed": 30,
+    "darkvision": 60,
+    "traits": [
+      {
+        "name": "Creature Type",
+        "description": "You are Undead."
+      },
+      {
+        "name": "Undead Fortitude",
+        "description": "If damage reduces you to 0 hit points, you must make a Constitution saving throw with a DC of 5+the damage taken, unless the damage is radiant or from a critical hit. On a success, you drop to 1 hit point instead."
+      },
+      {
+        "name": "Undead Nature",
+        "description": "You are immune to poison damage, and you can't be poisoned. You don't require air, food, drink, or sleep."
+      },
+      {
+        "name": "Darkvision",
+        "description": "You can see in dim light within 60 feet of you as if it were bright light, and in darkness as if it were dim light. You can't discern color in darkness, only shades of gray."
+      },
+      {
+        "name": "Languages",
+        "description": "You can't speak, but you can understand the languages you knew in life."
+      }
+    ],
+    "source": "DMG 2014"
+  }
+]
