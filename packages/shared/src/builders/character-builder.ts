@@ -1,9 +1,8 @@
 /**
  * Shared character builder — single source of truth for D&D mechanics.
  *
- * Both DDB and AideDD parsers extract CharacterIdentifiers (player choices),
- * then delegate to buildCharacter() which computes everything else from the
- * D&D 2024 database.
+ * Parsers extract CharacterIdentifiers (player choices), then delegate to
+ * buildCharacter() which computes everything else from the D&D 2024 database.
  */
 
 import type {
@@ -100,11 +99,25 @@ export function buildCharacter(
   const totalLevel = ids.classes.reduce((sum, c) => sum + c.level, 0);
   const proficiencyBonus = Math.ceil(totalLevel / 4) + 1;
 
+  // === HP adjustments from feats/species ===
+  let maxHP = ids.maxHP;
+  const featureNames = new Set(
+    (ids.additionalFeatures ?? []).map((f) => f.name.toLowerCase())
+  );
+  if (featureNames.has("tough")) {
+    maxHP += 2 * totalLevel;
+  }
+  // Dwarven Toughness
+  const speciesLowerForHP = ids.race.toLowerCase().replace(/\s*\(.*\)/, "");
+  if (speciesLowerForHP === "dwarf") {
+    maxHP += totalLevel;
+  }
+
   // === AC ===
   const armorClass = ids.armorClass ?? computeArmorClass(ids);
 
   // === Speed ===
-  const speed = ids.speed ?? computeSpeed(ids);
+  const speed = ids.speed ?? computeSpeed(ids, featureNames);
 
   // === Skills ===
   const skills = computeSkills(ids);
@@ -154,7 +167,7 @@ export function buildCharacter(
     race: ids.race,
     classes: ids.classes,
     abilities: ids.abilities,
-    maxHP: Math.max(1, ids.maxHP),
+    maxHP: Math.max(1, maxHP),
     armorClass,
     proficiencyBonus,
     speed,
@@ -176,7 +189,6 @@ export function buildCharacter(
     source: ids.source,
     sourceUrl: ids.sourceUrl,
     ddbId: ids.ddbId,
-    aideddRawData: ids.aideddRawData,
   };
 
   const dynamicData: CharacterDynamicData = {
@@ -278,7 +290,7 @@ function computeArmorClass(ids: CharacterIdentifiers): number {
 
 // ─── Speed Computation ───────────────────────────────────
 
-function computeSpeed(ids: CharacterIdentifiers): number {
+function computeSpeed(ids: CharacterIdentifiers, featureNames: Set<string>): number {
   // Look up species base speed
   const speciesLower = ids.race.toLowerCase().replace(/\s*\(.*\)/, "");
   let speed = getSpecies(speciesLower)?.speed ?? 30;
@@ -299,6 +311,11 @@ function computeSpeed(ids: CharacterIdentifiers): number {
       lvl >= 18 ? 30 : lvl >= 14 ? 25 : lvl >= 10 ? 20 : lvl >= 6 ? 15 : 10;
     speed += monkBonus;
   }
+
+  // Feat-based speed bonuses
+  if (featureNames.has("mobile")) speed += 10;
+  if (featureNames.has("speedy")) speed += 10;
+  if (featureNames.has("squat nimbleness")) speed += 5;
 
   return speed;
 }
@@ -564,6 +581,8 @@ function computeFeatures(
 function computeClassResources(ids: CharacterIdentifiers): ClassResource[] {
   const resources: ClassResource[] = [];
   const seen = new Set<string>();
+  const totalLevel = ids.classes.reduce((sum, c) => sum + c.level, 0);
+  const proficiencyBonus = Math.ceil(totalLevel / 4) + 1;
 
   for (const cls of ids.classes) {
     const classData = getClass(cls.name);
@@ -584,6 +603,17 @@ function computeClassResources(ids: CharacterIdentifiers): ClassResource[] {
         source: cls.name,
       });
     }
+  }
+
+  // Lucky feat: PB luck points, long rest
+  const featureNames = (ids.additionalFeatures ?? []).map((f) => f.name.toLowerCase());
+  if (featureNames.includes("lucky") && !seen.has("Luck Points")) {
+    resources.push({
+      name: "Luck Points",
+      maxUses: proficiencyBonus,
+      resetType: "long",
+      source: "Lucky",
+    });
   }
 
   return resources;

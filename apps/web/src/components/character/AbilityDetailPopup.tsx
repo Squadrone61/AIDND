@@ -11,18 +11,20 @@ import {
   getSkillModifier,
   getSavingThrowModifier,
 } from "@aidnd/shared/utils";
-import { CharacterPopupOverlay } from "./CharacterPopupOverlay";
+import { DetailPopover } from "./DetailPopover";
 
 interface AbilityDetailPopupProps {
   abilityKey: keyof AbilityScores;
   character: CharacterData;
   onClose: () => void;
+  position: { x: number; y: number };
 }
 
 export function AbilityDetailPopup({
   abilityKey,
   character,
   onClose,
+  position,
 }: AbilityDetailPopupProps) {
   const s = character.static;
   const score = s.abilities[abilityKey];
@@ -41,7 +43,7 @@ export function AbilityDetailPopup({
   const relatedSkills = s.skills.filter((sk) => sk.ability === abilityKey);
 
   return (
-    <CharacterPopupOverlay title={fullName} onClose={onClose}>
+    <DetailPopover title={fullName} onClose={onClose} position={position}>
       <div className="space-y-4">
         {/* Score + Modifier display */}
         <div className="flex items-center gap-4">
@@ -138,6 +140,6 @@ export function AbilityDetailPopup({
           </div>
         )}
       </div>
-    </CharacterPopupOverlay>
+    </DetailPopover>
   );
 }

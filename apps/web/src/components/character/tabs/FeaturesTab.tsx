@@ -4,7 +4,7 @@ import { FilterChipBar } from "../FilterChipBar";
 
 interface FeaturesTabProps {
   character: CharacterData;
-  onFeatureClick: (feature: CharacterFeature) => void;
+  onFeatureClick: (feature: CharacterFeature, e: React.MouseEvent) => void;
 }
 
 type FeatureFilter = "all" | "class" | "race" | "feat" | "background";
@@ -82,7 +82,7 @@ export function FeaturesTab({ character, onFeatureClick }: FeaturesTabProps) {
                 }`}
                 onClick={
                   feat.description
-                    ? () => onFeatureClick(feat)
+                    ? (e) => onFeatureClick(feat, e)
                     : undefined
                 }
               >

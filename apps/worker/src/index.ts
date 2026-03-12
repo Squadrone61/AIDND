@@ -3,8 +3,6 @@ import { getGoogleAuthURL, handleGoogleCallback } from "./auth/google";
 import { verifyJWT } from "./auth/jwt";
 import { parseDDBCharacter } from "./services/ddb-parser";
 import { extractDDBCharacterId, fetchDDBCharacter, DDBFetchError } from "./services/ddb-fetcher";
-import { parseAideDDCharacter } from "./services/aidedd-parser";
-import { exportToAideDDXml } from "./services/aidedd-exporter";
 import type { Env, RoomMeta } from "./types";
 
 export { GameRoom };
@@ -151,10 +149,9 @@ export default {
     if (url.pathname === "/api/character/import" && request.method === "POST") {
       try {
         const body = (await request.json()) as {
-          mode: "url" | "json" | "aidedd";
+          mode: "url" | "json";
           url?: string;
           json?: unknown;
-          xml?: string;
         };
 
         if (body.mode === "url") {
@@ -214,65 +211,14 @@ export default {
           );
         }
 
-        if (body.mode === "aidedd") {
-          if (!body.xml) {
-            return new Response(
-              JSON.stringify({ error: "XML data is required", code: "MISSING_XML" }),
-              { status: 400, headers: { "Content-Type": "application/json", ...cors } }
-            );
-          }
-
-          const { character, warnings } = parseAideDDCharacter(body.xml);
-          return new Response(
-            JSON.stringify({ character, warnings }),
-            { headers: { "Content-Type": "application/json", ...cors } }
-          );
-        }
-
         return new Response(
-          JSON.stringify({ error: "Mode must be 'url', 'json', or 'aidedd'", code: "INVALID_MODE" }),
+          JSON.stringify({ error: "Mode must be 'url' or 'json'", code: "INVALID_MODE" }),
           { status: 400, headers: { "Content-Type": "application/json", ...cors } }
         );
       } catch (e) {
         const message = e instanceof Error ? e.message : "Failed to import character";
         return new Response(
           JSON.stringify({ error: message, code: "PARSE_ERROR" }),
-          { status: 422, headers: { "Content-Type": "application/json", ...cors } }
-        );
-      }
-    }
-
-    // POST /api/character/export — export character to AideDD XML
-    if (url.pathname === "/api/character/export" && request.method === "POST") {
-      try {
-        const body = (await request.json()) as {
-          format: "aidedd";
-          character: unknown;
-        };
-
-        if (body.format !== "aidedd") {
-          return new Response(
-            JSON.stringify({ error: "Only 'aidedd' format is supported", code: "INVALID_FORMAT" }),
-            { status: 400, headers: { "Content-Type": "application/json", ...cors } }
-          );
-        }
-
-        if (!body.character) {
-          return new Response(
-            JSON.stringify({ error: "Character data is required", code: "MISSING_CHARACTER" }),
-            { status: 400, headers: { "Content-Type": "application/json", ...cors } }
-          );
-        }
-
-        const { xml, warnings } = exportToAideDDXml(body.character as import("@aidnd/shared/types").CharacterData);
-        return new Response(
-          JSON.stringify({ xml, warnings }),
-          { headers: { "Content-Type": "application/json", ...cors } }
-        );
-      } catch (e) {
-        const message = e instanceof Error ? e.message : "Failed to export character";
-        return new Response(
-          JSON.stringify({ error: message, code: "EXPORT_ERROR" }),
           { status: 422, headers: { "Content-Type": "application/json", ...cors } }
         );
       }

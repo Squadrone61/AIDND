@@ -6,7 +6,7 @@ import { FilterChipBar } from "../FilterChipBar";
 
 interface SpellsTabProps {
   character: CharacterData;
-  onSpellClick: (spell: CharacterSpell) => void;
+  onSpellClick: (spell: CharacterSpell, e: React.MouseEvent) => void;
 }
 
 // Known/spontaneous casters — all learned spells are always available
@@ -39,7 +39,7 @@ function SpellRow({
   onClick,
 }: {
   spell: CharacterSpell;
-  onClick: () => void;
+  onClick: (e: React.MouseEvent) => void;
 }) {
   const availability = getSpellAvailability(spell);
   const styles = AVAILABILITY_STYLES[availability];
@@ -210,7 +210,7 @@ export function SpellsTab({ character, onSpellClick }: SpellsTabProps) {
                   <SpellRow
                     key={sp.name}
                     spell={sp}
-                    onClick={() => onSpellClick(sp)}
+                    onClick={(e) => onSpellClick(sp, e)}
                   />
                 ))}
               </div>

@@ -1,7 +1,8 @@
 "use client";
 
 import type { CharacterFeature } from "@aidnd/shared/types";
-import { CharacterPopupOverlay } from "./CharacterPopupOverlay";
+import { DetailPopover } from "./DetailPopover";
+import { Prose } from "../Prose";
 
 const SOURCE_COLORS: Record<
   CharacterFeature["source"],
@@ -23,11 +24,13 @@ const SOURCE_LABELS: Record<CharacterFeature["source"], string> = {
 interface FeatureDetailPopupProps {
   feature: CharacterFeature;
   onClose: () => void;
+  position: { x: number; y: number };
 }
 
 export function FeatureDetailPopup({
   feature,
   onClose,
+  position,
 }: FeatureDetailPopupProps) {
   const colors = SOURCE_COLORS[feature.source];
   const sourceTag = feature.sourceLabel
@@ -35,27 +38,27 @@ export function FeatureDetailPopup({
     : SOURCE_LABELS[feature.source];
 
   return (
-    <CharacterPopupOverlay title={feature.name} onClose={onClose}>
+    <DetailPopover title={feature.name} onClose={onClose} position={position}>
       <div className="space-y-2">
         {/* Source badge */}
         <div className="flex items-center gap-2">
           <span
-            className={`text-[10px] px-2 py-0.5 rounded-full ${colors.bg} ${colors.text} border border-current/20`}
+            className={`text-xs px-2 py-0.5 rounded-full ${colors.bg} ${colors.text} border border-current/20`}
           >
             {sourceTag}
           </span>
           {feature.requiredLevel != null && (
-            <span className="text-[10px] text-gray-500">
+            <span className="text-xs text-gray-500">
               Level {feature.requiredLevel}
             </span>
           )}
         </div>
 
         {/* Description */}
-        <div className="text-xs text-gray-300 leading-relaxed whitespace-pre-wrap">
+        <Prose className="text-gray-300">
           {feature.description || "No description available."}
-        </div>
+        </Prose>
       </div>
-    </CharacterPopupOverlay>
+    </DetailPopover>
   );
 }

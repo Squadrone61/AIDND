@@ -1,19 +1,21 @@
 "use client";
 
 import type { InventoryItem } from "@aidnd/shared/types";
-import { CharacterPopupOverlay } from "./CharacterPopupOverlay";
+import { DetailPopover } from "./DetailPopover";
+import { Prose } from "../Prose";
 import { RARITY_COLORS } from "./utils";
 
 interface ItemDetailPopupProps {
   item: InventoryItem;
   onClose: () => void;
+  position: { x: number; y: number };
 }
 
-export function ItemDetailPopup({ item, onClose }: ItemDetailPopupProps) {
+export function ItemDetailPopup({ item, onClose, position }: ItemDetailPopupProps) {
   const rarityColor = RARITY_COLORS[item.rarity ?? ""] ?? "text-gray-300";
 
   return (
-    <CharacterPopupOverlay title={item.name} onClose={onClose}>
+    <DetailPopover title={item.name} onClose={onClose} position={position}>
       <div className="space-y-3">
         {/* Header badges */}
         <div className="flex items-center gap-2 flex-wrap">
@@ -54,8 +56,8 @@ export function ItemDetailPopup({ item, onClose }: ItemDetailPopupProps) {
         <div className="grid grid-cols-2 gap-2">
           {item.damage && (
             <div className="bg-gray-900/50 border border-gray-700 rounded px-2.5 py-1.5">
-              <div className="text-[10px] text-gray-500 uppercase">Damage</div>
-              <div className="text-xs text-gray-300">
+              <div className="text-xs text-gray-500 uppercase">Damage</div>
+              <div className="text-sm text-gray-300">
                 {item.damage}
                 {item.damageType && (
                   <span className="text-gray-500"> {item.damageType}</span>
@@ -65,20 +67,20 @@ export function ItemDetailPopup({ item, onClose }: ItemDetailPopupProps) {
           )}
           {item.armorClass != null && item.armorClass > 0 && (
             <div className="bg-gray-900/50 border border-gray-700 rounded px-2.5 py-1.5">
-              <div className="text-[10px] text-gray-500 uppercase">AC</div>
-              <div className="text-xs text-gray-300">{item.armorClass}</div>
+              <div className="text-xs text-gray-500 uppercase">AC</div>
+              <div className="text-sm text-gray-300">{item.armorClass}</div>
             </div>
           )}
           {item.weight != null && item.weight > 0 && (
             <div className="bg-gray-900/50 border border-gray-700 rounded px-2.5 py-1.5">
-              <div className="text-[10px] text-gray-500 uppercase">Weight</div>
-              <div className="text-xs text-gray-300">{item.weight} lb</div>
+              <div className="text-xs text-gray-500 uppercase">Weight</div>
+              <div className="text-sm text-gray-300">{item.weight} lb</div>
             </div>
           )}
           {item.quantity > 1 && (
             <div className="bg-gray-900/50 border border-gray-700 rounded px-2.5 py-1.5">
-              <div className="text-[10px] text-gray-500 uppercase">Qty</div>
-              <div className="text-xs text-gray-300">{item.quantity}</div>
+              <div className="text-xs text-gray-500 uppercase">Qty</div>
+              <div className="text-sm text-gray-300">{item.quantity}</div>
             </div>
           )}
         </div>
@@ -86,14 +88,14 @@ export function ItemDetailPopup({ item, onClose }: ItemDetailPopupProps) {
         {/* Properties */}
         {item.properties && item.properties.length > 0 && (
           <div>
-            <div className="text-xs text-gray-400 font-medium mb-1">
+            <div className="text-sm text-gray-400 font-medium mb-1">
               Properties
             </div>
             <div className="flex flex-wrap gap-1">
               {item.properties.map((prop) => (
                 <span
                   key={prop}
-                  className="text-[10px] bg-gray-700/50 text-gray-300 px-2 py-0.5 rounded"
+                  className="text-xs bg-gray-700/50 text-gray-300 px-2 py-0.5 rounded"
                 >
                   {prop}
                 </span>
@@ -105,15 +107,15 @@ export function ItemDetailPopup({ item, onClose }: ItemDetailPopupProps) {
         {/* Description */}
         {item.description && (
           <div>
-            <div className="text-xs text-gray-400 font-medium mb-1">
+            <div className="text-sm text-gray-400 font-medium mb-1">
               Description
             </div>
-            <div className="text-xs text-gray-300 leading-relaxed whitespace-pre-wrap">
+            <Prose className="text-gray-300">
               {item.description}
-            </div>
+            </Prose>
           </div>
         )}
       </div>
-    </CharacterPopupOverlay>
+    </DetailPopover>
   );
 }

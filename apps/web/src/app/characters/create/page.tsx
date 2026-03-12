@@ -19,17 +19,31 @@ export default function CreateCharacterPage() {
     fallbackHint,
     importFromUrl,
     importFromJson,
-    importFromAideDD,
     clearCharacter,
   } = useCharacterImport();
 
-  // On successful import, save to library and redirect
+  // On successful DDB import, save to library and redirect
   useEffect(() => {
     if (importState === "success" && character) {
       const saved = saveCharacter(character);
       router.push(`/characters/${saved.id}`);
     }
   }, [importState, character, saveCharacter, router]);
+
+  const handleImportNative = (jsonString: string) => {
+    try {
+      const data = JSON.parse(jsonString);
+      if (data.format !== "aidnd") {
+        throw new Error("Not a valid .aidnd.json file");
+      }
+      const saved = saveCharacter(data.character, {
+        builderChoices: data.builderChoices ?? undefined,
+      });
+      router.push(`/characters/${saved.id}`);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Failed to import file");
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
@@ -39,7 +53,7 @@ export default function CreateCharacterPage() {
             Import Character
           </h1>
           <p className="text-sm text-gray-500">
-            Import from D&D Beyond or AideDD to add to your character library.
+            Import from D&D Beyond or an .aidnd.json file.
           </p>
         </div>
 
@@ -52,7 +66,7 @@ export default function CreateCharacterPage() {
             warnings={warnings}
             onImportUrl={importFromUrl}
             onImportJson={importFromJson}
-            onImportAideDD={importFromAideDD}
+            onImportNative={handleImportNative}
             onClear={clearCharacter}
           />
         </div>

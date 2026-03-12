@@ -4,7 +4,6 @@ import { useState } from "react";
 import type { CharacterData } from "@aidnd/shared/types";
 import { formatClassString, getTotalLevel } from "@aidnd/shared/utils";
 import { CharacterSheet } from "./CharacterSheet";
-import { HPBar } from "./HPBar";
 import { useCharacterLibrary } from "@/hooks/useCharacterLibrary";
 import Link from "next/link";
 
@@ -45,55 +44,33 @@ export function LeftSidebar({ character, onCharacterImported }: LeftSidebarProps
 
   return (
     <div className="w-80 bg-gray-800 border-r border-gray-700 flex flex-col shrink-0 relative">
-      {/* Header */}
-      <div className="p-3 border-b border-gray-700 space-y-1.5 shrink-0">
-        <div className="flex items-center justify-between">
-          {character ? (
-            <h2
-              className="text-sm font-bold text-purple-400 truncate mr-2"
-              title={character.static.name}
-            >
-              {character.static.name}
-            </h2>
-          ) : (
-            <h2 className="text-sm font-medium text-gray-300">Character</h2>
-          )}
-          <div className="flex items-center gap-1 shrink-0">
-            <button
-              onClick={() => setCollapsed(true)}
-              className="text-gray-500 hover:text-gray-300 transition-colors p-1"
-              title="Collapse"
-            >
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
-            </button>
-          </div>
-        </div>
-        {character && (
-          <div className="text-[11px] text-gray-400 truncate">
-            {character.static.race} &middot;{" "}
-            {formatClassString(character.static.classes)} &middot; Lvl{" "}
-            {getTotalLevel(character.static.classes)}
-          </div>
-        )}
-        {character && (
-          <HPBar
-            current={character.dynamic.currentHP}
-            max={character.static.maxHP}
-            temp={character.dynamic.tempHP}
-          />
-        )}
+      {/* Top bar */}
+      <div className="flex items-center justify-between px-3 py-1.5 border-b border-gray-700 shrink-0">
+        <Link
+          href="/"
+          className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+        >
+          &larr; Home
+        </Link>
+        <button
+          onClick={() => setCollapsed(true)}
+          className="text-gray-500 hover:text-gray-300 transition-colors p-1"
+          title="Collapse"
+        >
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 19l-7-7 7-7"
+            />
+          </svg>
+        </button>
       </div>
 
       {/* Content */}

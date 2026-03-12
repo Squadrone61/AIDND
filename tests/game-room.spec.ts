@@ -103,8 +103,10 @@ test.describe("Game Room", () => {
     await page.getByPlaceholder("What do you do?").fill("I search the room");
     await page.getByRole("button", { name: "Send" }).click();
 
-    // Message should appear in chat
-    await expect(page.getByText("I search the room")).toBeVisible();
+    // Message should appear in chat (echoed back from server via WebSocket)
+    await expect(page.getByText("I search the room")).toBeVisible({
+      timeout: 10_000,
+    });
   });
 
   test("host sees AI config section", async ({ page }) => {

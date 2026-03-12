@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import type { CharacterData } from "@aidnd/shared/types";
 import type { SavedCharacter } from "@/types/saved-character";
+import type { BuilderChoices } from "@/components/builder/types";
 
 const STORAGE_KEY = "character_library";
 
@@ -50,7 +51,7 @@ export function useCharacterLibrary() {
   const saveCharacter = useCallback(
     (
       char: CharacterData,
-      opts?: { campaignSlug?: string; roomCode?: string }
+      opts?: { campaignSlug?: string; roomCode?: string; builderChoices?: BuilderChoices }
     ): SavedCharacter => {
       const now = Date.now();
       const saved: SavedCharacter = {
@@ -61,6 +62,7 @@ export function useCharacterLibrary() {
         campaignSlug: opts?.campaignSlug,
         roomCode: opts?.roomCode,
         character: char,
+        builderChoices: opts?.builderChoices,
       };
       const updated = [...readLibrary(), saved];
       writeLibrary(updated);
@@ -71,11 +73,16 @@ export function useCharacterLibrary() {
   );
 
   const updateCharacter = useCallback(
-    (id: string, char: CharacterData) => {
+    (id: string, char: CharacterData, builderChoices?: BuilderChoices) => {
       const lib = readLibrary();
       const idx = lib.findIndex((c) => c.id === id);
       if (idx === -1) return;
-      lib[idx] = { ...lib[idx], character: char, updatedAt: Date.now() };
+      lib[idx] = {
+        ...lib[idx],
+        character: char,
+        updatedAt: Date.now(),
+        ...(builderChoices !== undefined ? { builderChoices } : {}),
+      };
       writeLibrary(lib);
       setCharacters(lib);
     },

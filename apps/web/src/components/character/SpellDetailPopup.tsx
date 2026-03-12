@@ -1,21 +1,23 @@
 "use client";
 
 import type { CharacterSpell } from "@aidnd/shared/types";
-import { CharacterPopupOverlay } from "./CharacterPopupOverlay";
+import { DetailPopover } from "./DetailPopover";
+import { Prose } from "../Prose";
 
 interface SpellDetailPopupProps {
   spell: CharacterSpell;
   onClose: () => void;
+  position: { x: number; y: number };
 }
 
-export function SpellDetailPopup({ spell, onClose }: SpellDetailPopupProps) {
+export function SpellDetailPopup({ spell, onClose, position }: SpellDetailPopupProps) {
   const levelStr =
     spell.level === 0
       ? "Cantrip"
       : `Level ${spell.level}${spell.school ? ` ${spell.school}` : ""}`;
 
   return (
-    <CharacterPopupOverlay title={spell.name} onClose={onClose}>
+    <DetailPopover title={spell.name} onClose={onClose} position={position}>
       <div className="space-y-3">
         {/* Level & School */}
         <div className="flex items-center gap-2 flex-wrap">
@@ -41,32 +43,32 @@ export function SpellDetailPopup({ spell, onClose }: SpellDetailPopupProps) {
         <div className="grid grid-cols-2 gap-2">
           {spell.castingTime && (
             <div className="bg-gray-900/50 border border-gray-700 rounded px-2.5 py-1.5">
-              <div className="text-[10px] text-gray-500 uppercase">
+              <div className="text-xs text-gray-500 uppercase">
                 Casting Time
               </div>
-              <div className="text-xs text-gray-300">{spell.castingTime}</div>
+              <div className="text-sm text-gray-300">{spell.castingTime}</div>
             </div>
           )}
           {spell.range && (
             <div className="bg-gray-900/50 border border-gray-700 rounded px-2.5 py-1.5">
-              <div className="text-[10px] text-gray-500 uppercase">Range</div>
-              <div className="text-xs text-gray-300">{spell.range}</div>
+              <div className="text-xs text-gray-500 uppercase">Range</div>
+              <div className="text-sm text-gray-300">{spell.range}</div>
             </div>
           )}
           {spell.components && (
             <div className="bg-gray-900/50 border border-gray-700 rounded px-2.5 py-1.5">
-              <div className="text-[10px] text-gray-500 uppercase">
+              <div className="text-xs text-gray-500 uppercase">
                 Components
               </div>
-              <div className="text-xs text-gray-300">{spell.components}</div>
+              <div className="text-sm text-gray-300">{spell.components}</div>
             </div>
           )}
           {spell.duration && (
             <div className="bg-gray-900/50 border border-gray-700 rounded px-2.5 py-1.5">
-              <div className="text-[10px] text-gray-500 uppercase">
+              <div className="text-xs text-gray-500 uppercase">
                 Duration
               </div>
-              <div className="text-xs text-gray-300">{spell.duration}</div>
+              <div className="text-sm text-gray-300">{spell.duration}</div>
             </div>
           )}
         </div>
@@ -74,15 +76,15 @@ export function SpellDetailPopup({ spell, onClose }: SpellDetailPopupProps) {
         {/* Description */}
         {spell.description && (
           <div>
-            <div className="text-xs text-gray-400 font-medium mb-1">
+            <div className="text-sm text-gray-400 font-medium mb-1">
               Description
             </div>
-            <div className="text-xs text-gray-300 leading-relaxed whitespace-pre-wrap">
+            <Prose className="text-gray-300">
               {spell.description}
-            </div>
+            </Prose>
           </div>
         )}
       </div>
-    </CharacterPopupOverlay>
+    </DetailPopover>
   );
 }

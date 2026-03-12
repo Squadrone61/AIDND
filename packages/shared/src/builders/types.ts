@@ -3,7 +3,7 @@
  * Everything the shared D&D 2024 database can't know: names, chosen scores,
  * chosen proficiencies, spell selections, equipment, etc.
  *
- * Both DDB and AideDD parsers produce this, then delegate to buildCharacter().
+ * Parsers produce this, then delegate to buildCharacter().
  */
 
 import type {
@@ -38,7 +38,6 @@ export interface CharacterIdentifiers {
   spells: CharacterSpell[];
 
   // Features — parser-specific features that override/supplement DB features
-  // (DDB has rich descriptions from its data; AideDD has invocations, feats)
   additionalFeatures?: CharacterFeature[];
 
   // Equipment
@@ -67,10 +66,9 @@ export interface CharacterIdentifiers {
   speed?: number;
 
   // Import metadata
-  source: "ddb" | "aidedd";
+  source: "ddb" | "builder";
   sourceUrl?: string;
   ddbId?: number;
-  aideddRawData?: string;
 
   // DDB initial dynamic state (current HP, used spell slots, etc.)
   initialDynamic?: Partial<CharacterDynamicData>;

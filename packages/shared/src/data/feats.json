@@ -11,8 +11,7 @@
       "con",
       "int",
       "wis",
-      "cha",
-      "hidden"
+      "cha"
     ],
     "source": "PHB 2024"
   },
@@ -86,8 +85,7 @@
       "con",
       "int",
       "wis",
-      "cha",
-      "max"
+      "cha"
     ],
     "source": "PHB 2024"
   },
@@ -104,8 +102,7 @@
       "con",
       "int",
       "wis",
-      "cha",
-      "max"
+      "cha"
     ],
     "source": "PHB 2024"
   },
@@ -122,8 +119,7 @@
       "con",
       "int",
       "wis",
-      "cha",
-      "max"
+      "cha"
     ],
     "source": "PHB 2024"
   },
@@ -139,8 +135,7 @@
       "con",
       "int",
       "wis",
-      "cha",
-      "max"
+      "cha"
     ],
     "source": "PHB 2024"
   },
@@ -156,8 +151,7 @@
       "con",
       "int",
       "wis",
-      "cha",
-      "max"
+      "cha"
     ],
     "source": "PHB 2024"
   },
@@ -169,8 +163,7 @@
     "description": "You gain the following benefits.\n**Overcome Defenses.** The Bludgeoning, Piercing, and Slashing damage you deal always ignores Resistance.\n**Overwhelming Strike.** When you roll a 20 on the d20 for an attack roll, you can deal extra damage to the target equal to the ability score increased by this feat. The extra damage's type is the same as the attack's type.",
     "abilityScoreIncrease": [
       "str",
-      "dex",
-      "max"
+      "dex"
     ],
     "source": "PHB 2024"
   },
@@ -187,8 +180,7 @@
       "con",
       "int",
       "wis",
-      "cha",
-      "max"
+      "cha"
     ],
     "source": "PHB 2024"
   },
@@ -204,8 +196,7 @@
       "con",
       "int",
       "wis",
-      "cha",
-      "max"
+      "cha"
     ],
     "source": "PHB 2024"
   },
@@ -222,8 +213,7 @@
       "con",
       "int",
       "wis",
-      "cha",
-      "max"
+      "cha"
     ],
     "source": "PHB 2024"
   },
@@ -236,8 +226,7 @@
     "abilityScoreIncrease": [
       "int",
       "wis",
-      "cha",
-      "max"
+      "cha"
     ],
     "source": "PHB 2024"
   },
@@ -254,8 +243,7 @@
       "con",
       "int",
       "wis",
-      "cha",
-      "max"
+      "cha"
     ],
     "source": "PHB 2024"
   },
@@ -271,8 +259,7 @@
       "con",
       "int",
       "wis",
-      "cha",
-      "max"
+      "cha"
     ],
     "source": "PHB 2024"
   },

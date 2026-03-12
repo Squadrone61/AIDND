@@ -3,21 +3,6 @@
     {
       "name": "Antimatter Rifle",
       "category": "martial",
-      "type": "ranged",
-      "damage": "6d8",
-      "damageType": "N",
-      "weight": 10,
-      "cost": "—",
-      "properties": [
-        "AF|DMG",
-        "RLD",
-        "Two-Handed"
-      ],
-      "range": "120/360"
-    },
-    {
-      "name": "Antimatter Rifle",
-      "category": "martial",
       "type": "melee",
       "damage": "6d8",
       "damageType": "N",
@@ -48,22 +33,6 @@
     {
       "name": "Automatic Rifle",
       "category": "martial",
-      "type": "ranged",
-      "damage": "2d8",
-      "damageType": "piercing",
-      "weight": 8,
-      "cost": "—",
-      "properties": [
-        "AF|DMG",
-        "BF|DMG",
-        "RLD",
-        "Two-Handed"
-      ],
-      "range": "80/240"
-    },
-    {
-      "name": "Automatic Rifle",
-      "category": "martial",
       "type": "melee",
       "damage": "2d8",
       "damageType": "piercing",
@@ -87,35 +56,9 @@
       "weight": 4,
       "cost": "10 gp",
       "properties": [
-        "Versatile (1d10)"
-      ]
-    },
-    {
-      "name": "Battleaxe",
-      "category": "martial",
-      "type": "melee",
-      "damage": "1d8",
-      "damageType": "slashing",
-      "weight": 4,
-      "cost": "10 gp",
-      "properties": [
         "V|XPHB"
       ],
       "mastery": "Topple|XPHB"
-    },
-    {
-      "name": "Blowgun",
-      "category": "martial",
-      "type": "ranged",
-      "damage": "1",
-      "damageType": "piercing",
-      "weight": 1,
-      "cost": "10 gp",
-      "properties": [
-        "Ammunition",
-        "Loading"
-      ],
-      "range": "25/100"
     },
     {
       "name": "Blowgun",
@@ -131,18 +74,6 @@
       ],
       "mastery": "Vex|XPHB",
       "range": "25/100"
-    },
-    {
-      "name": "Club",
-      "category": "simple",
-      "type": "melee",
-      "damage": "1d4",
-      "damageType": "bludgeoning",
-      "weight": 2,
-      "cost": "1 sp",
-      "properties": [
-        "Light"
-      ]
     },
     {
       "name": "Club",
@@ -166,40 +97,11 @@
       "weight": 1,
       "cost": "2 gp",
       "properties": [
-        "Finesse",
-        "Light",
-        "Thrown"
-      ],
-      "range": "20/60"
-    },
-    {
-      "name": "Dagger",
-      "category": "simple",
-      "type": "melee",
-      "damage": "1d4",
-      "damageType": "piercing",
-      "weight": 1,
-      "cost": "2 gp",
-      "properties": [
         "F|XPHB",
         "L|XPHB",
         "T|XPHB"
       ],
       "mastery": "Nick|XPHB",
-      "range": "20/60"
-    },
-    {
-      "name": "Dart",
-      "category": "simple",
-      "type": "ranged",
-      "damage": "1d4",
-      "damageType": "piercing",
-      "weight": 0.25,
-      "cost": "5 cp",
-      "properties": [
-        "Finesse",
-        "Thrown"
-      ],
       "range": "20/60"
     },
     {
@@ -225,32 +127,8 @@
       "damageType": "bludgeoning",
       "weight": 2,
       "cost": "10 gp",
-      "properties": []
-    },
-    {
-      "name": "Flail",
-      "category": "martial",
-      "type": "melee",
-      "damage": "1d8",
-      "damageType": "bludgeoning",
-      "weight": 2,
-      "cost": "10 gp",
       "properties": [],
       "mastery": "Sap|XPHB"
-    },
-    {
-      "name": "Glaive",
-      "category": "martial",
-      "type": "melee",
-      "damage": "1d10",
-      "damageType": "slashing",
-      "weight": 6,
-      "cost": "20 gp",
-      "properties": [
-        "Heavy",
-        "Reach",
-        "Two-Handed"
-      ]
     },
     {
       "name": "Glaive",
@@ -276,35 +154,10 @@
       "weight": 7,
       "cost": "30 gp",
       "properties": [
-        "Heavy",
-        "Two-Handed"
-      ]
-    },
-    {
-      "name": "Greataxe",
-      "category": "martial",
-      "type": "melee",
-      "damage": "1d12",
-      "damageType": "slashing",
-      "weight": 7,
-      "cost": "30 gp",
-      "properties": [
         "H|XPHB",
         "2H|XPHB"
       ],
       "mastery": "Cleave|XPHB"
-    },
-    {
-      "name": "Greatclub",
-      "category": "simple",
-      "type": "melee",
-      "damage": "1d8",
-      "damageType": "bludgeoning",
-      "weight": 10,
-      "cost": "2 sp",
-      "properties": [
-        "Two-Handed"
-      ]
     },
     {
       "name": "Greatclub",
@@ -328,37 +181,10 @@
       "weight": 6,
       "cost": "50 gp",
       "properties": [
-        "Heavy",
-        "Two-Handed"
-      ]
-    },
-    {
-      "name": "Greatsword",
-      "category": "martial",
-      "type": "melee",
-      "damage": "2d6",
-      "damageType": "slashing",
-      "weight": 6,
-      "cost": "50 gp",
-      "properties": [
         "H|XPHB",
         "2H|XPHB"
       ],
       "mastery": "Graze|XPHB"
-    },
-    {
-      "name": "Halberd",
-      "category": "martial",
-      "type": "melee",
-      "damage": "1d10",
-      "damageType": "slashing",
-      "weight": 6,
-      "cost": "20 gp",
-      "properties": [
-        "Heavy",
-        "Reach",
-        "Two-Handed"
-      ]
     },
     {
       "name": "Halberd",
@@ -374,21 +200,6 @@
         "2H|XPHB"
       ],
       "mastery": "Cleave|XPHB"
-    },
-    {
-      "name": "Hand Crossbow",
-      "category": "martial",
-      "type": "ranged",
-      "damage": "1d6",
-      "damageType": "piercing",
-      "weight": 3,
-      "cost": "75 gp",
-      "properties": [
-        "Ammunition",
-        "Light",
-        "Loading"
-      ],
-      "range": "30/120"
     },
     {
       "name": "Hand Crossbow",
@@ -415,41 +226,11 @@
       "weight": 2,
       "cost": "5 gp",
       "properties": [
-        "Light",
-        "Thrown"
-      ],
-      "range": "20/60"
-    },
-    {
-      "name": "Handaxe",
-      "category": "simple",
-      "type": "melee",
-      "damage": "1d6",
-      "damageType": "slashing",
-      "weight": 2,
-      "cost": "5 gp",
-      "properties": [
         "L|XPHB",
         "T|XPHB"
       ],
       "mastery": "Vex|XPHB",
       "range": "20/60"
-    },
-    {
-      "name": "Heavy Crossbow",
-      "category": "martial",
-      "type": "ranged",
-      "damage": "1d10",
-      "damageType": "piercing",
-      "weight": 18,
-      "cost": "50 gp",
-      "properties": [
-        "Ammunition",
-        "Heavy",
-        "Loading",
-        "Two-Handed"
-      ],
-      "range": "100/400"
     },
     {
       "name": "Heavy Crossbow",
@@ -467,21 +248,6 @@
       ],
       "mastery": "Push|XPHB",
       "range": "100/400"
-    },
-    {
-      "name": "Hunting Rifle",
-      "category": "martial",
-      "type": "ranged",
-      "damage": "2d10",
-      "damageType": "piercing",
-      "weight": 8,
-      "cost": "—",
-      "properties": [
-        "AF|DMG",
-        "RLD",
-        "Two-Handed"
-      ],
-      "range": "80/240"
     },
     {
       "name": "Hunting Rifle",
@@ -508,36 +274,10 @@
       "weight": 2,
       "cost": "5 sp",
       "properties": [
-        "Thrown"
-      ],
-      "range": "30/120"
-    },
-    {
-      "name": "Javelin",
-      "category": "simple",
-      "type": "melee",
-      "damage": "1d6",
-      "damageType": "piercing",
-      "weight": 2,
-      "cost": "5 sp",
-      "properties": [
         "T|XPHB"
       ],
       "mastery": "Slow|XPHB",
       "range": "30/120"
-    },
-    {
-      "name": "Lance",
-      "category": "martial",
-      "type": "melee",
-      "damage": "1d12",
-      "damageType": "piercing",
-      "weight": 6,
-      "cost": "10 gp",
-      "properties": [
-        "Reach",
-        "Special"
-      ]
     },
     {
       "name": "Lance",
@@ -560,20 +300,6 @@
     {
       "name": "Laser Pistol",
       "category": "martial",
-      "type": "ranged",
-      "damage": "3d6",
-      "damageType": "R",
-      "weight": 2,
-      "cost": "—",
-      "properties": [
-        "AF|DMG",
-        "RLD"
-      ],
-      "range": "40/120"
-    },
-    {
-      "name": "Laser Pistol",
-      "category": "martial",
       "type": "melee",
       "damage": "3d6",
       "damageType": "R",
@@ -585,21 +311,6 @@
       ],
       "mastery": "Vex|XPHB",
       "range": "40/120"
-    },
-    {
-      "name": "Laser Rifle",
-      "category": "martial",
-      "type": "ranged",
-      "damage": "3d8",
-      "damageType": "R",
-      "weight": 7,
-      "cost": "—",
-      "properties": [
-        "AF|DMG",
-        "RLD",
-        "Two-Handed"
-      ],
-      "range": "100/300"
     },
     {
       "name": "Laser Rifle",
@@ -616,21 +327,6 @@
       ],
       "mastery": "Slow|XPHB",
       "range": "100/300"
-    },
-    {
-      "name": "Light Crossbow",
-      "category": "simple",
-      "type": "ranged",
-      "damage": "1d8",
-      "damageType": "piercing",
-      "weight": 5,
-      "cost": "25 gp",
-      "properties": [
-        "Ammunition",
-        "Loading",
-        "Two-Handed"
-      ],
-      "range": "80/320"
     },
     {
       "name": "Light Crossbow",
@@ -657,40 +353,11 @@
       "weight": 2,
       "cost": "2 gp",
       "properties": [
-        "Light",
-        "Thrown"
-      ],
-      "range": "20/60"
-    },
-    {
-      "name": "Light Hammer",
-      "category": "simple",
-      "type": "melee",
-      "damage": "1d4",
-      "damageType": "bludgeoning",
-      "weight": 2,
-      "cost": "2 gp",
-      "properties": [
         "L|XPHB",
         "T|XPHB"
       ],
       "mastery": "Nick|XPHB",
       "range": "20/60"
-    },
-    {
-      "name": "Longbow",
-      "category": "martial",
-      "type": "ranged",
-      "damage": "1d8",
-      "damageType": "piercing",
-      "weight": 2,
-      "cost": "50 gp",
-      "properties": [
-        "Ammunition",
-        "Heavy",
-        "Two-Handed"
-      ],
-      "range": "150/600"
     },
     {
       "name": "Longbow",
@@ -717,18 +384,6 @@
       "weight": 3,
       "cost": "15 gp",
       "properties": [
-        "Versatile (1d10)"
-      ]
-    },
-    {
-      "name": "Longsword",
-      "category": "martial",
-      "type": "melee",
-      "damage": "1d8",
-      "damageType": "slashing",
-      "weight": 3,
-      "cost": "15 gp",
-      "properties": [
         "V|XPHB"
       ],
       "mastery": "Sap|XPHB"
@@ -741,31 +396,8 @@
       "damageType": "bludgeoning",
       "weight": 4,
       "cost": "5 gp",
-      "properties": []
-    },
-    {
-      "name": "Mace",
-      "category": "simple",
-      "type": "melee",
-      "damage": "1d6",
-      "damageType": "bludgeoning",
-      "weight": 4,
-      "cost": "5 gp",
       "properties": [],
       "mastery": "Sap|XPHB"
-    },
-    {
-      "name": "Maul",
-      "category": "martial",
-      "type": "melee",
-      "damage": "2d6",
-      "damageType": "bludgeoning",
-      "weight": 10,
-      "cost": "10 gp",
-      "properties": [
-        "Heavy",
-        "Two-Handed"
-      ]
     },
     {
       "name": "Maul",
@@ -789,33 +421,8 @@
       "damageType": "piercing",
       "weight": 4,
       "cost": "15 gp",
-      "properties": []
-    },
-    {
-      "name": "Morningstar",
-      "category": "martial",
-      "type": "melee",
-      "damage": "1d8",
-      "damageType": "piercing",
-      "weight": 4,
-      "cost": "15 gp",
       "properties": [],
       "mastery": "Sap|XPHB"
-    },
-    {
-      "name": "Musket",
-      "category": "martial",
-      "type": "ranged",
-      "damage": "1d12",
-      "damageType": "piercing",
-      "weight": 10,
-      "cost": "500 gp",
-      "properties": [
-        "AF|DMG",
-        "Loading",
-        "Two-Handed"
-      ],
-      "range": "40/120"
     },
     {
       "name": "Musket",
@@ -856,39 +463,11 @@
       "weight": 18,
       "cost": "5 gp",
       "properties": [
-        "Heavy",
-        "Reach",
-        "Two-Handed"
-      ]
-    },
-    {
-      "name": "Pike",
-      "category": "martial",
-      "type": "melee",
-      "damage": "1d10",
-      "damageType": "piercing",
-      "weight": 18,
-      "cost": "5 gp",
-      "properties": [
         "H|XPHB",
         "R|XPHB",
         "2H|XPHB"
       ],
       "mastery": "Push|XPHB"
-    },
-    {
-      "name": "Pistol",
-      "category": "martial",
-      "type": "ranged",
-      "damage": "1d10",
-      "damageType": "piercing",
-      "weight": 3,
-      "cost": "250 gp",
-      "properties": [
-        "AF|DMG",
-        "Loading"
-      ],
-      "range": "30/90"
     },
     {
       "name": "Pistol",
@@ -914,33 +493,9 @@
       "weight": 4,
       "cost": "2 sp",
       "properties": [
-        "Versatile (1d8)"
-      ]
-    },
-    {
-      "name": "Quarterstaff",
-      "category": "simple",
-      "type": "melee",
-      "damage": "1d6",
-      "damageType": "bludgeoning",
-      "weight": 4,
-      "cost": "2 sp",
-      "properties": [
         "V|XPHB"
       ],
       "mastery": "Topple|XPHB"
-    },
-    {
-      "name": "Rapier",
-      "category": "martial",
-      "type": "melee",
-      "damage": "1d8",
-      "damageType": "piercing",
-      "weight": 2,
-      "cost": "25 gp",
-      "properties": [
-        "Finesse"
-      ]
     },
     {
       "name": "Rapier",
@@ -958,20 +513,6 @@
     {
       "name": "Revolver",
       "category": "martial",
-      "type": "ranged",
-      "damage": "2d8",
-      "damageType": "piercing",
-      "weight": 3,
-      "cost": "—",
-      "properties": [
-        "AF|DMG",
-        "RLD"
-      ],
-      "range": "40/120"
-    },
-    {
-      "name": "Revolver",
-      "category": "martial",
       "type": "melee",
       "damage": "2d8",
       "damageType": "piercing",
@@ -983,19 +524,6 @@
       ],
       "mastery": "Sap|XPHB",
       "range": "40/120"
-    },
-    {
-      "name": "Scimitar",
-      "category": "martial",
-      "type": "melee",
-      "damage": "1d6",
-      "damageType": "slashing",
-      "weight": 3,
-      "cost": "25 gp",
-      "properties": [
-        "Finesse",
-        "Light"
-      ]
     },
     {
       "name": "Scimitar",
@@ -1029,20 +557,6 @@
     {
       "name": "Shortbow",
       "category": "simple",
-      "type": "ranged",
-      "damage": "1d6",
-      "damageType": "piercing",
-      "weight": 2,
-      "cost": "25 gp",
-      "properties": [
-        "Ammunition",
-        "Two-Handed"
-      ],
-      "range": "80/320"
-    },
-    {
-      "name": "Shortbow",
-      "category": "simple",
       "type": "melee",
       "damage": "1d6",
       "damageType": "piercing",
@@ -1064,38 +578,10 @@
       "weight": 2,
       "cost": "10 gp",
       "properties": [
-        "Finesse",
-        "Light"
-      ]
-    },
-    {
-      "name": "Shortsword",
-      "category": "martial",
-      "type": "melee",
-      "damage": "1d6",
-      "damageType": "piercing",
-      "weight": 2,
-      "cost": "10 gp",
-      "properties": [
         "F|XPHB",
         "L|XPHB"
       ],
       "mastery": "Vex|XPHB"
-    },
-    {
-      "name": "Shotgun",
-      "category": "martial",
-      "type": "ranged",
-      "damage": "2d8",
-      "damageType": "piercing",
-      "weight": 7,
-      "cost": "—",
-      "properties": [
-        "AF|DMG",
-        "RLD",
-        "Two-Handed"
-      ],
-      "range": "30/90"
     },
     {
       "name": "Shotgun",
@@ -1122,34 +608,9 @@
       "weight": 2,
       "cost": "1 gp",
       "properties": [
-        "Light"
-      ]
-    },
-    {
-      "name": "Sickle",
-      "category": "simple",
-      "type": "melee",
-      "damage": "1d4",
-      "damageType": "slashing",
-      "weight": 2,
-      "cost": "1 gp",
-      "properties": [
         "L|XPHB"
       ],
       "mastery": "Nick|XPHB"
-    },
-    {
-      "name": "Sling",
-      "category": "simple",
-      "type": "ranged",
-      "damage": "1d4",
-      "damageType": "bludgeoning",
-      "weight": 0,
-      "cost": "1 sp",
-      "properties": [
-        "Ammunition"
-      ],
-      "range": "30/120"
     },
     {
       "name": "Sling",
@@ -1164,20 +625,6 @@
       ],
       "mastery": "Slow|XPHB",
       "range": "30/120"
-    },
-    {
-      "name": "Spear",
-      "category": "simple",
-      "type": "melee",
-      "damage": "1d6",
-      "damageType": "piercing",
-      "weight": 3,
-      "cost": "1 gp",
-      "properties": [
-        "Thrown",
-        "Versatile (1d8)"
-      ],
-      "range": "20/60"
     },
     {
       "name": "Spear",
@@ -1204,34 +651,8 @@
       "cost": "5 gp",
       "properties": [
         "Versatile (1d8)"
-      ]
-    },
-    {
-      "name": "Staff",
-      "category": "simple",
-      "type": "melee",
-      "damage": "1d6",
-      "damageType": "bludgeoning",
-      "weight": 4,
-      "cost": "5 gp",
-      "properties": [
-        "Versatile (1d8)"
       ],
       "mastery": "Topple|XPHB"
-    },
-    {
-      "name": "Trident",
-      "category": "martial",
-      "type": "melee",
-      "damage": "1d6",
-      "damageType": "piercing",
-      "weight": 4,
-      "cost": "5 gp",
-      "properties": [
-        "Thrown",
-        "Versatile (1d8)"
-      ],
-      "range": "20/60"
     },
     {
       "name": "Trident",
@@ -1256,32 +677,10 @@
       "damageType": "piercing",
       "weight": 2,
       "cost": "5 gp",
-      "properties": []
-    },
-    {
-      "name": "War Pick",
-      "category": "martial",
-      "type": "melee",
-      "damage": "1d8",
-      "damageType": "piercing",
-      "weight": 2,
-      "cost": "5 gp",
       "properties": [
         "V|XPHB"
       ],
       "mastery": "Sap|XPHB"
-    },
-    {
-      "name": "Warhammer",
-      "category": "martial",
-      "type": "melee",
-      "damage": "1d8",
-      "damageType": "bludgeoning",
-      "weight": 2,
-      "cost": "15 gp",
-      "properties": [
-        "Versatile (1d10)"
-      ]
     },
     {
       "name": "Warhammer",
@@ -1305,35 +704,10 @@
       "weight": 3,
       "cost": "2 gp",
       "properties": [
-        "Finesse",
-        "Reach"
-      ]
-    },
-    {
-      "name": "Whip",
-      "category": "martial",
-      "type": "melee",
-      "damage": "1d4",
-      "damageType": "slashing",
-      "weight": 3,
-      "cost": "2 gp",
-      "properties": [
         "F|XPHB",
         "R|XPHB"
       ],
       "mastery": "Slow|XPHB"
-    },
-    {
-      "name": "Wooden Staff",
-      "category": "simple",
-      "type": "melee",
-      "damage": "1d6",
-      "damageType": "bludgeoning",
-      "weight": 4,
-      "cost": "5 gp",
-      "properties": [
-        "Versatile (1d8)"
-      ]
     },
     {
       "name": "Wooden Staff",
@@ -1499,9 +873,34 @@
       "weight": 1.5
     },
     {
+      "name": "Component Pouch",
+      "cost": "25 gp",
+      "weight": 2
+    },
+    {
       "name": "Crystal",
       "cost": "10 gp",
       "weight": 1
+    },
+    {
+      "name": "Druidic Focus",
+      "cost": "5 gp",
+      "weight": 0
+    },
+    {
+      "name": "Holy Symbol (Amulet)",
+      "cost": "5 gp",
+      "weight": 1
+    },
+    {
+      "name": "Holy Symbol (Emblem)",
+      "cost": "5 gp",
+      "weight": 0
+    },
+    {
+      "name": "Holy Symbol (Reliquary)",
+      "cost": "5 gp",
+      "weight": 2
     },
     {
       "name": "Orb",

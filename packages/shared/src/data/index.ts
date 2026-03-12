@@ -180,6 +180,32 @@ export function getCasterMultiplier(className: string): number {
   }
 }
 
+// ─── Weapon Property Decoder ────────────────────────────
+
+const PROPERTY_CODES: Record<string, string> = {
+  "2H": "Two-Handed",
+  A: "Ammunition",
+  AF: "Automatic Fire",
+  BF: "Burst Fire",
+  F: "Finesse",
+  H: "Heavy",
+  L: "Light",
+  LD: "Loading",
+  R: "Reach",
+  RLD: "Reload",
+  T: "Thrown",
+  V: "Versatile",
+};
+
+/** Decode a weapon property code like "F|XPHB" → "Finesse" */
+export function formatWeaponProperty(raw: string | { uid: string; note?: string }): string {
+  const str = typeof raw === "string" ? raw : raw.uid;
+  const code = str.split("|")[0];
+  const label = PROPERTY_CODES[code] ?? code;
+  if (typeof raw !== "string" && raw.note) return `${label} (${raw.note})`;
+  return label;
+}
+
 // ─── Search helpers ─────────────────────────────────────
 
 export function searchSpells(query: string): SpellData[] {

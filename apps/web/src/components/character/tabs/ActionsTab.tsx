@@ -14,8 +14,8 @@ interface ActionEntry {
 
 interface ActionsTabProps {
   character: CharacterData;
-  onItemClick: (item: InventoryItem) => void;
-  onFeatureClick: (feature: CharacterFeature) => void;
+  onItemClick: (item: InventoryItem, e: React.MouseEvent) => void;
+  onFeatureClick: (feature: CharacterFeature, e: React.MouseEvent) => void;
 }
 
 // Standard D&D combat actions — always shown as a reference
@@ -154,7 +154,7 @@ export function ActionsTab({
               <div
                 key={`${action.name}-${i}`}
                 className="flex items-center gap-1.5 text-xs px-1.5 py-1 rounded cursor-pointer hover:bg-gray-700/30 transition-colors group"
-                onClick={() => onItemClick(action.item)}
+                onClick={(e) => onItemClick(action.item, e)}
               >
                 <span className="text-gray-200 group-hover:text-purple-300 transition-colors truncate flex-1">
                   {action.name}
@@ -179,7 +179,7 @@ export function ActionsTab({
               <div
                 key={feature.name}
                 className="flex items-center gap-1.5 text-xs px-1.5 py-1 rounded cursor-pointer hover:bg-gray-700/30 transition-colors group"
-                onClick={() => onFeatureClick(feature)}
+                onClick={(e) => onFeatureClick(feature, e)}
               >
                 <span className="text-gray-200 group-hover:text-purple-300 transition-colors truncate flex-1">
                   {feature.name}

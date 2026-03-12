@@ -14,11 +14,14 @@ import {
   SKILL_DISPLAY_NAMES,
   ABILITY_FULL_NAMES,
   formatBonus,
+  formatClassString,
+  getTotalLevel,
   getSkillModifier,
   getSavingThrowModifier,
   getModifier,
   formatModifier,
 } from "@aidnd/shared/utils";
+import { HPBar } from "./HPBar";
 import { AbilityDetailPopup } from "./AbilityDetailPopup";
 import { SpellDetailPopup } from "./SpellDetailPopup";
 import { ItemDetailPopup } from "./ItemDetailPopup";
@@ -82,11 +85,13 @@ function AdvMarker({
 
 // ─── Types ───
 
+type ClickPosition = { x: number; y: number };
+
 type PopupState =
-  | { type: "ability"; id: keyof AbilityScores }
-  | { type: "spell"; spell: CharacterSpell }
-  | { type: "item"; item: InventoryItem }
-  | { type: "feature"; feature: CharacterFeature }
+  | { type: "ability"; id: keyof AbilityScores; position: ClickPosition }
+  | { type: "spell"; spell: CharacterSpell; position: ClickPosition }
+  | { type: "item"; item: InventoryItem; position: ClickPosition }
+  | { type: "feature"; feature: CharacterFeature; position: ClickPosition }
   | null;
 
 type TabId = "actions" | "spells" | "inventory" | "features";
@@ -148,10 +153,20 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
     <div className="flex flex-col h-full text-sm">
       {/* ═══ UPPER SECTION (not constrained) ═══ */}
       <div className="shrink-0 p-3 space-y-3">
-        {/* Stat Boxes — compact row */}
-        <div
-          className={`grid ${isCaster ? "grid-cols-5" : "grid-cols-3"} gap-1.5 text-center`}
-        >
+        {/* Character Identity */}
+        <div>
+          <h2 className="text-lg font-bold text-purple-400">{s.name}</h2>
+          <div className="text-xs text-gray-400">
+            {s.race} &middot; {formatClassString(s.classes)} &middot; Lvl{" "}
+            {getTotalLevel(s.classes)}
+          </div>
+        </div>
+
+        {/* HP Bar — full width */}
+        <HPBar current={d.currentHP} max={s.maxHP} temp={d.tempHP} />
+
+        {/* Stat Boxes — 3-column grid, 2 rows */}
+        <div className="grid grid-cols-3 gap-1.5 text-center">
           <div className="bg-gray-900/50 border border-gray-700 rounded py-1">
             <div className="text-[10px] text-gray-500 uppercase">AC</div>
             <div className="text-base font-bold text-gray-200">
@@ -170,7 +185,7 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
               +{s.proficiencyBonus}
             </div>
           </div>
-          {isCaster && (
+          {isCaster ? (
             <>
               <div className="bg-gray-900/50 border border-gray-700 rounded py-1">
                 <div className="text-[10px] text-gray-500 uppercase">
@@ -186,6 +201,33 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
                 </div>
                 <div className="text-base font-bold text-gray-200">
                   {formatBonus(s.spellAttackBonus ?? 0)}
+                </div>
+              </div>
+              <div className="bg-gray-900/50 border border-gray-700 rounded py-1">
+                <div className="text-[10px] text-gray-500 uppercase">Init</div>
+                <div className="text-base font-bold text-gray-200">
+                  {formatBonus(getModifier(s.abilities.dexterity))}
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="bg-gray-900/50 border border-gray-700 rounded py-1">
+                <div className="text-[10px] text-gray-500 uppercase">Init</div>
+                <div className="text-base font-bold text-gray-200">
+                  {formatBonus(getModifier(s.abilities.dexterity))}
+                </div>
+              </div>
+              <div className="bg-gray-900/50 border border-gray-700 rounded py-1">
+                <div className="text-[10px] text-gray-500 uppercase">Hit Dice</div>
+                <div className="text-base font-bold text-gray-200">
+                  {getTotalLevel(s.classes)}
+                </div>
+              </div>
+              <div className="bg-gray-900/50 border border-gray-700 rounded py-1">
+                <div className="text-[10px] text-gray-500 uppercase">Passive</div>
+                <div className="text-base font-bold text-gray-200">
+                  {10 + getModifier(s.abilities.wisdom)}
                 </div>
               </div>
             </>
@@ -277,7 +319,7 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
               <div
                 key={key}
                 className="bg-gray-900/50 border border-gray-700 rounded p-1 py-1.5 text-center relative cursor-pointer hover:border-purple-500/50 hover:bg-gray-900/70 transition-colors"
-                onClick={() => setPopup({ type: "ability", id: key })}
+                onClick={(e) => setPopup({ type: "ability", id: key, position: { x: e.clientX, y: e.clientY } })}
               >
                 <div className="text-[9px] text-gray-500 uppercase tracking-wider font-medium">
                   {label}
@@ -586,60 +628,64 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
         {activeTab === "actions" && (
           <ActionsTab
             character={character}
-            onItemClick={(item) => setPopup({ type: "item", item })}
-            onFeatureClick={(feature) =>
-              setPopup({ type: "feature", feature })
+            onItemClick={(item, e) => setPopup({ type: "item", item, position: { x: e.clientX, y: e.clientY } })}
+            onFeatureClick={(feature, e) =>
+              setPopup({ type: "feature", feature, position: { x: e.clientX, y: e.clientY } })
             }
           />
         )}
         {activeTab === "spells" && (
           <SpellsTab
             character={character}
-            onSpellClick={(spell) =>
-              setPopup({ type: "spell", spell })
+            onSpellClick={(spell, e) =>
+              setPopup({ type: "spell", spell, position: { x: e.clientX, y: e.clientY } })
             }
           />
         )}
         {activeTab === "inventory" && (
           <InventoryTab
             character={character}
-            onItemClick={(item) => setPopup({ type: "item", item })}
+            onItemClick={(item, e) => setPopup({ type: "item", item, position: { x: e.clientX, y: e.clientY } })}
           />
         )}
         {activeTab === "features" && (
           <FeaturesTab
             character={character}
-            onFeatureClick={(feature) =>
-              setPopup({ type: "feature", feature })
+            onFeatureClick={(feature, e) =>
+              setPopup({ type: "feature", feature, position: { x: e.clientX, y: e.clientY } })
             }
           />
         )}
       </div>
 
-      {/* Popup overlays */}
+      {/* Popup popovers */}
       {popup?.type === "ability" && (
         <AbilityDetailPopup
           abilityKey={popup.id}
           character={character}
           onClose={() => setPopup(null)}
+          position={popup.position}
         />
       )}
       {popup?.type === "spell" && (
         <SpellDetailPopup
           spell={popup.spell}
           onClose={() => setPopup(null)}
+          position={popup.position}
         />
       )}
       {popup?.type === "item" && (
         <ItemDetailPopup
           item={popup.item}
           onClose={() => setPopup(null)}
+          position={popup.position}
         />
       )}
       {popup?.type === "feature" && (
         <FeatureDetailPopup
           feature={popup.feature}
           onClose={() => setPopup(null)}
+          position={popup.position}
         />
       )}
     </div>

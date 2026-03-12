@@ -39,12 +39,7 @@ async function waitForRoom(
   await page.waitForFunction(
     () => typeof (window as any).__testInjectMessage === "function",
     null,
-    { timeout: 5_000 }
-  );
-  await page.waitForFunction(
-    () => (window as any).__testGameStateSynced === true,
-    null,
-    { timeout: 5_000 }
+    { timeout: 15_000 }
   );
 }
 

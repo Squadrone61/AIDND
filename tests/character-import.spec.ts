@@ -4,27 +4,6 @@ import * as path from "path";
 
 const WORKER_URL = "http://localhost:8787";
 
-/**
- * Helper: create a room via API and register an init script that sets
- * localStorage BEFORE the React app hydrates.
- */
-async function createRoomAndSetup(
-  page: import("@playwright/test").Page,
-  playerName: string
-): Promise<string> {
-  const res = await page.request.post(`${WORKER_URL}/api/rooms/create`);
-  const { roomCode } = await res.json();
-
-  await page.addInitScript(
-    (name) => {
-      localStorage.setItem("playerName", name);
-    },
-    playerName
-  );
-
-  return roomCode;
-}
-
 /** Load a parsed character fixture from .testing/ */
 function loadFixture(name: string) {
   const filePath = path.resolve(__dirname, "..", ".testing", name);
@@ -33,23 +12,29 @@ function loadFixture(name: string) {
 
 test.describe("Character Import", () => {
   test("JSON paste: invalid JSON shows error in UI", async ({ page }) => {
-    const roomCode = await createRoomAndSetup(page, "TestHero");
-    await page.goto(`/rooms/${roomCode}`);
-    await expect(page.getByText(roomCode)).toBeVisible({ timeout: 15_000 });
+    await page.goto("/characters/create");
+    await expect(page.getByText("Import Character")).toBeVisible({
+      timeout: 10_000,
+    });
 
     // Expand JSON mode
     await page.getByText("Or paste character JSON...").click();
 
     // Paste invalid JSON
-    await page.getByPlaceholder("Paste D&D Beyond character JSON here...").fill("{ not valid json");
+    await page
+      .getByPlaceholder("Paste D&D Beyond character JSON here...")
+      .fill("{ not valid json");
     await page.getByRole("button", { name: "Parse JSON" }).click();
 
     // Should show an error
-    await expect(page.getByText("Invalid JSON")).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText("Invalid JSON")).toBeVisible({
+      timeout: 5_000,
+    });
   });
 
-  test("JSON paste: successful import shows character in sheet", async ({ page }) => {
-    const roomCode = await createRoomAndSetup(page, "TestHero");
+  test("JSON paste: successful import redirects to character page", async ({
+    page,
+  }) => {
     const fixture = loadFixture("kael_sunforge_import.json");
 
     // Mock the API endpoint to return our fixture directly
@@ -61,20 +46,32 @@ test.describe("Character Import", () => {
       });
     });
 
-    await page.goto(`/rooms/${roomCode}`);
-    await expect(page.getByText(roomCode)).toBeVisible({ timeout: 15_000 });
+    await page.goto("/characters/create");
+    await expect(page.getByText("Import Character")).toBeVisible({
+      timeout: 10_000,
+    });
 
     // Expand JSON mode and paste something (content doesn't matter — API is mocked)
     await page.getByText("Or paste character JSON...").click();
-    await page.getByPlaceholder("Paste D&D Beyond character JSON here...").fill('{"data":{}}');
+    await page
+      .getByPlaceholder("Paste D&D Beyond character JSON here...")
+      .fill('{"data":{}}');
     await page.getByRole("button", { name: "Parse JSON" }).click();
 
-    // Character name should appear in the import success state
-    await expect(page.getByText("Kael Sunforge")).toBeVisible({ timeout: 10_000 });
+    // Should redirect to character detail page
+    await expect(page).toHaveURL(/\/characters\/[a-z0-9-]+/, {
+      timeout: 10_000,
+    });
+
+    // Character name should appear on the detail page
+    await expect(
+      page.getByText("Sir Aldric Brightshield")
+    ).toBeVisible({ timeout: 5_000 });
   });
 
-  test("imported character persists in localStorage", async ({ page }) => {
-    const roomCode = await createRoomAndSetup(page, "TestHero");
+  test("imported character persists in character library", async ({
+    page,
+  }) => {
     const fixture = loadFixture("kael_sunforge_import.json");
 
     await page.route(`${WORKER_URL}/api/character/import`, (route) => {
@@ -85,29 +82,47 @@ test.describe("Character Import", () => {
       });
     });
 
-    await page.goto(`/rooms/${roomCode}`);
-    await expect(page.getByText(roomCode)).toBeVisible({ timeout: 15_000 });
+    await page.goto("/characters/create");
+    await expect(page.getByText("Import Character")).toBeVisible({
+      timeout: 10_000,
+    });
 
     // Import via JSON paste
     await page.getByText("Or paste character JSON...").click();
-    await page.getByPlaceholder("Paste D&D Beyond character JSON here...").fill('{"data":{}}');
+    await page
+      .getByPlaceholder("Paste D&D Beyond character JSON here...")
+      .fill('{"data":{}}');
     await page.getByRole("button", { name: "Parse JSON" }).click();
 
-    await expect(page.getByText("Kael Sunforge")).toBeVisible({ timeout: 10_000 });
+    // Wait for redirect to character detail page
+    await expect(page).toHaveURL(/\/characters\/[a-z0-9-]+/, {
+      timeout: 10_000,
+    });
 
-    // Verify localStorage
-    const stored = await page.evaluate(() => localStorage.getItem("imported_character"));
-    expect(stored).toBeTruthy();
-    const data = JSON.parse(stored!);
-    expect(data.static.name).toBe("Kael Sunforge");
-    expect(data.static.race).toBe("Human");
-    expect(data.dynamic.currentHP).toBeGreaterThan(0);
+    // Verify character is in localStorage library (may need a tick to flush)
+    await page.waitForFunction(
+      () => {
+        const raw = localStorage.getItem("character_library");
+        if (!raw) return false;
+        const lib = JSON.parse(raw);
+        return lib.length > 0;
+      },
+      null,
+      { timeout: 5_000 }
+    );
+    const stored = await page.evaluate(() =>
+      localStorage.getItem("character_library")
+    );
+    const library = JSON.parse(stored!);
+    expect(library[0].character.static.name).toBe(
+      "Sir Aldric Brightshield"
+    );
   });
 
-  test("API endpoint: JSON mode returns parsed character", async ({ page }) => {
-    // Test the restored endpoint directly via API call
-    // We need valid DDB-like JSON. The parser is lenient — test with a minimal structure.
-    // Since we can't easily get raw DDB JSON, verify the endpoint exists and responds.
+  test("API endpoint: JSON mode returns parsed character", async ({
+    page,
+  }) => {
+    // Test the endpoint directly via API call
     const res = await page.request.post(`${WORKER_URL}/api/character/import`, {
       data: { mode: "json", json: { notValidDDB: true } },
     });

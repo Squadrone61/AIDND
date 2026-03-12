@@ -4,7 +4,7 @@ import { useState, useRef } from "react";
 import type { CharacterData } from "@aidnd/shared/types";
 import { formatClassString, getTotalLevel } from "@aidnd/shared/utils";
 
-type ImportTab = "ddb" | "aidedd";
+type ImportTab = "ddb" | "native";
 
 interface CharacterImportProps {
   importState: "idle" | "importing" | "success" | "error";
@@ -14,7 +14,7 @@ interface CharacterImportProps {
   warnings: string[];
   onImportUrl: (url: string) => Promise<void>;
   onImportJson: (json: string) => Promise<void>;
-  onImportAideDD: (xml: string) => Promise<void>;
+  onImportNative?: (json: string) => void;
   onClear: () => void;
 }
 
@@ -26,14 +26,14 @@ export function CharacterImport({
   warnings,
   onImportUrl,
   onImportJson,
-  onImportAideDD,
+  onImportNative,
   onClear,
 }: CharacterImportProps) {
   const [tab, setTab] = useState<ImportTab>("ddb");
   const [url, setUrl] = useState("");
   const [jsonText, setJsonText] = useState("");
   const [showJsonMode, setShowJsonMode] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const nativeFileInputRef = useRef<HTMLInputElement>(null);
 
   // Auto-expand JSON mode when URL import fails with 403
   const showJson = showJsonMode || !!fallbackHint;
@@ -70,19 +70,6 @@ export function CharacterImport({
     );
   }
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      const xml = evt.target?.result as string;
-      if (xml) onImportAideDD(xml);
-    };
-    reader.readAsText(file);
-    // Reset file input so re-uploading the same file triggers onChange
-    e.target.value = "";
-  };
-
   return (
     <div className="space-y-2">
       {/* Tab Selector */}
@@ -97,16 +84,18 @@ export function CharacterImport({
         >
           D&D Beyond
         </button>
-        <button
-          onClick={() => setTab("aidedd")}
-          className={`flex-1 text-xs py-1.5 font-medium transition-colors ${
-            tab === "aidedd"
-              ? "text-emerald-400 border-b-2 border-emerald-400"
-              : "text-gray-500 hover:text-gray-300"
-          }`}
-        >
-          AideDD
-        </button>
+        {onImportNative && (
+          <button
+            onClick={() => setTab("native")}
+            className={`flex-1 text-xs py-1.5 font-medium transition-colors ${
+              tab === "native"
+                ? "text-blue-400 border-b-2 border-blue-400"
+                : "text-gray-500 hover:text-gray-300"
+            }`}
+          >
+            AIDND
+          </button>
+        )}
       </div>
 
       {tab === "ddb" && (
@@ -169,34 +158,35 @@ export function CharacterImport({
         </>
       )}
 
-      {tab === "aidedd" && (
+      {tab === "native" && onImportNative && (
         <div className="space-y-2">
           <p className="text-[10px] text-gray-500 leading-relaxed">
-            Create your character at{" "}
-            <a
-              href="https://www.aidedd.org/dnd-creator/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-emerald-400 hover:text-emerald-300 underline"
-            >
-              aidedd.org/dnd-creator
-            </a>
-            , click EXPORT, then upload the XML file here.
+            Import a character from a <code>.aidnd.json</code> file exported from this app.
           </p>
           <input
-            ref={fileInputRef}
+            ref={nativeFileInputRef}
             type="file"
-            accept=".xml"
-            onChange={handleFileUpload}
+            accept=".json,.aidnd.json"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (!file) return;
+              const reader = new FileReader();
+              reader.onload = (evt) => {
+                const json = evt.target?.result as string;
+                if (json) onImportNative(json);
+              };
+              reader.readAsText(file);
+              e.target.value = "";
+            }}
             className="hidden"
           />
           <button
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => nativeFileInputRef.current?.click()}
             disabled={importState === "importing"}
-            className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-700
+            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700
                        text-white py-1.5 rounded-lg text-sm font-medium transition-colors"
           >
-            {importState === "importing" ? "Parsing..." : "Upload XML File"}
+            {importState === "importing" ? "Importing..." : "Upload .aidnd.json"}
           </button>
         </div>
       )}

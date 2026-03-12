@@ -5,7 +5,7 @@ import { RARITY_COLORS } from "../utils";
 
 interface InventoryTabProps {
   character: CharacterData;
-  onItemClick: (item: InventoryItem) => void;
+  onItemClick: (item: InventoryItem, e: React.MouseEvent) => void;
 }
 
 export function InventoryTab({ character, onItemClick }: InventoryTabProps) {
@@ -101,7 +101,7 @@ export function InventoryTab({ character, onItemClick }: InventoryTabProps) {
             <div
               key={`${item.name}-${i}`}
               className="flex items-center gap-1.5 text-xs px-1.5 py-1 rounded cursor-pointer hover:bg-gray-700/30 transition-colors group"
-              onClick={() => onItemClick(item)}
+              onClick={(e) => onItemClick(item, e)}
             >
               {/* Equipped indicator */}
               <span

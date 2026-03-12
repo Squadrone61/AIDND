@@ -213,17 +213,6 @@
             "description": "For some barbarians, rage is a means to an end—that end being violence. The Path of the Berserker is a path of untrammeled fury, slick with blood. As you enter the berserker's rage, you thrill in the chaos of battle, heedless of your own health or well-being."
           },
           {
-            "name": "Frenzy",
-            "level": 3,
-            "description": "Starting when you choose this path at 3rd level, you can go into a frenzy when you rage. If you do so, for the duration of your rage you can make a single melee weapon attack as a bonus action on each of your turns after this one. When your rage ends, you suffer one level of exhaustion.",
-            "activationType": "bonus action"
-          },
-          {
-            "name": "Mindless Rage",
-            "level": 6,
-            "description": "Beginning at 6th level, you can't be charmed or frightened while raging. If you are charmed or frightened when you enter your rage, the effect is suspended for the duration of the rage."
-          },
-          {
             "name": "Intimidating Presence",
             "level": 10,
             "description": "Beginning at 10th level, you can use your action to frighten someone with your menacing presence. When you do so, choose one creature that you can see within 30 feet of you. If the creature can see or hear you, it must succeed on a Wisdom saving throw (DC equal to 8 + your proficiency bonus + your Charisma modifier) or be frightened of you until the end of your next turn. On subsequent turns, you can use your action to extend the duration of this effect on the frightened creature until the end of your next turn. This effect ends if the creature ends its turn out of line of sight or more than 60 feet away from you.\nIf the creature succeeds on its saving throw, you can't use this feature on that creature again for 24 hours.",
@@ -272,17 +261,6 @@
             "name": "Path of the Berserker",
             "level": 3,
             "description": "For some barbarians, rage is a means to an end—that end being violence. The Path of the Berserker is a path of untrammeled fury, slick with blood. As you enter the berserker's rage, you thrill in the chaos of battle, heedless of your own health or well-being."
-          },
-          {
-            "name": "Frenzy",
-            "level": 3,
-            "description": "Starting when you choose this path at 3rd level, you can go into a frenzy when you rage. If you do so, for the duration of your rage you can make a single melee weapon attack as a bonus action on each of your turns after this one. When your rage ends, you suffer one level of exhaustion.",
-            "activationType": "bonus action"
-          },
-          {
-            "name": "Mindless Rage",
-            "level": 6,
-            "description": "Beginning at 6th level, you can't be charmed or frightened while raging. If you are charmed or frightened when you enter your rage, the effect is suspended for the duration of the rage."
           },
           {
             "name": "Intimidating Presence",
@@ -499,17 +477,6 @@
             "name": "Path of the Berserker",
             "level": 3,
             "description": "For some barbarians, rage is a means to an end—that end being violence. The Path of the Berserker is a path of untrammeled fury, slick with blood. As you enter the berserker's rage, you thrill in the chaos of battle, heedless of your own health or well-being."
-          },
-          {
-            "name": "Frenzy",
-            "level": 3,
-            "description": "Starting when you choose this path at 3rd level, you can go into a frenzy when you rage. If you do so, for the duration of your rage you can make a single melee weapon attack as a bonus action on each of your turns after this one. When your rage ends, you suffer one level of exhaustion.",
-            "activationType": "bonus action"
-          },
-          {
-            "name": "Mindless Rage",
-            "level": 6,
-            "description": "Beginning at 6th level, you can't be charmed or frightened while raging. If you are charmed or frightened when you enter your rage, the effect is suspended for the duration of the rage."
           },
           {
             "name": "Intimidating Presence",
@@ -1164,11 +1131,6 @@
             "description": "At 6th level, you learn two spells of your choice from any class. A spell you choose must be of a level you can cast, as shown on the Bard table, or a cantrip. The chosen spells count as bard spells for you but don't count against the number of bard spells you know."
           },
           {
-            "name": "Peerless Skill",
-            "level": 14,
-            "description": "Starting at 14th level, when you make an ability check, you can expend one use of Bardic Inspiration. Roll a Bardic Inspiration die and add the number rolled to your ability check. You can choose to do so after you roll the die for the ability check, but before the DM tells you whether you succeed or fail."
-          },
-          {
             "name": "College of Lore",
             "level": 3,
             "description": "Plumb the Depths of Magical Knowledge\nBards of the College of Lore collect spells and secrets from diverse sources, such as scholarly tomes, mystical rites, and peasant tales. The college's members gather in libraries and universities to share their lore with one another. They also meet at festivals or affairs of state, where they can expose corruption, unravel lies, and poke fun at self-important figures of authority."
@@ -1222,11 +1184,6 @@
             "description": "At 6th level, you learn two spells of your choice from any class. A spell you choose must be of a level you can cast, as shown on the Bard table, or a cantrip. The chosen spells count as bard spells for you but don't count against the number of bard spells you know."
           },
           {
-            "name": "Peerless Skill",
-            "level": 14,
-            "description": "Starting at 14th level, when you make an ability check, you can expend one use of Bardic Inspiration. Roll a Bardic Inspiration die and add the number rolled to your ability check. You can choose to do so after you roll the die for the ability check, but before the DM tells you whether you succeed or fail."
-          },
-          {
             "name": "College of Lore",
             "level": 3,
             "description": "Plumb the Depths of Magical Knowledge\nBards of the College of Lore collect spells and secrets from diverse sources, such as scholarly tomes, mystical rites, and peasant tales. The college's members gather in libraries and universities to share their lore with one another. They also meet at festivals or affairs of state, where they can expose corruption, unravel lies, and poke fun at self-important figures of authority."
@@ -1273,18 +1230,6 @@
             "level": 3,
             "description": "Also at 3rd level, you learn to inspire others in battle. A creature that has a Bardic Inspiration die from you can roll that die and add the number rolled to a weapon damage roll it just made. Alternatively, when an attack roll is made against the creature, it can use its reaction to roll the Bardic Inspiration die and add the number rolled to its AC against that attack, after seeing the roll but before knowing whether it hits or misses.",
             "activationType": "reaction"
-          },
-          {
-            "name": "Extra Attack",
-            "level": 6,
-            "description": "Starting at 6th level, you can attack twice, instead of once, whenever you take the Attack action on your turn.",
-            "activationType": "action"
-          },
-          {
-            "name": "Battle Magic",
-            "level": 14,
-            "description": "At 14th level, you have mastered the art of weaving spellcasting and weapon use into a single harmonious act. When you use your action to cast a bard spell, you can make one weapon attack as a bonus action.",
-            "activationType": "bonus action"
           },
           {
             "name": "College of Valor",
@@ -1335,18 +1280,6 @@
             "level": 3,
             "description": "Also at 3rd level, you learn to inspire others in battle. A creature that has a Bardic Inspiration die from you can roll that die and add the number rolled to a weapon damage roll it just made. Alternatively, when an attack roll is made against the creature, it can use its reaction to roll the Bardic Inspiration die and add the number rolled to its AC against that attack, after seeing the roll but before knowing whether it hits or misses.",
             "activationType": "reaction"
-          },
-          {
-            "name": "Extra Attack",
-            "level": 6,
-            "description": "Starting at 6th level, you can attack twice, instead of once, whenever you take the Attack action on your turn.",
-            "activationType": "action"
-          },
-          {
-            "name": "Battle Magic",
-            "level": 14,
-            "description": "At 14th level, you have mastered the art of weaving spellcasting and weapon use into a single harmonious act. When you use your action to cast a bard spell, you can make one weapon attack as a bonus action.",
-            "activationType": "bonus action"
           },
           {
             "name": "College of Valor",
@@ -1492,11 +1425,6 @@
             "description": "At 6th level, you learn two spells of your choice from any class. A spell you choose must be of a level you can cast, as shown on the Bard table, or a cantrip. The chosen spells count as bard spells for you but don't count against the number of bard spells you know."
           },
           {
-            "name": "Peerless Skill",
-            "level": 14,
-            "description": "Starting at 14th level, when you make an ability check, you can expend one use of Bardic Inspiration. Roll a Bardic Inspiration die and add the number rolled to your ability check. You can choose to do so after you roll the die for the ability check, but before the DM tells you whether you succeed or fail."
-          },
-          {
             "name": "College of Lore",
             "level": 3,
             "description": "Plumb the Depths of Magical Knowledge\nBards of the College of Lore collect spells and secrets from diverse sources, such as scholarly tomes, mystical rites, and peasant tales. The college's members gather in libraries and universities to share their lore with one another. They also meet at festivals or affairs of state, where they can expose corruption, unravel lies, and poke fun at self-important figures of authority."
@@ -1543,18 +1471,6 @@
             "level": 3,
             "description": "Also at 3rd level, you learn to inspire others in battle. A creature that has a Bardic Inspiration die from you can roll that die and add the number rolled to a weapon damage roll it just made. Alternatively, when an attack roll is made against the creature, it can use its reaction to roll the Bardic Inspiration die and add the number rolled to its AC against that attack, after seeing the roll but before knowing whether it hits or misses.",
             "activationType": "reaction"
-          },
-          {
-            "name": "Extra Attack",
-            "level": 6,
-            "description": "Starting at 6th level, you can attack twice, instead of once, whenever you take the Attack action on your turn.",
-            "activationType": "action"
-          },
-          {
-            "name": "Battle Magic",
-            "level": 14,
-            "description": "At 14th level, you have mastered the art of weaving spellcasting and weapon use into a single harmonious act. When you use your action to cast a bard spell, you can make one weapon attack as a bonus action.",
-            "activationType": "bonus action"
           },
           {
             "name": "College of Valor",
@@ -2161,19 +2077,9 @@
             "activationType": "action"
           },
           {
-            "name": "Blessed Healer",
-            "level": 6,
-            "description": "Beginning at 6th level, the healing spells you cast on others heal you as well. When you cast a spell of 1st level or higher that restores hit points to a creature other than you, you regain hit points equal to 2 + the spell's level."
-          },
-          {
             "name": "Divine Strike",
             "level": 8,
             "description": "At 8th level, you gain the ability to infuse your weapon strikes with divine energy. Once on each of your turns when you hit a creature with a weapon attack, you can cause the attack to deal an extra 1d8 radiant damage to the target. When you reach 14th level, the extra damage increases to 2d8."
-          },
-          {
-            "name": "Supreme Healing",
-            "level": 17,
-            "description": "Starting at 17th level, when you would normally roll one or more dice to restore hit points with a spell, you instead use the highest number possible for each die. For example, instead of restoring 2d6 hit points to a creature, you restore 12."
           },
           {
             "name": "Life Domain",
@@ -2234,19 +2140,9 @@
             "activationType": "action"
           },
           {
-            "name": "Blessed Healer",
-            "level": 6,
-            "description": "Beginning at 6th level, the healing spells you cast on others heal you as well. When you cast a spell of 1st level or higher that restores hit points to a creature other than you, you regain hit points equal to 2 + the spell's level."
-          },
-          {
             "name": "Divine Strike",
             "level": 8,
             "description": "At 8th level, you gain the ability to infuse your weapon strikes with divine energy. Once on each of your turns when you hit a creature with a weapon attack, you can cause the attack to deal an extra 1d8 radiant damage to the target. When you reach 14th level, the extra damage increases to 2d8."
-          },
-          {
-            "name": "Supreme Healing",
-            "level": 17,
-            "description": "Starting at 17th level, when you would normally roll one or more dice to restore hit points with a spell, you instead use the highest number possible for each die. For example, instead of restoring 2d6 hit points to a creature, you restore 12."
           },
           {
             "name": "Life Domain",
@@ -2316,12 +2212,6 @@
             "name": "Potent Spellcasting",
             "level": 8,
             "description": "Starting at 8th level, you add your Wisdom modifier to the damage you deal with any cleric cantrip."
-          },
-          {
-            "name": "Corona of Light",
-            "level": 17,
-            "description": "Starting at 17th level, you can use your action to activate an aura of sunlight that lasts for 1 minute or until you dismiss it using another action. You emit bright light in a 60-foot radius and dim light 30 feet beyond that. Your enemies in the bright light have disadvantage on saving throws against any spell that deals fire or radiant damage.",
-            "activationType": "action"
           },
           {
             "name": "Light Domain",
@@ -2393,12 +2283,6 @@
             "name": "Potent Spellcasting",
             "level": 8,
             "description": "Starting at 8th level, you add your Wisdom modifier to the damage you deal with any cleric cantrip."
-          },
-          {
-            "name": "Corona of Light",
-            "level": 17,
-            "description": "Starting at 17th level, you can use your action to activate an aura of sunlight that lasts for 1 minute or until you dismiss it using another action. You emit bright light in a 60-foot radius and dim light 30 feet beyond that. Your enemies in the bright light have disadvantage on saving throws against any spell that deals fire or radiant damage.",
-            "activationType": "action"
           },
           {
             "name": "Light Domain",
@@ -2640,12 +2524,6 @@
             "description": "At 8th level, you gain the ability to infuse your weapon strikes with poison—a gift from your deity. Once on each of your turns when you hit a creature with a weapon attack, you can cause the attack to deal an extra 1d8 poison damage to the target. When you reach 14th level, the extra damage increases to 2d8."
           },
           {
-            "name": "Improved Duplicity",
-            "level": 17,
-            "description": "At 17th level, you can create up to four duplicates of yourself, instead of one, when you use Invoke Duplicity. As a bonus action on your turn, you can move any number of them up to 30 feet, to a maximum range of 120 feet.",
-            "activationType": "bonus action"
-          },
-          {
             "name": "Trickery Domain",
             "level": 3,
             "description": "Make Mischief and Challenge Authority\nThe Trickery Domain offers magic of deception, illusion, and stealth. Clerics who wield this magic are a disruptive force in the world, puncturing pride, mocking tyrants, freeing captives, and flouting hollow traditions. They prefer subterfuge and pranks to direct confrontation.\nGods of trickery are mischief-makers and instigators who stand as a constant challenge to the accepted order among both gods and mortals. They embody the forces of change and social upheaval, and they're patrons of thieves, scoundrels, gamblers, rebels, and liberators. Religious orders that operate in secret, especially those that seek to undermine oppressive governments or hierarchies, also draw on the power of the Trickery Domain."
@@ -2713,12 +2591,6 @@
             "description": "At 8th level, you gain the ability to infuse your weapon strikes with poison—a gift from your deity. Once on each of your turns when you hit a creature with a weapon attack, you can cause the attack to deal an extra 1d8 poison damage to the target. When you reach 14th level, the extra damage increases to 2d8."
           },
           {
-            "name": "Improved Duplicity",
-            "level": 17,
-            "description": "At 17th level, you can create up to four duplicates of yourself, instead of one, when you use Invoke Duplicity. As a bonus action on your turn, you can move any number of them up to 30 feet, to a maximum range of 120 feet.",
-            "activationType": "bonus action"
-          },
-          {
             "name": "Trickery Domain",
             "level": 3,
             "description": "Make Mischief and Challenge Authority\nThe Trickery Domain offers magic of deception, illusion, and stealth. Clerics who wield this magic are a disruptive force in the world, puncturing pride, mocking tyrants, freeing captives, and flouting hollow traditions. They prefer subterfuge and pranks to direct confrontation.\nGods of trickery are mischief-makers and instigators who stand as a constant challenge to the accepted order among both gods and mortals. They embody the forces of change and social upheaval, and they're patrons of thieves, scoundrels, gamblers, rebels, and liberators. Religious orders that operate in secret, especially those that seek to undermine oppressive governments or hierarchies, also draw on the power of the Trickery Domain."
@@ -2790,11 +2662,6 @@
             "description": "At 8th level, you gain the ability to infuse your weapon strikes with divine energy. Once on each of your turns when you hit a creature with a weapon attack, you can cause the attack to deal an extra 1d8 damage of the same type dealt by the weapon to the target. When you reach 14th level, the extra damage increases to 2d8."
           },
           {
-            "name": "Avatar of Battle",
-            "level": 17,
-            "description": "At 17th level, you gain resistance to bludgeoning, piercing, and slashing damage from nonmagical attacks."
-          },
-          {
             "name": "War Domain",
             "level": 3,
             "description": "Inspire Valor and Smite Foes\nWar has many manifestations. It can make heroes of ordinary people. It can be desperate and horrific, with acts of cruelty and cowardice eclipsing instances of excellence and courage. Clerics who tap into the magic of the War Domain excel in battle, inspiring others to fight the good fight or offering acts of violence as prayers.\nGods of the War Domain watch over warriors and reward them for their great deeds. They include champions of honor and chivalry as well as gods of destruction and pillage. Other war gods take a more neutral stance, promoting war in all its manifestations and supporting warriors in any circumstance."
@@ -2865,11 +2732,6 @@
             "description": "At 8th level, you gain the ability to infuse your weapon strikes with divine energy. Once on each of your turns when you hit a creature with a weapon attack, you can cause the attack to deal an extra 1d8 damage of the same type dealt by the weapon to the target. When you reach 14th level, the extra damage increases to 2d8."
           },
           {
-            "name": "Avatar of Battle",
-            "level": 17,
-            "description": "At 17th level, you gain resistance to bludgeoning, piercing, and slashing damage from nonmagical attacks."
-          },
-          {
             "name": "War Domain",
             "level": 3,
             "description": "Inspire Valor and Smite Foes\nWar has many manifestations. It can make heroes of ordinary people. It can be desperate and horrific, with acts of cruelty and cowardice eclipsing instances of excellence and courage. Clerics who tap into the magic of the War Domain excel in battle, inspiring others to fight the good fight or offering acts of violence as prayers.\nGods of the War Domain watch over warriors and reward them for their great deeds. They include champions of honor and chivalry as well as gods of destruction and pillage. Other war gods take a more neutral stance, promoting war in all its manifestations and supporting warriors in any circumstance."
@@ -2929,19 +2791,9 @@
             "activationType": "action"
           },
           {
-            "name": "Blessed Healer",
-            "level": 6,
-            "description": "Beginning at 6th level, the healing spells you cast on others heal you as well. When you cast a spell of 1st level or higher that restores hit points to a creature other than you, you regain hit points equal to 2 + the spell's level."
-          },
-          {
             "name": "Divine Strike",
             "level": 8,
             "description": "At 8th level, you gain the ability to infuse your weapon strikes with divine energy. Once on each of your turns when you hit a creature with a weapon attack, you can cause the attack to deal an extra 1d8 radiant damage to the target. When you reach 14th level, the extra damage increases to 2d8."
-          },
-          {
-            "name": "Supreme Healing",
-            "level": 17,
-            "description": "Starting at 17th level, when you would normally roll one or more dice to restore hit points with a spell, you instead use the highest number possible for each die. For example, instead of restoring 2d6 hit points to a creature, you restore 12."
           },
           {
             "name": "Life Domain",
@@ -3013,12 +2865,6 @@
             "description": "Starting at 8th level, you add your Wisdom modifier to the damage you deal with any cleric cantrip."
           },
           {
-            "name": "Corona of Light",
-            "level": 17,
-            "description": "Starting at 17th level, you can use your action to activate an aura of sunlight that lasts for 1 minute or until you dismiss it using another action. You emit bright light in a 60-foot radius and dim light 30 feet beyond that. Your enemies in the bright light have disadvantage on saving throws against any spell that deals fire or radiant damage.",
-            "activationType": "action"
-          },
-          {
             "name": "Light Domain",
             "level": 3,
             "description": "Bring Light to Banish Darkness\nThe Light Domain emphasizes the divine power to bring about blazing fire and revelation. Clerics who wield this power are enlightened souls infused with radiance and the power of their deities' discerning vision, charged with chasing away lies and burning away darkness.\nThe Light Domain is associated with gods of truth, vigilance, beauty, insight, and renewal. Some of these gods are identified with the sun or as charioteers who guide the sun across the sky. Others are sentinels who pierce deception. Some are deities of beauty and artistry who teach that art is a vehicle for the soul's improvement."
@@ -3084,12 +2930,6 @@
             "name": "Divine Strike",
             "level": 8,
             "description": "At 8th level, you gain the ability to infuse your weapon strikes with poison—a gift from your deity. Once on each of your turns when you hit a creature with a weapon attack, you can cause the attack to deal an extra 1d8 poison damage to the target. When you reach 14th level, the extra damage increases to 2d8."
-          },
-          {
-            "name": "Improved Duplicity",
-            "level": 17,
-            "description": "At 17th level, you can create up to four duplicates of yourself, instead of one, when you use Invoke Duplicity. As a bonus action on your turn, you can move any number of them up to 30 feet, to a maximum range of 120 feet.",
-            "activationType": "bonus action"
           },
           {
             "name": "Trickery Domain",
@@ -3161,11 +3001,6 @@
             "name": "Divine Strike",
             "level": 8,
             "description": "At 8th level, you gain the ability to infuse your weapon strikes with divine energy. Once on each of your turns when you hit a creature with a weapon attack, you can cause the attack to deal an extra 1d8 damage of the same type dealt by the weapon to the target. When you reach 14th level, the extra damage increases to 2d8."
-          },
-          {
-            "name": "Avatar of Battle",
-            "level": 17,
-            "description": "At 17th level, you gain resistance to bludgeoning, piercing, and slashing damage from nonmagical attacks."
           },
           {
             "name": "War Domain",
@@ -3677,16 +3512,6 @@
             "description": "Starting at 6th level, moving through nonmagical difficult terrain costs you no extra movement. You can also pass through nonmagical plants without being slowed by them and without taking damage from them if they have thorns, spines, or a similar hazard.\nIn addition, you have advantage on saving throws against plants that are magically created or manipulated to impede movement, such as those created by the entangle spell."
           },
           {
-            "name": "Nature's Ward",
-            "level": 10,
-            "description": "When you reach 10th level, you can't be charmed or frightened by elementals or fey, and you are immune to poison and disease."
-          },
-          {
-            "name": "Nature's Sanctuary",
-            "level": 14,
-            "description": "When you reach 14th level, creatures of the natural world sense your connection to nature and become hesitant to attack you. When a beast or plant creature attacks you, that creature must make a Wisdom saving throw against your druid spell save DC. On a failed save, the creature must choose a different target, or the attack automatically misses. On a successful save, the creature is immune to this effect for 24 hours.\nThe creature is aware of this effect before it makes its attack against you."
-          },
-          {
             "name": "Circle of the Land",
             "level": 3,
             "description": "Celebrate Connection to the Natural World\nThe Circle of the Land comprises mystics and sages who safeguard ancient knowledge and rites. These Druids meet within sacred circles of trees or standing stones to whisper primal secrets in Druidic. The circle's wisest members preside as the chief priests of their communities."
@@ -3748,16 +3573,6 @@
             "name": "Land's Stride",
             "level": 6,
             "description": "Starting at 6th level, moving through nonmagical difficult terrain costs you no extra movement. You can also pass through nonmagical plants without being slowed by them and without taking damage from them if they have thorns, spines, or a similar hazard.\nIn addition, you have advantage on saving throws against plants that are magically created or manipulated to impede movement, such as those created by the entangle spell."
-          },
-          {
-            "name": "Nature's Ward",
-            "level": 10,
-            "description": "When you reach 10th level, you can't be charmed or frightened by elementals or fey, and you are immune to poison and disease."
-          },
-          {
-            "name": "Nature's Sanctuary",
-            "level": 14,
-            "description": "When you reach 14th level, creatures of the natural world sense your connection to nature and become hesitant to attack you. When a beast or plant creature attacks you, that creature must make a Wisdom saving throw against your druid spell save DC. On a failed save, the creature must choose a different target, or the attack automatically misses. On a successful save, the creature is immune to this effect for 24 hours.\nThe creature is aware of this effect before it makes its attack against you."
           },
           {
             "name": "Circle of the Land",
@@ -3957,16 +3772,6 @@
             "name": "Land's Stride",
             "level": 6,
             "description": "Starting at 6th level, moving through nonmagical difficult terrain costs you no extra movement. You can also pass through nonmagical plants without being slowed by them and without taking damage from them if they have thorns, spines, or a similar hazard.\nIn addition, you have advantage on saving throws against plants that are magically created or manipulated to impede movement, such as those created by the entangle spell."
-          },
-          {
-            "name": "Nature's Ward",
-            "level": 10,
-            "description": "When you reach 10th level, you can't be charmed or frightened by elementals or fey, and you are immune to poison and disease."
-          },
-          {
-            "name": "Nature's Sanctuary",
-            "level": 14,
-            "description": "When you reach 14th level, creatures of the natural world sense your connection to nature and become hesitant to attack you. When a beast or plant creature attacks you, that creature must make a Wisdom saving throw against your druid spell save DC. On a failed save, the creature must choose a different target, or the attack automatically misses. On a successful save, the creature is immune to this effect for 24 hours.\nThe creature is aware of this effect before it makes its attack against you."
           },
           {
             "name": "Circle of the Land",
@@ -4428,24 +4233,9 @@
         "name": "Battle Master",
         "features": [
           {
-            "name": "Battle Master",
-            "level": 3,
-            "description": "Those who emulate the archetypal Battle Master employ martial techniques passed down through generations. To a Battle Master, combat is an academic field, sometimes including subjects beyond battle such as weaponsmithing and calligraphy. Not every fighter absorbs the lessons of history, theory, and artistry that are reflected in the Battle Master archetype, but those who do are well-rounded fighters of great skill and knowledge."
-          },
-          {
-            "name": "Combat Superiority",
-            "level": 3,
-            "description": "When you choose this archetype at 3rd level, you learn maneuvers that are fueled by special dice called superiority dice.\n**Maneuvers.** You learn three maneuvers of your choice, which are listed under \"Maneuvers\" below. Many maneuvers enhance an attack in some way. You can use only one maneuver per attack.\nYou learn two additional maneuvers of your choice at 7th, 10th, and 15th level. Each time you learn new maneuvers, you can also replace one maneuver you know with a different one.\n**Superiority Dice.** You have four superiority dice, which are d8s. A superiority die is expended when you use it. You regain all of your expended superiority dice when you finish a short or long rest.\nYou gain another superiority die at 7th level and one more at 15th level.\n**Saving Throws.** Some of your maneuvers require your target to make a saving throw to resist the maneuver's effects. The saving throw DC is calculated as follows:\nManeuver"
-          },
-          {
             "name": "Maneuvers",
             "level": 3,
             "description": "The maneuvers are presented in alphabetical order."
-          },
-          {
-            "name": "Student of War",
-            "level": 3,
-            "description": "At 3rd level, you gain proficiency with one type of artisan's tools of your choice."
           },
           {
             "name": "Additional Maneuvers",
@@ -4481,11 +4271,6 @@
             "name": "Additional Superiority Die",
             "level": 15,
             "description": "You gain another superiority die at 15th level."
-          },
-          {
-            "name": "Relentless",
-            "level": 15,
-            "description": "Starting at 15th level, when you roll initiative and have no superiority dice remaining, you regain 1 superiority die."
           },
           {
             "name": "Improved Combat Superiority (d12)",
@@ -4540,24 +4325,9 @@
         "name": "Battle Master",
         "features": [
           {
-            "name": "Battle Master",
-            "level": 3,
-            "description": "Those who emulate the archetypal Battle Master employ martial techniques passed down through generations. To a Battle Master, combat is an academic field, sometimes including subjects beyond battle such as weaponsmithing and calligraphy. Not every fighter absorbs the lessons of history, theory, and artistry that are reflected in the Battle Master archetype, but those who do are well-rounded fighters of great skill and knowledge."
-          },
-          {
-            "name": "Combat Superiority",
-            "level": 3,
-            "description": "When you choose this archetype at 3rd level, you learn maneuvers that are fueled by special dice called superiority dice.\n**Maneuvers.** You learn three maneuvers of your choice, which are listed under \"Maneuvers\" below. Many maneuvers enhance an attack in some way. You can use only one maneuver per attack.\nYou learn two additional maneuvers of your choice at 7th, 10th, and 15th level. Each time you learn new maneuvers, you can also replace one maneuver you know with a different one.\n**Superiority Dice.** You have four superiority dice, which are d8s. A superiority die is expended when you use it. You regain all of your expended superiority dice when you finish a short or long rest.\nYou gain another superiority die at 7th level and one more at 15th level.\n**Saving Throws.** Some of your maneuvers require your target to make a saving throw to resist the maneuver's effects. The saving throw DC is calculated as follows:\nManeuver"
-          },
-          {
             "name": "Maneuvers",
             "level": 3,
             "description": "The maneuvers are presented in alphabetical order."
-          },
-          {
-            "name": "Student of War",
-            "level": 3,
-            "description": "At 3rd level, you gain proficiency with one type of artisan's tools of your choice."
           },
           {
             "name": "Additional Maneuvers",
@@ -4593,11 +4363,6 @@
             "name": "Additional Superiority Die",
             "level": 15,
             "description": "You gain another superiority die at 15th level."
-          },
-          {
-            "name": "Relentless",
-            "level": 15,
-            "description": "Starting at 15th level, when you roll initiative and have no superiority dice remaining, you regain 1 superiority die."
           },
           {
             "name": "Improved Combat Superiority (d12)",
@@ -4652,16 +4417,6 @@
         "name": "Champion",
         "features": [
           {
-            "name": "Champion",
-            "level": 3,
-            "description": "The archetypal Champion focuses on the development of raw physical power honed to deadly perfection. Those who model themselves on this archetype combine rigorous training with physical excellence to deal devastating blows."
-          },
-          {
-            "name": "Improved Critical",
-            "level": 3,
-            "description": "Beginning when you choose this archetype at 3rd level, your weapon attacks score a critical hit on a roll of 19 or 20."
-          },
-          {
             "name": "Remarkable Athlete",
             "level": 7,
             "description": "Starting at 7th level, you can add half your proficiency bonus (round up) to any Strength, Dexterity, or Constitution check you make that doesn't already use your proficiency bonus.\nIn addition, when you make a running long jump, the distance you can cover increases by a number of feet equal to your Strength modifier."
@@ -4670,16 +4425,6 @@
             "name": "Additional Fighting Style",
             "level": 10,
             "description": "At 10th level, you can choose a second option from the Fighting Style class feature."
-          },
-          {
-            "name": "Superior Critical",
-            "level": 15,
-            "description": "Starting at 15th level, your weapon attacks score a critical hit on a roll of 18-20."
-          },
-          {
-            "name": "Survivor",
-            "level": 18,
-            "description": "At 18th level, you attain the pinnacle of resilience in battle. At the start of each of your turns, you regain hit points equal to 5 + your Constitution modifier if you have no more than half of your hit points left. You don't gain this benefit if you have 0 hit points."
           },
           {
             "name": "Champion",
@@ -4723,16 +4468,6 @@
         "name": "Champion",
         "features": [
           {
-            "name": "Champion",
-            "level": 3,
-            "description": "The archetypal Champion focuses on the development of raw physical power honed to deadly perfection. Those who model themselves on this archetype combine rigorous training with physical excellence to deal devastating blows."
-          },
-          {
-            "name": "Improved Critical",
-            "level": 3,
-            "description": "Beginning when you choose this archetype at 3rd level, your weapon attacks score a critical hit on a roll of 19 or 20."
-          },
-          {
             "name": "Remarkable Athlete",
             "level": 7,
             "description": "Starting at 7th level, you can add half your proficiency bonus (round up) to any Strength, Dexterity, or Constitution check you make that doesn't already use your proficiency bonus.\nIn addition, when you make a running long jump, the distance you can cover increases by a number of feet equal to your Strength modifier."
@@ -4741,16 +4476,6 @@
             "name": "Additional Fighting Style",
             "level": 10,
             "description": "At 10th level, you can choose a second option from the Fighting Style class feature."
-          },
-          {
-            "name": "Superior Critical",
-            "level": 15,
-            "description": "Starting at 15th level, your weapon attacks score a critical hit on a roll of 18-20."
-          },
-          {
-            "name": "Survivor",
-            "level": 18,
-            "description": "At 18th level, you attain the pinnacle of resilience in battle. At the start of each of your turns, you regain hit points equal to 5 + your Constitution modifier if you have no more than half of your hit points left. You don't gain this benefit if you have 0 hit points."
           },
           {
             "name": "Champion",
@@ -4799,37 +4524,9 @@
             "description": "The archetypal Eldritch Knight combines the martial mastery common to all fighters with a careful study of magic. Eldritch Knights use magical techniques similar to those practiced by wizards. They focus their study on two of the eight schools of magic—abjuration and evocation. Abjuration spells grant an Eldritch Knight additional protection in battle, and evocation spells deal damage to many foes at once, extending the fighter's reach in combat. These knights learn a comparatively small number of spells, committing them to memory instead of keeping them in a spellbook."
           },
           {
-            "name": "Spellcasting",
-            "level": 3,
-            "description": "When you reach 3rd level, you augment your martial prowess with the ability to cast spells. See chapter 10 for the general rules of spellcasting and chapter 11 for the wizard spell list.\n**Cantrips.** You learn two cantrips of your choice from the wizard spell list. You learn an additional wizard cantrip of your choice at 10th level.\n**Spell Slots.** The Eldritch Knight Spellcasting table shows how many spell slots you have to cast your wizard spells of 1st level and higher. To cast one of these spells, you must expend a slot of the spell's level or higher. You regain all expended spell slots when you finish a long rest.\nFor example, if you know the 1st-level spell shield and have a 1st-level and a 2nd-level spell slot available, you can cast shield using either slot.\n**Spells Known of 1st-Level and Higher.** You know three 1st-level wizard spells of your choice, two of which you must choose from the abjuration and evocation spells on the wizard spell list.\nThe Spells Known column of the Eldritch Knight Spellcasting table shows when you learn more wizard spells of 1st level or higher. Each of these spells must be an abjuration or evocation spell of your choice, and must be of a level for which you have spell slots. For instance, when you reach 7th level in this class, you can learn one new spell of 1st or 2nd level.\nThe spells you learn at 8th, 14th, and 20th level can come from any school of magic.\nWhenever you gain a level in this class, you can replace one of the wizard spells you know with another spell of your choice from the wizard spell list. The new spell must be of a level for which you have spell slots, and it must be an abjuration or evocation spell, unless you're replacing the spell you gained at 3rd, 8th, 14th, or 20th level from any school of magic.\n**Spellcasting Ability.** Intelligence is your spellcasting ability for your wizard spells, since you learn your spells through study and memorization. You use your Intelligence whenever a spell refers to your spellcasting ability. In addition, you use your Intelligence modifier when setting the saving throw DC for a wizard spell you cast and when making an attack roll with one.\nSpell\nSpell"
-          },
-          {
             "name": "Weapon Bond",
             "level": 3,
             "description": "At 3rd level, you learn a ritual that creates a magical bond between yourself and one weapon. You perform the ritual over the course of 1 hour, which can be done during a short rest. The weapon must be within your reach throughout the ritual, at the conclusion of which you touch the weapon and forge the bond.\nOnce you have bonded a weapon to yourself, you can't be disarmed of that weapon unless you are incapacitated. If it is on the same plane of existence, you can summon that weapon as a bonus action on your turn, causing it to teleport instantly to your hand.\nYou can have up to two bonded weapons, but can summon only one at a time with your bonus action. If you attempt to bond with a third weapon, you must break the bond with one of the other two.",
-            "activationType": "bonus action"
-          },
-          {
-            "name": "War Magic",
-            "level": 7,
-            "description": "Beginning at 7th level, when you use your action to cast a cantrip, you can make one weapon attack as a bonus action.",
-            "activationType": "bonus action"
-          },
-          {
-            "name": "Eldritch Strike",
-            "level": 10,
-            "description": "At 10th level, you learn how to make your weapon strikes undercut a creature's resistance to your spells. When you hit a creature with a weapon attack, that creature has disadvantage on the next saving throw it makes against a spell you cast before the end of your next turn."
-          },
-          {
-            "name": "Arcane Charge",
-            "level": 15,
-            "description": "At 15th level, you gain the ability to teleport up to 30 feet to an unoccupied space you can see when you use your Action Surge. You can teleport before or after the additional action.",
-            "activationType": "action"
-          },
-          {
-            "name": "Improved War Magic",
-            "level": 18,
-            "description": "Starting at 18th level, when you use your action to cast a spell, you can make one weapon attack as a bonus action.",
             "activationType": "bonus action"
           },
           {
@@ -4883,37 +4580,9 @@
             "description": "The archetypal Eldritch Knight combines the martial mastery common to all fighters with a careful study of magic. Eldritch Knights use magical techniques similar to those practiced by wizards. They focus their study on two of the eight schools of magic—abjuration and evocation. Abjuration spells grant an Eldritch Knight additional protection in battle, and evocation spells deal damage to many foes at once, extending the fighter's reach in combat. These knights learn a comparatively small number of spells, committing them to memory instead of keeping them in a spellbook."
           },
           {
-            "name": "Spellcasting",
-            "level": 3,
-            "description": "When you reach 3rd level, you augment your martial prowess with the ability to cast spells. See chapter 10 for the general rules of spellcasting and chapter 11 for the wizard spell list.\n**Cantrips.** You learn two cantrips of your choice from the wizard spell list. You learn an additional wizard cantrip of your choice at 10th level.\n**Spell Slots.** The Eldritch Knight Spellcasting table shows how many spell slots you have to cast your wizard spells of 1st level and higher. To cast one of these spells, you must expend a slot of the spell's level or higher. You regain all expended spell slots when you finish a long rest.\nFor example, if you know the 1st-level spell shield and have a 1st-level and a 2nd-level spell slot available, you can cast shield using either slot.\n**Spells Known of 1st-Level and Higher.** You know three 1st-level wizard spells of your choice, two of which you must choose from the abjuration and evocation spells on the wizard spell list.\nThe Spells Known column of the Eldritch Knight Spellcasting table shows when you learn more wizard spells of 1st level or higher. Each of these spells must be an abjuration or evocation spell of your choice, and must be of a level for which you have spell slots. For instance, when you reach 7th level in this class, you can learn one new spell of 1st or 2nd level.\nThe spells you learn at 8th, 14th, and 20th level can come from any school of magic.\nWhenever you gain a level in this class, you can replace one of the wizard spells you know with another spell of your choice from the wizard spell list. The new spell must be of a level for which you have spell slots, and it must be an abjuration or evocation spell, unless you're replacing the spell you gained at 3rd, 8th, 14th, or 20th level from any school of magic.\n**Spellcasting Ability.** Intelligence is your spellcasting ability for your wizard spells, since you learn your spells through study and memorization. You use your Intelligence whenever a spell refers to your spellcasting ability. In addition, you use your Intelligence modifier when setting the saving throw DC for a wizard spell you cast and when making an attack roll with one.\nSpell\nSpell"
-          },
-          {
             "name": "Weapon Bond",
             "level": 3,
             "description": "At 3rd level, you learn a ritual that creates a magical bond between yourself and one weapon. You perform the ritual over the course of 1 hour, which can be done during a short rest. The weapon must be within your reach throughout the ritual, at the conclusion of which you touch the weapon and forge the bond.\nOnce you have bonded a weapon to yourself, you can't be disarmed of that weapon unless you are incapacitated. If it is on the same plane of existence, you can summon that weapon as a bonus action on your turn, causing it to teleport instantly to your hand.\nYou can have up to two bonded weapons, but can summon only one at a time with your bonus action. If you attempt to bond with a third weapon, you must break the bond with one of the other two.",
-            "activationType": "bonus action"
-          },
-          {
-            "name": "War Magic",
-            "level": 7,
-            "description": "Beginning at 7th level, when you use your action to cast a cantrip, you can make one weapon attack as a bonus action.",
-            "activationType": "bonus action"
-          },
-          {
-            "name": "Eldritch Strike",
-            "level": 10,
-            "description": "At 10th level, you learn how to make your weapon strikes undercut a creature's resistance to your spells. When you hit a creature with a weapon attack, that creature has disadvantage on the next saving throw it makes against a spell you cast before the end of your next turn."
-          },
-          {
-            "name": "Arcane Charge",
-            "level": 15,
-            "description": "At 15th level, you gain the ability to teleport up to 30 feet to an unoccupied space you can see when you use your Action Surge. You can teleport before or after the additional action.",
-            "activationType": "action"
-          },
-          {
-            "name": "Improved War Magic",
-            "level": 18,
-            "description": "Starting at 18th level, when you use your action to cast a spell, you can make one weapon attack as a bonus action.",
             "activationType": "bonus action"
           },
           {
@@ -4962,24 +4631,9 @@
         "name": "Battle Master",
         "features": [
           {
-            "name": "Battle Master",
-            "level": 3,
-            "description": "Those who emulate the archetypal Battle Master employ martial techniques passed down through generations. To a Battle Master, combat is an academic field, sometimes including subjects beyond battle such as weaponsmithing and calligraphy. Not every fighter absorbs the lessons of history, theory, and artistry that are reflected in the Battle Master archetype, but those who do are well-rounded fighters of great skill and knowledge."
-          },
-          {
-            "name": "Combat Superiority",
-            "level": 3,
-            "description": "When you choose this archetype at 3rd level, you learn maneuvers that are fueled by special dice called superiority dice.\n**Maneuvers.** You learn three maneuvers of your choice, which are listed under \"Maneuvers\" below. Many maneuvers enhance an attack in some way. You can use only one maneuver per attack.\nYou learn two additional maneuvers of your choice at 7th, 10th, and 15th level. Each time you learn new maneuvers, you can also replace one maneuver you know with a different one.\n**Superiority Dice.** You have four superiority dice, which are d8s. A superiority die is expended when you use it. You regain all of your expended superiority dice when you finish a short or long rest.\nYou gain another superiority die at 7th level and one more at 15th level.\n**Saving Throws.** Some of your maneuvers require your target to make a saving throw to resist the maneuver's effects. The saving throw DC is calculated as follows:\nManeuver"
-          },
-          {
             "name": "Maneuvers",
             "level": 3,
             "description": "The maneuvers are presented in alphabetical order."
-          },
-          {
-            "name": "Student of War",
-            "level": 3,
-            "description": "At 3rd level, you gain proficiency with one type of artisan's tools of your choice."
           },
           {
             "name": "Additional Maneuvers",
@@ -5015,11 +4669,6 @@
             "name": "Additional Superiority Die",
             "level": 15,
             "description": "You gain another superiority die at 15th level."
-          },
-          {
-            "name": "Relentless",
-            "level": 15,
-            "description": "Starting at 15th level, when you roll initiative and have no superiority dice remaining, you regain 1 superiority die."
           },
           {
             "name": "Improved Combat Superiority (d12)",
@@ -5074,16 +4723,6 @@
         "name": "Champion",
         "features": [
           {
-            "name": "Champion",
-            "level": 3,
-            "description": "The archetypal Champion focuses on the development of raw physical power honed to deadly perfection. Those who model themselves on this archetype combine rigorous training with physical excellence to deal devastating blows."
-          },
-          {
-            "name": "Improved Critical",
-            "level": 3,
-            "description": "Beginning when you choose this archetype at 3rd level, your weapon attacks score a critical hit on a roll of 19 or 20."
-          },
-          {
             "name": "Remarkable Athlete",
             "level": 7,
             "description": "Starting at 7th level, you can add half your proficiency bonus (round up) to any Strength, Dexterity, or Constitution check you make that doesn't already use your proficiency bonus.\nIn addition, when you make a running long jump, the distance you can cover increases by a number of feet equal to your Strength modifier."
@@ -5092,16 +4731,6 @@
             "name": "Additional Fighting Style",
             "level": 10,
             "description": "At 10th level, you can choose a second option from the Fighting Style class feature."
-          },
-          {
-            "name": "Superior Critical",
-            "level": 15,
-            "description": "Starting at 15th level, your weapon attacks score a critical hit on a roll of 18-20."
-          },
-          {
-            "name": "Survivor",
-            "level": 18,
-            "description": "At 18th level, you attain the pinnacle of resilience in battle. At the start of each of your turns, you regain hit points equal to 5 + your Constitution modifier if you have no more than half of your hit points left. You don't gain this benefit if you have 0 hit points."
           },
           {
             "name": "Champion",
@@ -5150,37 +4779,9 @@
             "description": "The archetypal Eldritch Knight combines the martial mastery common to all fighters with a careful study of magic. Eldritch Knights use magical techniques similar to those practiced by wizards. They focus their study on two of the eight schools of magic—abjuration and evocation. Abjuration spells grant an Eldritch Knight additional protection in battle, and evocation spells deal damage to many foes at once, extending the fighter's reach in combat. These knights learn a comparatively small number of spells, committing them to memory instead of keeping them in a spellbook."
           },
           {
-            "name": "Spellcasting",
-            "level": 3,
-            "description": "When you reach 3rd level, you augment your martial prowess with the ability to cast spells. See chapter 10 for the general rules of spellcasting and chapter 11 for the wizard spell list.\n**Cantrips.** You learn two cantrips of your choice from the wizard spell list. You learn an additional wizard cantrip of your choice at 10th level.\n**Spell Slots.** The Eldritch Knight Spellcasting table shows how many spell slots you have to cast your wizard spells of 1st level and higher. To cast one of these spells, you must expend a slot of the spell's level or higher. You regain all expended spell slots when you finish a long rest.\nFor example, if you know the 1st-level spell shield and have a 1st-level and a 2nd-level spell slot available, you can cast shield using either slot.\n**Spells Known of 1st-Level and Higher.** You know three 1st-level wizard spells of your choice, two of which you must choose from the abjuration and evocation spells on the wizard spell list.\nThe Spells Known column of the Eldritch Knight Spellcasting table shows when you learn more wizard spells of 1st level or higher. Each of these spells must be an abjuration or evocation spell of your choice, and must be of a level for which you have spell slots. For instance, when you reach 7th level in this class, you can learn one new spell of 1st or 2nd level.\nThe spells you learn at 8th, 14th, and 20th level can come from any school of magic.\nWhenever you gain a level in this class, you can replace one of the wizard spells you know with another spell of your choice from the wizard spell list. The new spell must be of a level for which you have spell slots, and it must be an abjuration or evocation spell, unless you're replacing the spell you gained at 3rd, 8th, 14th, or 20th level from any school of magic.\n**Spellcasting Ability.** Intelligence is your spellcasting ability for your wizard spells, since you learn your spells through study and memorization. You use your Intelligence whenever a spell refers to your spellcasting ability. In addition, you use your Intelligence modifier when setting the saving throw DC for a wizard spell you cast and when making an attack roll with one.\nSpell\nSpell"
-          },
-          {
             "name": "Weapon Bond",
             "level": 3,
             "description": "At 3rd level, you learn a ritual that creates a magical bond between yourself and one weapon. You perform the ritual over the course of 1 hour, which can be done during a short rest. The weapon must be within your reach throughout the ritual, at the conclusion of which you touch the weapon and forge the bond.\nOnce you have bonded a weapon to yourself, you can't be disarmed of that weapon unless you are incapacitated. If it is on the same plane of existence, you can summon that weapon as a bonus action on your turn, causing it to teleport instantly to your hand.\nYou can have up to two bonded weapons, but can summon only one at a time with your bonus action. If you attempt to bond with a third weapon, you must break the bond with one of the other two.",
-            "activationType": "bonus action"
-          },
-          {
-            "name": "War Magic",
-            "level": 7,
-            "description": "Beginning at 7th level, when you use your action to cast a cantrip, you can make one weapon attack as a bonus action.",
-            "activationType": "bonus action"
-          },
-          {
-            "name": "Eldritch Strike",
-            "level": 10,
-            "description": "At 10th level, you learn how to make your weapon strikes undercut a creature's resistance to your spells. When you hit a creature with a weapon attack, that creature has disadvantage on the next saving throw it makes against a spell you cast before the end of your next turn."
-          },
-          {
-            "name": "Arcane Charge",
-            "level": 15,
-            "description": "At 15th level, you gain the ability to teleport up to 30 feet to an unoccupied space you can see when you use your Action Surge. You can teleport before or after the additional action.",
-            "activationType": "action"
-          },
-          {
-            "name": "Improved War Magic",
-            "level": 18,
-            "description": "Starting at 18th level, when you use your action to cast a spell, you can make one weapon attack as a bonus action.",
             "activationType": "bonus action"
           },
           {
@@ -6727,25 +6328,9 @@
             "activationType": "action"
           },
           {
-            "name": "Aura of Devotion",
-            "level": 7,
-            "description": "Starting at 7th level, you and friendly creatures within 10 feet of you can't be charmed while you are conscious.\nAt 18th level, the range of this aura increases to 30 feet."
-          },
-          {
             "name": "Purity of Spirit",
             "level": 15,
             "description": "Beginning at 15th level, you are always under the effects of a protection from evil and good spell."
-          },
-          {
-            "name": "Holy Nimbus",
-            "level": 20,
-            "description": "At 20th level, as an action, you can emanate an aura of sunlight. For 1 minute, bright light shines from you in a 30-foot radius, and dim light shines 30 feet beyond that.\nWhenever an enemy creature starts its turn in the bright light, the creature takes 10 radiant damage.\nIn addition, for the duration, you have advantage on saving throws against spells cast by fiends or undead.\nOnce you use this feature, you can't use it again until you finish a long rest.",
-            "activationType": "action"
-          },
-          {
-            "name": "Oath of Devotion",
-            "level": 3,
-            "description": "Uphold the Ideals of Justice and Order\nThe Oath of Devotion binds Paladins to the ideals of justice and order. These Paladins meet the archetype of the knight in shining armor. They hold themselves to the highest standards of conduct, and some—for better or worse—hold the rest of the world to the same standards.\nMany who swear this oath are devoted to gods of law and good and use their gods' tenets as the measure of personal devotion. Others hold angels as their ideals and incorporate images of angelic wings into their helmets or coats of arms.\nThese paladins share the following tenets:\n• Let your word be your promise.\n• Protect the weak and never fear to act.\n• Let your honorable deeds be an example."
           },
           {
             "name": "Oath of Devotion Spells",
@@ -6813,25 +6398,9 @@
             "activationType": "action"
           },
           {
-            "name": "Aura of Devotion",
-            "level": 7,
-            "description": "Starting at 7th level, you and friendly creatures within 10 feet of you can't be charmed while you are conscious.\nAt 18th level, the range of this aura increases to 30 feet."
-          },
-          {
             "name": "Purity of Spirit",
             "level": 15,
             "description": "Beginning at 15th level, you are always under the effects of a protection from evil and good spell."
-          },
-          {
-            "name": "Holy Nimbus",
-            "level": 20,
-            "description": "At 20th level, as an action, you can emanate an aura of sunlight. For 1 minute, bright light shines from you in a 30-foot radius, and dim light shines 30 feet beyond that.\nWhenever an enemy creature starts its turn in the bright light, the creature takes 10 radiant damage.\nIn addition, for the duration, you have advantage on saving throws against spells cast by fiends or undead.\nOnce you use this feature, you can't use it again until you finish a long rest.",
-            "activationType": "action"
-          },
-          {
-            "name": "Oath of Devotion",
-            "level": 3,
-            "description": "Uphold the Ideals of Justice and Order\nThe Oath of Devotion binds Paladins to the ideals of justice and order. These Paladins meet the archetype of the knight in shining armor. They hold themselves to the highest standards of conduct, and some—for better or worse—hold the rest of the world to the same standards.\nMany who swear this oath are devoted to gods of law and good and use their gods' tenets as the measure of personal devotion. Others hold angels as their ideals and incorporate images of angelic wings into their helmets or coats of arms.\nThese paladins share the following tenets:\n• Let your word be your promise.\n• Protect the weak and never fear to act.\n• Let your honorable deeds be an example."
           },
           {
             "name": "Oath of Devotion Spells",
@@ -6897,22 +6466,6 @@
             "level": 3,
             "description": "You can use your Channel Divinity to utter ancient words that are painful for fey and fiends to hear. As an action, you present your holy symbol, and each fey or fiend within 30 feet of you that can hear you must make a Wisdom saving throw. On a failed save, the creature is turned for 1 minute or until it takes damage.\nA turned creature must spend its turns trying to move as far away from you as it can, and it can't willingly move to a space within 30 feet of you. It also can't take reactions. For its action, it can use only the Dash action or try to escape from an effect that prevents it from moving. If there's nowhere to move, the creature can use the Dodge action.\nIf the creature's true form is concealed by an illusion, shapeshifting, or other effect, that form is revealed while it is turned.",
             "activationType": "action"
-          },
-          {
-            "name": "Aura of Warding",
-            "level": 7,
-            "description": "Beginning at 7th level, ancient magic lies so heavily upon you that it forms an eldritch ward. You and friendly creatures within 10 feet of you have resistance to damage from spells.\nAt 18th level, the range of this aura increases to 30 feet."
-          },
-          {
-            "name": "Undying Sentinel",
-            "level": 15,
-            "description": "Starting at 15th level, when you are reduced to 0 hit points and are not killed outright, you can choose to drop to 1 hit point instead. Once you use this ability, you can't use it again until you finish a long rest.\nAdditionally, you suffer none of the drawbacks of old age, and you can't be aged magically."
-          },
-          {
-            "name": "Elder Champion",
-            "level": 20,
-            "description": "At 20th level, you can assume the form of an ancient force of nature, taking on an appearance you choose. For example, your skin might turn green or take on a bark-like texture, your hair might become leafy or moss-like, or you might sprout antlers or a lion-like mane.\nUsing your action, you undergo a transformation. For 1 minute, you gain the following benefits:\n• At the start of each of your turns, you regain 10 hit points.\n• Whenever you cast a paladin spell that has a casting time of 1 action, you can cast it using your bonus action instead.\n• Enemy creatures within 10 feet of you have disadvantage on saving throws against your paladin spells and Channel Divinity options.\nOnce you use this feature, you can't use it again until you finish a long rest.",
-            "activationType": "bonus action"
           },
           {
             "name": "Nature's Wrath",
@@ -6983,22 +6536,6 @@
             "level": 3,
             "description": "You can use your Channel Divinity to utter ancient words that are painful for fey and fiends to hear. As an action, you present your holy symbol, and each fey or fiend within 30 feet of you that can hear you must make a Wisdom saving throw. On a failed save, the creature is turned for 1 minute or until it takes damage.\nA turned creature must spend its turns trying to move as far away from you as it can, and it can't willingly move to a space within 30 feet of you. It also can't take reactions. For its action, it can use only the Dash action or try to escape from an effect that prevents it from moving. If there's nowhere to move, the creature can use the Dodge action.\nIf the creature's true form is concealed by an illusion, shapeshifting, or other effect, that form is revealed while it is turned.",
             "activationType": "action"
-          },
-          {
-            "name": "Aura of Warding",
-            "level": 7,
-            "description": "Beginning at 7th level, ancient magic lies so heavily upon you that it forms an eldritch ward. You and friendly creatures within 10 feet of you have resistance to damage from spells.\nAt 18th level, the range of this aura increases to 30 feet."
-          },
-          {
-            "name": "Undying Sentinel",
-            "level": 15,
-            "description": "Starting at 15th level, when you are reduced to 0 hit points and are not killed outright, you can choose to drop to 1 hit point instead. Once you use this ability, you can't use it again until you finish a long rest.\nAdditionally, you suffer none of the drawbacks of old age, and you can't be aged magically."
-          },
-          {
-            "name": "Elder Champion",
-            "level": 20,
-            "description": "At 20th level, you can assume the form of an ancient force of nature, taking on an appearance you choose. For example, your skin might turn green or take on a bark-like texture, your hair might become leafy or moss-like, or you might sprout antlers or a lion-like mane.\nUsing your action, you undergo a transformation. For 1 minute, you gain the following benefits:\n• At the start of each of your turns, you regain 10 hit points.\n• Whenever you cast a paladin spell that has a casting time of 1 action, you can cast it using your bonus action instead.\n• Enemy creatures within 10 feet of you have disadvantage on saving throws against your paladin spells and Channel Divinity options.\nOnce you use this feature, you can't use it again until you finish a long rest.",
-            "activationType": "bonus action"
           },
           {
             "name": "Nature's Wrath",
@@ -7069,24 +6606,6 @@
             "level": 3,
             "description": "As a bonus action, you can utter a vow of enmity against a creature you can see within 10 feet of you, using your Channel Divinity. You gain advantage on attack rolls against the creature for 1 minute or until it drops to 0 hit points or falls unconscious.",
             "activationType": "bonus action"
-          },
-          {
-            "name": "Relentless Avenger",
-            "level": 7,
-            "description": "By 7th level, your supernatural focus helps you close off a foe's retreat. When you hit a creature with an opportunity attack, you can move up to half your speed immediately after the attack and as part of the same reaction. This movement doesn't provoke opportunity attacks.",
-            "activationType": "reaction"
-          },
-          {
-            "name": "Soul of Vengeance",
-            "level": 15,
-            "description": "Starting at 15th level, the authority with which you speak your Vow of Enmity gives you greater power over your foe. When a creature under the effect of your Vow of Enmity makes an attack, you can use your reaction to make a melee weapon attack against that creature if it is within range.",
-            "activationType": "reaction"
-          },
-          {
-            "name": "Avenging Angel",
-            "level": 20,
-            "description": "At 20th level, you can assume the form of an angelic avenger. Using your action, you undergo a transformation. For 1 hour, you gain the following benefits:\n• Wings sprout from your back and grant you a flying speed of 60 feet.\n• You emanate an aura of menace in a 30-foot radius. The first time any enemy creature enters the aura or starts its turn there during a battle, the creature must succeed on a Wisdom saving throw or become frightened of you for 1 minute or until it takes any damage. Attack rolls against the frightened creature have advantage.\nOnce you use this feature, you can't use it again until you finish a long rest.",
-            "activationType": "action"
           },
           {
             "name": "Oath of Vengeance",
@@ -7161,24 +6680,6 @@
             "activationType": "bonus action"
           },
           {
-            "name": "Relentless Avenger",
-            "level": 7,
-            "description": "By 7th level, your supernatural focus helps you close off a foe's retreat. When you hit a creature with an opportunity attack, you can move up to half your speed immediately after the attack and as part of the same reaction. This movement doesn't provoke opportunity attacks.",
-            "activationType": "reaction"
-          },
-          {
-            "name": "Soul of Vengeance",
-            "level": 15,
-            "description": "Starting at 15th level, the authority with which you speak your Vow of Enmity gives you greater power over your foe. When a creature under the effect of your Vow of Enmity makes an attack, you can use your reaction to make a melee weapon attack against that creature if it is within range.",
-            "activationType": "reaction"
-          },
-          {
-            "name": "Avenging Angel",
-            "level": 20,
-            "description": "At 20th level, you can assume the form of an angelic avenger. Using your action, you undergo a transformation. For 1 hour, you gain the following benefits:\n• Wings sprout from your back and grant you a flying speed of 60 feet.\n• You emanate an aura of menace in a 30-foot radius. The first time any enemy creature enters the aura or starts its turn there during a battle, the creature must succeed on a Wisdom saving throw or become frightened of you for 1 minute or until it takes any damage. Attack rolls against the frightened creature have advantage.\nOnce you use this feature, you can't use it again until you finish a long rest.",
-            "activationType": "action"
-          },
-          {
             "name": "Oath of Vengeance",
             "level": 3,
             "description": "Punish Evildoers at Any Cost\nThe Oath of Vengeance is a solemn commitment to punish those who have committed grievously evil acts. When evil armies slaughter helpless villagers, when a tyrant defies the will of the gods, when a thieves' guild grows too violent, when a dragon rampages through the countryside—at times like these, paladins arise and swear an Oath of Vengeance to set right what has gone wrong.\nThese paladins share the following tenets:\n• Show the wicked no mercy.\n• Fight injustice and its causes.\n• Aid those harmed by injustice."
@@ -7251,25 +6752,9 @@
             "activationType": "action"
           },
           {
-            "name": "Aura of Devotion",
-            "level": 7,
-            "description": "Starting at 7th level, you and friendly creatures within 10 feet of you can't be charmed while you are conscious.\nAt 18th level, the range of this aura increases to 30 feet."
-          },
-          {
             "name": "Purity of Spirit",
             "level": 15,
             "description": "Beginning at 15th level, you are always under the effects of a protection from evil and good spell."
-          },
-          {
-            "name": "Holy Nimbus",
-            "level": 20,
-            "description": "At 20th level, as an action, you can emanate an aura of sunlight. For 1 minute, bright light shines from you in a 30-foot radius, and dim light shines 30 feet beyond that.\nWhenever an enemy creature starts its turn in the bright light, the creature takes 10 radiant damage.\nIn addition, for the duration, you have advantage on saving throws against spells cast by fiends or undead.\nOnce you use this feature, you can't use it again until you finish a long rest.",
-            "activationType": "action"
-          },
-          {
-            "name": "Oath of Devotion",
-            "level": 3,
-            "description": "Uphold the Ideals of Justice and Order\nThe Oath of Devotion binds Paladins to the ideals of justice and order. These Paladins meet the archetype of the knight in shining armor. They hold themselves to the highest standards of conduct, and some—for better or worse—hold the rest of the world to the same standards.\nMany who swear this oath are devoted to gods of law and good and use their gods' tenets as the measure of personal devotion. Others hold angels as their ideals and incorporate images of angelic wings into their helmets or coats of arms.\nThese paladins share the following tenets:\n• Let your word be your promise.\n• Protect the weak and never fear to act.\n• Let your honorable deeds be an example."
           },
           {
             "name": "Oath of Devotion Spells",
@@ -7381,22 +6866,6 @@
             "activationType": "action"
           },
           {
-            "name": "Aura of Warding",
-            "level": 7,
-            "description": "Beginning at 7th level, ancient magic lies so heavily upon you that it forms an eldritch ward. You and friendly creatures within 10 feet of you have resistance to damage from spells.\nAt 18th level, the range of this aura increases to 30 feet."
-          },
-          {
-            "name": "Undying Sentinel",
-            "level": 15,
-            "description": "Starting at 15th level, when you are reduced to 0 hit points and are not killed outright, you can choose to drop to 1 hit point instead. Once you use this ability, you can't use it again until you finish a long rest.\nAdditionally, you suffer none of the drawbacks of old age, and you can't be aged magically."
-          },
-          {
-            "name": "Elder Champion",
-            "level": 20,
-            "description": "At 20th level, you can assume the form of an ancient force of nature, taking on an appearance you choose. For example, your skin might turn green or take on a bark-like texture, your hair might become leafy or moss-like, or you might sprout antlers or a lion-like mane.\nUsing your action, you undergo a transformation. For 1 minute, you gain the following benefits:\n• At the start of each of your turns, you regain 10 hit points.\n• Whenever you cast a paladin spell that has a casting time of 1 action, you can cast it using your bonus action instead.\n• Enemy creatures within 10 feet of you have disadvantage on saving throws against your paladin spells and Channel Divinity options.\nOnce you use this feature, you can't use it again until you finish a long rest.",
-            "activationType": "bonus action"
-          },
-          {
             "name": "Nature's Wrath",
             "level": 3,
             "description": "As a Magic action, you can expend one use of your Channel Divinity to conjure spectral vines around nearby creatures. Each creature of your choice that you can see within 15 feet of yourself must succeed on a Strength saving throw or have the Restrained condition for 1 minute. A Restrained creature repeats the save at the end of each of its turns, ending the effect on itself on a success.",
@@ -7465,24 +6934,6 @@
             "level": 3,
             "description": "As a bonus action, you can utter a vow of enmity against a creature you can see within 10 feet of you, using your Channel Divinity. You gain advantage on attack rolls against the creature for 1 minute or until it drops to 0 hit points or falls unconscious.",
             "activationType": "bonus action"
-          },
-          {
-            "name": "Relentless Avenger",
-            "level": 7,
-            "description": "By 7th level, your supernatural focus helps you close off a foe's retreat. When you hit a creature with an opportunity attack, you can move up to half your speed immediately after the attack and as part of the same reaction. This movement doesn't provoke opportunity attacks.",
-            "activationType": "reaction"
-          },
-          {
-            "name": "Soul of Vengeance",
-            "level": 15,
-            "description": "Starting at 15th level, the authority with which you speak your Vow of Enmity gives you greater power over your foe. When a creature under the effect of your Vow of Enmity makes an attack, you can use your reaction to make a melee weapon attack against that creature if it is within range.",
-            "activationType": "reaction"
-          },
-          {
-            "name": "Avenging Angel",
-            "level": 20,
-            "description": "At 20th level, you can assume the form of an angelic avenger. Using your action, you undergo a transformation. For 1 hour, you gain the following benefits:\n• Wings sprout from your back and grant you a flying speed of 60 feet.\n• You emanate an aura of menace in a 30-foot radius. The first time any enemy creature enters the aura or starts its turn there during a battle, the creature must succeed on a Wisdom saving throw or become frightened of you for 1 minute or until it takes any damage. Attack rolls against the frightened creature have advantage.\nOnce you use this feature, you can't use it again until you finish a long rest.",
-            "activationType": "action"
           },
           {
             "name": "Oath of Vengeance",
@@ -7555,11 +7006,11 @@
         "name": "Channel Divinity",
         "levelAvailable": 3,
         "resetType": "short",
-        "uses": 1,
+        "uses": 2,
         "usesTable": {
-          "3": 1,
-          "11": 2,
-          "15": 3
+          "3": 2,
+          "11": 3,
+          "15": 4
         }
       }
     ],
@@ -8035,32 +7486,10 @@
         "name": "Beast Master",
         "features": [
           {
-            "name": "Beast Master",
-            "level": 3,
-            "description": "The Beast Master archetype embodies a friendship between the civilized races and the beasts of the world. United in focus, beast and ranger work as one to fight the monstrous foes that threaten civilization and the wilderness alike. Emulating the Beast Master archetype means committing yourself to this ideal, working in partnership with an animal as its companion and friend."
-          },
-          {
             "name": "Ranger's Companion",
             "level": 3,
             "description": "You gain a beast companion that accompanies you on your adventures and is trained to fight alongside you. Choose a beast that is no larger than Medium and that has a challenge rating of 1/4 or lower. Add your proficiency bonus to the beast's AC, attack rolls, and damage rolls, as well as to any saving throws and skills it is proficient in. Its hit point maximum equals its normal maximum or four times your ranger level, whichever is higher. Like any creature, the beast can spend Hit Dice during a short rest.\nThe beast obeys your commands as best as it can. It takes its turn on your initiative. On your turn, you can verbally command the beast where to move (no action required by you). You can use your action to verbally command it to take the Attack, Dash, Disengage, or Help action. If you don't issue a command, the beast takes the Dodge action. Once you have the Extra Attack feature, you can make one weapon attack yourself when you command the beast to take the Attack action.\nIf you are incapacitated or absent, your beast companion acts on its own, focusing on protecting you and itself. It never requires your command to use its reaction, such as when making an opportunity attack.\nWhile traveling through your favored terrain with only the beast, you can move stealthily at a normal pace.\nIf the beast dies, you can obtain a new companion by spending 8 hours magically bonding with a beast that isn't hostile to you and that meets the requirements.",
             "activationType": "reaction"
-          },
-          {
-            "name": "Exceptional Training",
-            "level": 7,
-            "description": "Beginning at 7th level, on any of your turns when your beast companion doesn't attack, you can use a bonus action to command the beast to take the Dash, Disengage, or Help action on its turn. In addition, the beast's attacks now count as magical for the purpose of overcoming resistance and immunity to nonmagical attacks and damage.",
-            "activationType": "bonus action"
-          },
-          {
-            "name": "Bestial Fury",
-            "level": 11,
-            "description": "Starting at 11th level, when you command your beast companion to take the Attack action, the beast can make two attacks, or it can take the Multiattack action if it has that action.",
-            "activationType": "action"
-          },
-          {
-            "name": "Share Spells",
-            "level": 15,
-            "description": "Beginning at 15th level, when you cast a spell targeting yourself, you can also affect your beast companion with the spell if the beast is within 30 feet of you."
           },
           {
             "name": "Beast Master",
@@ -8097,32 +7526,10 @@
         "name": "Beast Master",
         "features": [
           {
-            "name": "Beast Master",
-            "level": 3,
-            "description": "The Beast Master archetype embodies a friendship between the civilized races and the beasts of the world. United in focus, beast and ranger work as one to fight the monstrous foes that threaten civilization and the wilderness alike. Emulating the Beast Master archetype means committing yourself to this ideal, working in partnership with an animal as its companion and friend."
-          },
-          {
             "name": "Ranger's Companion",
             "level": 3,
             "description": "You gain a beast companion that accompanies you on your adventures and is trained to fight alongside you. Choose a beast that is no larger than Medium and that has a challenge rating of 1/4 or lower. Add your proficiency bonus to the beast's AC, attack rolls, and damage rolls, as well as to any saving throws and skills it is proficient in. Its hit point maximum equals its normal maximum or four times your ranger level, whichever is higher. Like any creature, the beast can spend Hit Dice during a short rest.\nThe beast obeys your commands as best as it can. It takes its turn on your initiative. On your turn, you can verbally command the beast where to move (no action required by you). You can use your action to verbally command it to take the Attack, Dash, Disengage, or Help action. If you don't issue a command, the beast takes the Dodge action. Once you have the Extra Attack feature, you can make one weapon attack yourself when you command the beast to take the Attack action.\nIf you are incapacitated or absent, your beast companion acts on its own, focusing on protecting you and itself. It never requires your command to use its reaction, such as when making an opportunity attack.\nWhile traveling through your favored terrain with only the beast, you can move stealthily at a normal pace.\nIf the beast dies, you can obtain a new companion by spending 8 hours magically bonding with a beast that isn't hostile to you and that meets the requirements.",
             "activationType": "reaction"
-          },
-          {
-            "name": "Exceptional Training",
-            "level": 7,
-            "description": "Beginning at 7th level, on any of your turns when your beast companion doesn't attack, you can use a bonus action to command the beast to take the Dash, Disengage, or Help action on its turn. In addition, the beast's attacks now count as magical for the purpose of overcoming resistance and immunity to nonmagical attacks and damage.",
-            "activationType": "bonus action"
-          },
-          {
-            "name": "Bestial Fury",
-            "level": 11,
-            "description": "Starting at 11th level, when you command your beast companion to take the Attack action, the beast can make two attacks, or it can take the Multiattack action if it has that action.",
-            "activationType": "action"
-          },
-          {
-            "name": "Share Spells",
-            "level": 15,
-            "description": "Beginning at 15th level, when you cast a spell targeting yourself, you can also affect your beast companion with the spell if the beast is within 30 feet of you."
           },
           {
             "name": "Beast Master",
@@ -8159,19 +7566,9 @@
         "name": "Hunter",
         "features": [
           {
-            "name": "Hunter",
-            "level": 3,
-            "description": "Emulating the Hunter archetype means accepting your place as a bulwark between civilization and the terrors of the wilderness. As you walk the Hunter's path, you learn specialized techniques for fighting the threats you face, from rampaging ogres and hordes of orcs to towering giants and terrifying dragons."
-          },
-          {
             "name": "Horde Breaker",
             "level": 3,
             "description": "Once on each of your turns when you make a weapon attack, you can make another attack with the same weapon against a different creature that is within 5 feet of the original target and within range of your weapon."
-          },
-          {
-            "name": "Hunter's Prey",
-            "level": 3,
-            "description": "At 3rd level, you gain one of the following features of your choice."
           },
           {
             "name": "Colossus Slayer",
@@ -8183,11 +7580,6 @@
             "level": 3,
             "description": "When a Large or larger creature within 5 feet of you hits or misses you with an attack, you can use your reaction to attack that creature immediately after its attack, provided that you can see the creature.",
             "activationType": "reaction"
-          },
-          {
-            "name": "Defensive Tactics",
-            "level": 7,
-            "description": "At 7th level, you gain one of the following features of your choice."
           },
           {
             "name": "Escape the Horde",
@@ -8233,11 +7625,6 @@
             "activationType": "reaction"
           },
           {
-            "name": "Superior Hunter's Defense",
-            "level": 15,
-            "description": "At 15th level, you gain one of the following features of your choice."
-          },
-          {
             "name": "Uncanny Dodge",
             "level": 15,
             "description": "When an attacker that you can see hits you with an attack, you can use your reaction to halve the attack's damage against you.",
@@ -8281,19 +7668,9 @@
         "name": "Hunter",
         "features": [
           {
-            "name": "Hunter",
-            "level": 3,
-            "description": "Emulating the Hunter archetype means accepting your place as a bulwark between civilization and the terrors of the wilderness. As you walk the Hunter's path, you learn specialized techniques for fighting the threats you face, from rampaging ogres and hordes of orcs to towering giants and terrifying dragons."
-          },
-          {
             "name": "Horde Breaker",
             "level": 3,
             "description": "Once on each of your turns when you make a weapon attack, you can make another attack with the same weapon against a different creature that is within 5 feet of the original target and within range of your weapon."
-          },
-          {
-            "name": "Hunter's Prey",
-            "level": 3,
-            "description": "At 3rd level, you gain one of the following features of your choice."
           },
           {
             "name": "Colossus Slayer",
@@ -8305,11 +7682,6 @@
             "level": 3,
             "description": "When a Large or larger creature within 5 feet of you hits or misses you with an attack, you can use your reaction to attack that creature immediately after its attack, provided that you can see the creature.",
             "activationType": "reaction"
-          },
-          {
-            "name": "Defensive Tactics",
-            "level": 7,
-            "description": "At 7th level, you gain one of the following features of your choice."
           },
           {
             "name": "Escape the Horde",
@@ -8355,11 +7727,6 @@
             "activationType": "reaction"
           },
           {
-            "name": "Superior Hunter's Defense",
-            "level": 15,
-            "description": "At 15th level, you gain one of the following features of your choice."
-          },
-          {
             "name": "Uncanny Dodge",
             "level": 15,
             "description": "When an attacker that you can see hits you with an attack, you can use your reaction to halve the attack's damage against you.",
@@ -8403,32 +7770,10 @@
         "name": "Beast Master",
         "features": [
           {
-            "name": "Beast Master",
-            "level": 3,
-            "description": "The Beast Master archetype embodies a friendship between the civilized races and the beasts of the world. United in focus, beast and ranger work as one to fight the monstrous foes that threaten civilization and the wilderness alike. Emulating the Beast Master archetype means committing yourself to this ideal, working in partnership with an animal as its companion and friend."
-          },
-          {
             "name": "Ranger's Companion",
             "level": 3,
             "description": "You gain a beast companion that accompanies you on your adventures and is trained to fight alongside you. Choose a beast that is no larger than Medium and that has a challenge rating of 1/4 or lower. Add your proficiency bonus to the beast's AC, attack rolls, and damage rolls, as well as to any saving throws and skills it is proficient in. Its hit point maximum equals its normal maximum or four times your ranger level, whichever is higher. Like any creature, the beast can spend Hit Dice during a short rest.\nThe beast obeys your commands as best as it can. It takes its turn on your initiative. On your turn, you can verbally command the beast where to move (no action required by you). You can use your action to verbally command it to take the Attack, Dash, Disengage, or Help action. If you don't issue a command, the beast takes the Dodge action. Once you have the Extra Attack feature, you can make one weapon attack yourself when you command the beast to take the Attack action.\nIf you are incapacitated or absent, your beast companion acts on its own, focusing on protecting you and itself. It never requires your command to use its reaction, such as when making an opportunity attack.\nWhile traveling through your favored terrain with only the beast, you can move stealthily at a normal pace.\nIf the beast dies, you can obtain a new companion by spending 8 hours magically bonding with a beast that isn't hostile to you and that meets the requirements.",
             "activationType": "reaction"
-          },
-          {
-            "name": "Exceptional Training",
-            "level": 7,
-            "description": "Beginning at 7th level, on any of your turns when your beast companion doesn't attack, you can use a bonus action to command the beast to take the Dash, Disengage, or Help action on its turn. In addition, the beast's attacks now count as magical for the purpose of overcoming resistance and immunity to nonmagical attacks and damage.",
-            "activationType": "bonus action"
-          },
-          {
-            "name": "Bestial Fury",
-            "level": 11,
-            "description": "Starting at 11th level, when you command your beast companion to take the Attack action, the beast can make two attacks, or it can take the Multiattack action if it has that action.",
-            "activationType": "action"
-          },
-          {
-            "name": "Share Spells",
-            "level": 15,
-            "description": "Beginning at 15th level, when you cast a spell targeting yourself, you can also affect your beast companion with the spell if the beast is within 30 feet of you."
           },
           {
             "name": "Beast Master",
@@ -8549,19 +7894,9 @@
         "name": "Hunter",
         "features": [
           {
-            "name": "Hunter",
-            "level": 3,
-            "description": "Emulating the Hunter archetype means accepting your place as a bulwark between civilization and the terrors of the wilderness. As you walk the Hunter's path, you learn specialized techniques for fighting the threats you face, from rampaging ogres and hordes of orcs to towering giants and terrifying dragons."
-          },
-          {
             "name": "Horde Breaker",
             "level": 3,
             "description": "Once on each of your turns when you make a weapon attack, you can make another attack with the same weapon against a different creature that is within 5 feet of the original target and within range of your weapon."
-          },
-          {
-            "name": "Hunter's Prey",
-            "level": 3,
-            "description": "At 3rd level, you gain one of the following features of your choice."
           },
           {
             "name": "Colossus Slayer",
@@ -8573,11 +7908,6 @@
             "level": 3,
             "description": "When a Large or larger creature within 5 feet of you hits or misses you with an attack, you can use your reaction to attack that creature immediately after its attack, provided that you can see the creature.",
             "activationType": "reaction"
-          },
-          {
-            "name": "Defensive Tactics",
-            "level": 7,
-            "description": "At 7th level, you gain one of the following features of your choice."
           },
           {
             "name": "Escape the Horde",
@@ -8621,11 +7951,6 @@
             "level": 15,
             "description": "When a hostile creature misses you with a melee attack, you can use your reaction to force that creature to repeat the same attack against another creature (other than itself) of your choice.",
             "activationType": "reaction"
-          },
-          {
-            "name": "Superior Hunter's Defense",
-            "level": 15,
-            "description": "At 15th level, you gain one of the following features of your choice."
           },
           {
             "name": "Uncanny Dodge",
@@ -8942,34 +8267,6 @@
             "description": "Some rogues enhance their fine-honed skills of stealth and agility with magic, learning tricks of enchantment and illusion. These rogues include pickpockets and burglars, but also pranksters, mischief-makers, and a significant number of adventurers."
           },
           {
-            "name": "Mage Hand Legerdemain",
-            "level": 3,
-            "description": "Starting at 3rd level, when you cast mage hand, you can make the spectral hand invisible, and you can perform the following additional tasks with it:\n• You can stow one object the hand is holding in a container worn or carried by another creature.\n• You can retrieve an object in a container worn or carried by another creature.\n• You can use thieves' tools to pick locks and disarm traps at range.\nYou can perform one of these tasks without being noticed by a creature if you succeed on a Dexterity (Sleight of Hand) check contested by the creature's Wisdom (Perception) check.\nIn addition, you can use the bonus action granted by your Cunning Action to control the hand.",
-            "activationType": "bonus action"
-          },
-          {
-            "name": "Spellcasting",
-            "level": 3,
-            "description": "When you reach 3rd level, you gain the ability to cast spells. See chapter 10 for the general rules of spellcasting and chapter 11 for the wizard spell list.\n**Cantrips.** You learn three cantrips: mage hand and two other cantrips of your choice from the wizard spell list. You learn another wizard cantrip of your choice at 10th level.\n**Spell Slots.** The Arcane Trickster Spellcasting table shows how many spell slots you have to cast your wizard spells of 1st level and higher. To cast one of these spells, you must expend a slot of the spell's level or higher. You regain all expended spell slots when you finish a long rest.\nFor example, if you know the 1st-level spell charm person and have a 1st-level and a 2nd-level spell slot available, you can cast charm person using either slot.\n**Spells Known of 1st-Level and Higher.** You know three 1st-level wizard spells of your choice, two of which you must choose from the enchantment and illusion spells on the wizard spell list.\nThe Spells Known column of the Arcane Trickster Spellcasting table shows when you learn more wizard spells of 1st level or higher. Each of these spells must be an enchantment or illusion spell of your choice, and must be of a level for which you have spell slots. For instance, when you reach 7th level in this class, you can learn one new spell of 1st or 2nd level.\nThe spells you learn at 8th, 14th, and 20th level can come from any school of magic.\nWhenever you gain a level in this class, you can replace one of the wizard spells you know with another spell of your choice from the wizard spell list. The new spell must be of a level for which you have spell slots, and it must be an enchantment or illusion spell, unless you're replacing the spell you gained at 3rd, 8th, 14th, or 20th level from any school of magic.\n**Spellcasting Ability.** Intelligence is your spellcasting ability for your wizard spells, since you learn your spells through dedicated study and memorization. You use your Intelligence whenever a spell refers to your spellcasting ability. In addition, you use your Intelligence modifier when setting the saving throw DC for a wizard spell you cast and when making an attack roll with one.\nSpell\nSpell"
-          },
-          {
-            "name": "Magical Ambush",
-            "level": 9,
-            "description": "Starting at 9th level, if you are hidden from a creature when you cast a spell on it, the creature has disadvantage on any saving throw it makes against the spell this turn."
-          },
-          {
-            "name": "Versatile Trickster",
-            "level": 13,
-            "description": "At 13th level, you gain the ability to distract targets with your mage hand. As a bonus action on your turn, you can designate a creature within 5 feet of the spectral hand created by the spell. Doing so gives you advantage on attack rolls against that creature until the end of the turn.",
-            "activationType": "bonus action"
-          },
-          {
-            "name": "Spell Thief",
-            "level": 17,
-            "description": "At 17th level, you gain the ability to magically steal the knowledge of how to cast a spell from another spellcaster.\nImmediately after a creature casts a spell that targets you or includes you in its area of effect, you can use your reaction to force the creature to make a saving throw with its spellcasting ability modifier. The DC equals your spell save DC. On a failed save, you negate the spell's effect against you, and you steal the knowledge of the spell if it is at least 1st level and of a level you can cast (it doesn't need to be a wizard spell). For the next 8 hours, you know the spell and can cast it using your spell slots. The creature can't cast that spell until the 8 hours have passed.\nOnce you use this feature, you can't use it again until you finish a long rest.",
-            "activationType": "reaction"
-          },
-          {
             "name": "Arcane Trickster",
             "level": 3,
             "description": "Enhance Stealth with Arcane Spells\nSome Rogues enhance their fine-honed skills of stealth and agility with spells, learning magical tricks to aid them in their trade. Some Arcane Tricksters use their talents as pickpockets and burglars, while others are pranksters."
@@ -9013,34 +8310,6 @@
             "description": "Some rogues enhance their fine-honed skills of stealth and agility with magic, learning tricks of enchantment and illusion. These rogues include pickpockets and burglars, but also pranksters, mischief-makers, and a significant number of adventurers."
           },
           {
-            "name": "Mage Hand Legerdemain",
-            "level": 3,
-            "description": "Starting at 3rd level, when you cast mage hand, you can make the spectral hand invisible, and you can perform the following additional tasks with it:\n• You can stow one object the hand is holding in a container worn or carried by another creature.\n• You can retrieve an object in a container worn or carried by another creature.\n• You can use thieves' tools to pick locks and disarm traps at range.\nYou can perform one of these tasks without being noticed by a creature if you succeed on a Dexterity (Sleight of Hand) check contested by the creature's Wisdom (Perception) check.\nIn addition, you can use the bonus action granted by your Cunning Action to control the hand.",
-            "activationType": "bonus action"
-          },
-          {
-            "name": "Spellcasting",
-            "level": 3,
-            "description": "When you reach 3rd level, you gain the ability to cast spells. See chapter 10 for the general rules of spellcasting and chapter 11 for the wizard spell list.\n**Cantrips.** You learn three cantrips: mage hand and two other cantrips of your choice from the wizard spell list. You learn another wizard cantrip of your choice at 10th level.\n**Spell Slots.** The Arcane Trickster Spellcasting table shows how many spell slots you have to cast your wizard spells of 1st level and higher. To cast one of these spells, you must expend a slot of the spell's level or higher. You regain all expended spell slots when you finish a long rest.\nFor example, if you know the 1st-level spell charm person and have a 1st-level and a 2nd-level spell slot available, you can cast charm person using either slot.\n**Spells Known of 1st-Level and Higher.** You know three 1st-level wizard spells of your choice, two of which you must choose from the enchantment and illusion spells on the wizard spell list.\nThe Spells Known column of the Arcane Trickster Spellcasting table shows when you learn more wizard spells of 1st level or higher. Each of these spells must be an enchantment or illusion spell of your choice, and must be of a level for which you have spell slots. For instance, when you reach 7th level in this class, you can learn one new spell of 1st or 2nd level.\nThe spells you learn at 8th, 14th, and 20th level can come from any school of magic.\nWhenever you gain a level in this class, you can replace one of the wizard spells you know with another spell of your choice from the wizard spell list. The new spell must be of a level for which you have spell slots, and it must be an enchantment or illusion spell, unless you're replacing the spell you gained at 3rd, 8th, 14th, or 20th level from any school of magic.\n**Spellcasting Ability.** Intelligence is your spellcasting ability for your wizard spells, since you learn your spells through dedicated study and memorization. You use your Intelligence whenever a spell refers to your spellcasting ability. In addition, you use your Intelligence modifier when setting the saving throw DC for a wizard spell you cast and when making an attack roll with one.\nSpell\nSpell"
-          },
-          {
-            "name": "Magical Ambush",
-            "level": 9,
-            "description": "Starting at 9th level, if you are hidden from a creature when you cast a spell on it, the creature has disadvantage on any saving throw it makes against the spell this turn."
-          },
-          {
-            "name": "Versatile Trickster",
-            "level": 13,
-            "description": "At 13th level, you gain the ability to distract targets with your mage hand. As a bonus action on your turn, you can designate a creature within 5 feet of the spectral hand created by the spell. Doing so gives you advantage on attack rolls against that creature until the end of the turn.",
-            "activationType": "bonus action"
-          },
-          {
-            "name": "Spell Thief",
-            "level": 17,
-            "description": "At 17th level, you gain the ability to magically steal the knowledge of how to cast a spell from another spellcaster.\nImmediately after a creature casts a spell that targets you or includes you in its area of effect, you can use your reaction to force the creature to make a saving throw with its spellcasting ability modifier. The DC equals your spell save DC. On a failed save, you negate the spell's effect against you, and you steal the knowledge of the spell if it is at least 1st level and of a level you can cast (it doesn't need to be a wizard spell). For the next 8 hours, you know the spell and can cast it using your spell slots. The creature can't cast that spell until the 8 hours have passed.\nOnce you use this feature, you can't use it again until you finish a long rest.",
-            "activationType": "reaction"
-          },
-          {
             "name": "Arcane Trickster",
             "level": 3,
             "description": "Enhance Stealth with Arcane Spells\nSome Rogues enhance their fine-honed skills of stealth and agility with spells, learning magical tricks to aid them in their trade. Some Arcane Tricksters use their talents as pickpockets and burglars, while others are pranksters."
@@ -9079,34 +8348,14 @@
         "name": "Assassin",
         "features": [
           {
-            "name": "Assassin",
-            "level": 3,
-            "description": "You focus your training on the grim art of death. Those who adhere to this archetype are diverse—hired killers, spies, bounty hunters, and even specially anointed priests trained to exterminate the enemies of their deity. Stealth, poison, and disguise help you eliminate your foes with deadly efficiency.\nYour archetype grants you features at 3rd level and then again at 9th, 13th, and 17th level."
-          },
-          {
-            "name": "Assassinate",
-            "level": 3,
-            "description": "Starting at 3rd level, you are at your deadliest when you get the drop on your enemies. You have advantage on attack rolls against any creature that hasn't taken a turn in the combat yet. In addition, any hit you score against a creature that is surprised is a critical hit."
-          },
-          {
             "name": "Bonus Proficiencies",
             "level": 3,
             "description": "When you choose this archetype at 3rd level, you gain proficiency with the disguise kit and the poisoner's kit."
           },
           {
-            "name": "Infiltration Expertise",
-            "level": 9,
-            "description": "Starting at 9th level, you can unfailingly create false identities for yourself. You must spend seven days and 25 gp to establish the history, profession, and affiliations for an identity. You can't establish an identity that belongs to someone else. For example, you might acquire appropriate clothing, letters of introduction, and official-looking certification to establish yourself as a member of a trading house from a remote city so you can insinuate yourself into the company of other wealthy merchants.\nThereafter, if you adopt the new identity as a disguise, other creatures believe you to be that person until given an obvious reason not to."
-          },
-          {
             "name": "Impostor",
             "level": 13,
             "description": "At 13th level, you gain the ability to unerringly mimic another person's speech, writing, and behavior. You must spend at least three hours studying these three components of the person's behavior, listening to speech, examining handwriting, and observing mannerism.\nYour ruse is indiscernible to the casual observer. If a wary creature suspects something is amiss, you have advantage on any Charisma (Deception) check you make to avoid detection."
-          },
-          {
-            "name": "Death Strike",
-            "level": 17,
-            "description": "Starting at 17th level, you become a master of instant death. When you attack and hit a creature that is surprised, it must make a Constitution saving throw (8 + your Dexterity modifier + your proficiency bonus). On a failed save, double the damage of your attack against the creature."
           },
           {
             "name": "Assassin",
@@ -9145,34 +8394,14 @@
         "name": "Assassin",
         "features": [
           {
-            "name": "Assassin",
-            "level": 3,
-            "description": "You focus your training on the grim art of death. Those who adhere to this archetype are diverse—hired killers, spies, bounty hunters, and even specially anointed priests trained to exterminate the enemies of their deity. Stealth, poison, and disguise help you eliminate your foes with deadly efficiency.\nYour archetype grants you features at 3rd level and then again at 9th, 13th, and 17th level."
-          },
-          {
-            "name": "Assassinate",
-            "level": 3,
-            "description": "Starting at 3rd level, you are at your deadliest when you get the drop on your enemies. You have advantage on attack rolls against any creature that hasn't taken a turn in the combat yet. In addition, any hit you score against a creature that is surprised is a critical hit."
-          },
-          {
             "name": "Bonus Proficiencies",
             "level": 3,
             "description": "When you choose this archetype at 3rd level, you gain proficiency with the disguise kit and the poisoner's kit."
           },
           {
-            "name": "Infiltration Expertise",
-            "level": 9,
-            "description": "Starting at 9th level, you can unfailingly create false identities for yourself. You must spend seven days and 25 gp to establish the history, profession, and affiliations for an identity. You can't establish an identity that belongs to someone else. For example, you might acquire appropriate clothing, letters of introduction, and official-looking certification to establish yourself as a member of a trading house from a remote city so you can insinuate yourself into the company of other wealthy merchants.\nThereafter, if you adopt the new identity as a disguise, other creatures believe you to be that person until given an obvious reason not to."
-          },
-          {
             "name": "Impostor",
             "level": 13,
             "description": "At 13th level, you gain the ability to unerringly mimic another person's speech, writing, and behavior. You must spend at least three hours studying these three components of the person's behavior, listening to speech, examining handwriting, and observing mannerism.\nYour ruse is indiscernible to the casual observer. If a wary creature suspects something is amiss, you have advantage on any Charisma (Deception) check you make to avoid detection."
-          },
-          {
-            "name": "Death Strike",
-            "level": 17,
-            "description": "Starting at 17th level, you become a master of instant death. When you attack and hit a creature that is surprised, it must make a Constitution saving throw (8 + your Dexterity modifier + your proficiency bonus). On a failed save, double the damage of your attack against the creature."
           },
           {
             "name": "Assassin",
@@ -9211,37 +8440,6 @@
         "name": "Thief",
         "features": [
           {
-            "name": "Thief",
-            "level": 3,
-            "description": "You hone your skills in the larcenous arts. Burglars, bandits, cutpurses, and other criminals typically follow this archetype, but so do rogues who prefer to think of themselves as professional treasure seekers, explorers, delvers, and investigators. In addition to improving your agility and stealth, you learn skills useful for delving into ancient ruins, reading unfamiliar languages, and using magic items you normally couldn't employ."
-          },
-          {
-            "name": "Fast Hands",
-            "level": 3,
-            "description": "Starting at 3rd level, you can use the bonus action granted by your Cunning Action to make a Dexterity (Sleight of Hand) check, use your thieves' tools to disarm a trap or open a lock, or take the Use an Object action.",
-            "activationType": "bonus action"
-          },
-          {
-            "name": "Second-Story Work",
-            "level": 3,
-            "description": "When you choose this archetype at 3rd level, you gain the ability to climb faster than normal; climbing no longer costs you extra movement.\nIn addition, when you make a running jump, the distance you cover increases by a number of feet equal to your Dexterity modifier."
-          },
-          {
-            "name": "Supreme Sneak",
-            "level": 9,
-            "description": "Starting at 9th level, you have advantage on a Dexterity (Stealth) check if you move no more than half your speed on the same turn."
-          },
-          {
-            "name": "Use Magic Device",
-            "level": 13,
-            "description": "By 13th level, you have learned enough about the workings of magic that you can improvise the use of items even when they are not intended for you. You ignore all class, race, and level requirements on the use of magic items."
-          },
-          {
-            "name": "Thief's Reflexes",
-            "level": 17,
-            "description": "When you reach 17th level, you have become adept at laying ambushes and quickly escaping danger. You can take two turns during the first round of any combat. You take your first turn at your normal initiative and your second turn at your initiative minus 10. You can't use this feature when you are surprised."
-          },
-          {
             "name": "Fast Hands",
             "level": 3,
             "description": "As a Bonus Action, you can do one of the following.\n**Sleight of Hand.** Make a Dexterity (Sleight of Hand) check to pick a lock or disarm a trap with Thieves' Tools or to pick a pocket.\n**Use an Object.** Take the Utilize action, or take the Magic action to use a magic item that requires that action.",
@@ -9279,37 +8477,6 @@
       {
         "name": "Thief",
         "features": [
-          {
-            "name": "Thief",
-            "level": 3,
-            "description": "You hone your skills in the larcenous arts. Burglars, bandits, cutpurses, and other criminals typically follow this archetype, but so do rogues who prefer to think of themselves as professional treasure seekers, explorers, delvers, and investigators. In addition to improving your agility and stealth, you learn skills useful for delving into ancient ruins, reading unfamiliar languages, and using magic items you normally couldn't employ."
-          },
-          {
-            "name": "Fast Hands",
-            "level": 3,
-            "description": "Starting at 3rd level, you can use the bonus action granted by your Cunning Action to make a Dexterity (Sleight of Hand) check, use your thieves' tools to disarm a trap or open a lock, or take the Use an Object action.",
-            "activationType": "bonus action"
-          },
-          {
-            "name": "Second-Story Work",
-            "level": 3,
-            "description": "When you choose this archetype at 3rd level, you gain the ability to climb faster than normal; climbing no longer costs you extra movement.\nIn addition, when you make a running jump, the distance you cover increases by a number of feet equal to your Dexterity modifier."
-          },
-          {
-            "name": "Supreme Sneak",
-            "level": 9,
-            "description": "Starting at 9th level, you have advantage on a Dexterity (Stealth) check if you move no more than half your speed on the same turn."
-          },
-          {
-            "name": "Use Magic Device",
-            "level": 13,
-            "description": "By 13th level, you have learned enough about the workings of magic that you can improvise the use of items even when they are not intended for you. You ignore all class, race, and level requirements on the use of magic items."
-          },
-          {
-            "name": "Thief's Reflexes",
-            "level": 17,
-            "description": "When you reach 17th level, you have become adept at laying ambushes and quickly escaping danger. You can take two turns during the first round of any combat. You take your first turn at your normal initiative and your second turn at your initiative minus 10. You can't use this feature when you are surprised."
-          },
           {
             "name": "Fast Hands",
             "level": 3,
@@ -9352,34 +8519,6 @@
             "name": "Arcane Trickster",
             "level": 3,
             "description": "Some rogues enhance their fine-honed skills of stealth and agility with magic, learning tricks of enchantment and illusion. These rogues include pickpockets and burglars, but also pranksters, mischief-makers, and a significant number of adventurers."
-          },
-          {
-            "name": "Mage Hand Legerdemain",
-            "level": 3,
-            "description": "Starting at 3rd level, when you cast mage hand, you can make the spectral hand invisible, and you can perform the following additional tasks with it:\n• You can stow one object the hand is holding in a container worn or carried by another creature.\n• You can retrieve an object in a container worn or carried by another creature.\n• You can use thieves' tools to pick locks and disarm traps at range.\nYou can perform one of these tasks without being noticed by a creature if you succeed on a Dexterity (Sleight of Hand) check contested by the creature's Wisdom (Perception) check.\nIn addition, you can use the bonus action granted by your Cunning Action to control the hand.",
-            "activationType": "bonus action"
-          },
-          {
-            "name": "Spellcasting",
-            "level": 3,
-            "description": "When you reach 3rd level, you gain the ability to cast spells. See chapter 10 for the general rules of spellcasting and chapter 11 for the wizard spell list.\n**Cantrips.** You learn three cantrips: mage hand and two other cantrips of your choice from the wizard spell list. You learn another wizard cantrip of your choice at 10th level.\n**Spell Slots.** The Arcane Trickster Spellcasting table shows how many spell slots you have to cast your wizard spells of 1st level and higher. To cast one of these spells, you must expend a slot of the spell's level or higher. You regain all expended spell slots when you finish a long rest.\nFor example, if you know the 1st-level spell charm person and have a 1st-level and a 2nd-level spell slot available, you can cast charm person using either slot.\n**Spells Known of 1st-Level and Higher.** You know three 1st-level wizard spells of your choice, two of which you must choose from the enchantment and illusion spells on the wizard spell list.\nThe Spells Known column of the Arcane Trickster Spellcasting table shows when you learn more wizard spells of 1st level or higher. Each of these spells must be an enchantment or illusion spell of your choice, and must be of a level for which you have spell slots. For instance, when you reach 7th level in this class, you can learn one new spell of 1st or 2nd level.\nThe spells you learn at 8th, 14th, and 20th level can come from any school of magic.\nWhenever you gain a level in this class, you can replace one of the wizard spells you know with another spell of your choice from the wizard spell list. The new spell must be of a level for which you have spell slots, and it must be an enchantment or illusion spell, unless you're replacing the spell you gained at 3rd, 8th, 14th, or 20th level from any school of magic.\n**Spellcasting Ability.** Intelligence is your spellcasting ability for your wizard spells, since you learn your spells through dedicated study and memorization. You use your Intelligence whenever a spell refers to your spellcasting ability. In addition, you use your Intelligence modifier when setting the saving throw DC for a wizard spell you cast and when making an attack roll with one.\nSpell\nSpell"
-          },
-          {
-            "name": "Magical Ambush",
-            "level": 9,
-            "description": "Starting at 9th level, if you are hidden from a creature when you cast a spell on it, the creature has disadvantage on any saving throw it makes against the spell this turn."
-          },
-          {
-            "name": "Versatile Trickster",
-            "level": 13,
-            "description": "At 13th level, you gain the ability to distract targets with your mage hand. As a bonus action on your turn, you can designate a creature within 5 feet of the spectral hand created by the spell. Doing so gives you advantage on attack rolls against that creature until the end of the turn.",
-            "activationType": "bonus action"
-          },
-          {
-            "name": "Spell Thief",
-            "level": 17,
-            "description": "At 17th level, you gain the ability to magically steal the knowledge of how to cast a spell from another spellcaster.\nImmediately after a creature casts a spell that targets you or includes you in its area of effect, you can use your reaction to force the creature to make a saving throw with its spellcasting ability modifier. The DC equals your spell save DC. On a failed save, you negate the spell's effect against you, and you steal the knowledge of the spell if it is at least 1st level and of a level you can cast (it doesn't need to be a wizard spell). For the next 8 hours, you know the spell and can cast it using your spell slots. The creature can't cast that spell until the 8 hours have passed.\nOnce you use this feature, you can't use it again until you finish a long rest.",
-            "activationType": "reaction"
           },
           {
             "name": "Arcane Trickster",
@@ -9420,34 +8559,14 @@
         "name": "Assassin",
         "features": [
           {
-            "name": "Assassin",
-            "level": 3,
-            "description": "You focus your training on the grim art of death. Those who adhere to this archetype are diverse—hired killers, spies, bounty hunters, and even specially anointed priests trained to exterminate the enemies of their deity. Stealth, poison, and disguise help you eliminate your foes with deadly efficiency.\nYour archetype grants you features at 3rd level and then again at 9th, 13th, and 17th level."
-          },
-          {
-            "name": "Assassinate",
-            "level": 3,
-            "description": "Starting at 3rd level, you are at your deadliest when you get the drop on your enemies. You have advantage on attack rolls against any creature that hasn't taken a turn in the combat yet. In addition, any hit you score against a creature that is surprised is a critical hit."
-          },
-          {
             "name": "Bonus Proficiencies",
             "level": 3,
             "description": "When you choose this archetype at 3rd level, you gain proficiency with the disguise kit and the poisoner's kit."
           },
           {
-            "name": "Infiltration Expertise",
-            "level": 9,
-            "description": "Starting at 9th level, you can unfailingly create false identities for yourself. You must spend seven days and 25 gp to establish the history, profession, and affiliations for an identity. You can't establish an identity that belongs to someone else. For example, you might acquire appropriate clothing, letters of introduction, and official-looking certification to establish yourself as a member of a trading house from a remote city so you can insinuate yourself into the company of other wealthy merchants.\nThereafter, if you adopt the new identity as a disguise, other creatures believe you to be that person until given an obvious reason not to."
-          },
-          {
             "name": "Impostor",
             "level": 13,
             "description": "At 13th level, you gain the ability to unerringly mimic another person's speech, writing, and behavior. You must spend at least three hours studying these three components of the person's behavior, listening to speech, examining handwriting, and observing mannerism.\nYour ruse is indiscernible to the casual observer. If a wary creature suspects something is amiss, you have advantage on any Charisma (Deception) check you make to avoid detection."
-          },
-          {
-            "name": "Death Strike",
-            "level": 17,
-            "description": "Starting at 17th level, you become a master of instant death. When you attack and hit a creature that is surprised, it must make a Constitution saving throw (8 + your Dexterity modifier + your proficiency bonus). On a failed save, double the damage of your attack against the creature."
           },
           {
             "name": "Assassin",
@@ -9546,37 +8665,6 @@
       {
         "name": "Thief",
         "features": [
-          {
-            "name": "Thief",
-            "level": 3,
-            "description": "You hone your skills in the larcenous arts. Burglars, bandits, cutpurses, and other criminals typically follow this archetype, but so do rogues who prefer to think of themselves as professional treasure seekers, explorers, delvers, and investigators. In addition to improving your agility and stealth, you learn skills useful for delving into ancient ruins, reading unfamiliar languages, and using magic items you normally couldn't employ."
-          },
-          {
-            "name": "Fast Hands",
-            "level": 3,
-            "description": "Starting at 3rd level, you can use the bonus action granted by your Cunning Action to make a Dexterity (Sleight of Hand) check, use your thieves' tools to disarm a trap or open a lock, or take the Use an Object action.",
-            "activationType": "bonus action"
-          },
-          {
-            "name": "Second-Story Work",
-            "level": 3,
-            "description": "When you choose this archetype at 3rd level, you gain the ability to climb faster than normal; climbing no longer costs you extra movement.\nIn addition, when you make a running jump, the distance you cover increases by a number of feet equal to your Dexterity modifier."
-          },
-          {
-            "name": "Supreme Sneak",
-            "level": 9,
-            "description": "Starting at 9th level, you have advantage on a Dexterity (Stealth) check if you move no more than half your speed on the same turn."
-          },
-          {
-            "name": "Use Magic Device",
-            "level": 13,
-            "description": "By 13th level, you have learned enough about the workings of magic that you can improvise the use of items even when they are not intended for you. You ignore all class, race, and level requirements on the use of magic items."
-          },
-          {
-            "name": "Thief's Reflexes",
-            "level": 17,
-            "description": "When you reach 17th level, you have become adept at laying ambushes and quickly escaping danger. You can take two turns during the first round of any combat. You take your first turn at your normal initiative and your second turn at your initiative minus 10. You can't use this feature when you are surprised."
-          },
           {
             "name": "Fast Hands",
             "level": 3,
@@ -10055,17 +9143,6 @@
             "description": "At 1st level, you choose one type of dragon as your ancestor. The damage type associated with each dragon is used by features you gain later.\nDragon | Damage Type\nBlack | Acid\nBlue | Lightning\nBrass | Fire\nBronze | Lightning\nCopper | Acid\nGold | Fire\nGreen | Poison\nRed | Fire\nSilver | Cold\nWhite | Cold\nYou can speak, read, and write Draconic. Additionally, whenever you make a Charisma check when interacting with dragons, your proficiency bonus is doubled if it applies to the check."
           },
           {
-            "name": "Elemental Affinity",
-            "level": 6,
-            "description": "Starting at 6th level, when you cast a spell that deals damage of the type associated with your draconic ancestry, you can add your Charisma modifier to one damage roll of that spell. At the same time, you can spend 1 sorcery point to gain resistance to that damage type for 1 hour."
-          },
-          {
-            "name": "Dragon Wings",
-            "level": 14,
-            "description": "At 14th level, you gain the ability to sprout a pair of dragon wings from your back, gaining a flying speed equal to your current speed. You can create these wings as a bonus action on your turn. They last until you dismiss them as a bonus action on your turn.\nYou can't manifest your wings while wearing armor unless the armor is made to accommodate them, and clothing not made to accommodate your wings might be destroyed when you manifest them.",
-            "activationType": "bonus action"
-          },
-          {
             "name": "Draconic Presence",
             "level": 18,
             "description": "Beginning at 18th level, you can channel the dread presence of your dragon ancestor, causing those around you to become awestruck or frightened. As an action, you can spend 5 sorcery points to draw on this power and exude an aura of awe or fear (your choice) to a distance of 60 feet. For 1 minute or until you lose your concentration (as if you were casting a concentration spell), each hostile creature that starts its turn in this aura must succeed on a Wisdom saving throw or be charmed (if you chose awe) or frightened (if you chose fear) until the aura ends. A creature that succeeds on this saving throw is immune to your aura for 24 hours.",
@@ -10122,17 +9199,6 @@
             "name": "Dragon Ancestor",
             "level": 1,
             "description": "At 1st level, you choose one type of dragon as your ancestor. The damage type associated with each dragon is used by features you gain later.\nDragon | Damage Type\nBlack | Acid\nBlue | Lightning\nBrass | Fire\nBronze | Lightning\nCopper | Acid\nGold | Fire\nGreen | Poison\nRed | Fire\nSilver | Cold\nWhite | Cold\nYou can speak, read, and write Draconic. Additionally, whenever you make a Charisma check when interacting with dragons, your proficiency bonus is doubled if it applies to the check."
-          },
-          {
-            "name": "Elemental Affinity",
-            "level": 6,
-            "description": "Starting at 6th level, when you cast a spell that deals damage of the type associated with your draconic ancestry, you can add your Charisma modifier to one damage roll of that spell. At the same time, you can spend 1 sorcery point to gain resistance to that damage type for 1 hour."
-          },
-          {
-            "name": "Dragon Wings",
-            "level": 14,
-            "description": "At 14th level, you gain the ability to sprout a pair of dragon wings from your back, gaining a flying speed equal to your current speed. You can create these wings as a bonus action on your turn. They last until you dismiss them as a bonus action on your turn.\nYou can't manifest your wings while wearing armor unless the armor is made to accommodate them, and clothing not made to accommodate your wings might be destroyed when you manifest them.",
-            "activationType": "bonus action"
           },
           {
             "name": "Draconic Presence",
@@ -10351,17 +9417,6 @@
             "name": "Dragon Ancestor",
             "level": 1,
             "description": "At 1st level, you choose one type of dragon as your ancestor. The damage type associated with each dragon is used by features you gain later.\nDragon | Damage Type\nBlack | Acid\nBlue | Lightning\nBrass | Fire\nBronze | Lightning\nCopper | Acid\nGold | Fire\nGreen | Poison\nRed | Fire\nSilver | Cold\nWhite | Cold\nYou can speak, read, and write Draconic. Additionally, whenever you make a Charisma check when interacting with dragons, your proficiency bonus is doubled if it applies to the check."
-          },
-          {
-            "name": "Elemental Affinity",
-            "level": 6,
-            "description": "Starting at 6th level, when you cast a spell that deals damage of the type associated with your draconic ancestry, you can add your Charisma modifier to one damage roll of that spell. At the same time, you can spend 1 sorcery point to gain resistance to that damage type for 1 hour."
-          },
-          {
-            "name": "Dragon Wings",
-            "level": 14,
-            "description": "At 14th level, you gain the ability to sprout a pair of dragon wings from your back, gaining a flying speed equal to your current speed. You can create these wings as a bonus action on your turn. They last until you dismiss them as a bonus action on your turn.\nYou can't manifest your wings while wearing armor unless the armor is made to accommodate them, and clothing not made to accommodate your wings might be destroyed when you manifest them.",
-            "activationType": "bonus action"
           },
           {
             "name": "Draconic Presence",
@@ -10782,18 +9837,6 @@
             "activationType": "action"
           },
           {
-            "name": "Misty Escape",
-            "level": 6,
-            "description": "Starting at 6th level, you can vanish in a puff of mist in response to harm. When you take damage, you can use your reaction to turn invisible and teleport up to 60 feet to an unoccupied space you can see. You remain invisible until the start of your next turn or until you attack or cast a spell.\nOnce you use this feature, you can't use it again until you finish a short or long rest.",
-            "activationType": "reaction"
-          },
-          {
-            "name": "Beguiling Defenses",
-            "level": 10,
-            "description": "Beginning at 10th level, your patron teaches you how to turn the mind-affecting magic of your enemies against them. You are immune to being charmed, and when another creature attempts to charm you, you can use your reaction to attempt to turn the charm back on that creature. The creature must succeed on a Wisdom saving throw against your warlock spell save DC or be charmed by you for 1 minute or until the creature takes any damage.",
-            "activationType": "reaction"
-          },
-          {
             "name": "Dark Delirium",
             "level": 14,
             "description": "Starting at 14th level, you can plunge a creature into an illusory realm. As an action, choose a creature that you can see within 60 feet of you. It must make a Wisdom saving throw against your warlock spell save DC. On a failed save, it is charmed or frightened by you (your choice) for 1 minute or until your concentration is broken (as if you are concentration on a spell). This effect ends early if the creature takes any damage.\nUntil this illusion ends, the creature thinks it is lost in a misty realm, the appearance of which you choose. The creature can see and hear only itself, you, and the illusion.\nYou must finish a short or long rest before you can use this feature again.",
@@ -10850,18 +9893,6 @@
             "activationType": "action"
           },
           {
-            "name": "Misty Escape",
-            "level": 6,
-            "description": "Starting at 6th level, you can vanish in a puff of mist in response to harm. When you take damage, you can use your reaction to turn invisible and teleport up to 60 feet to an unoccupied space you can see. You remain invisible until the start of your next turn or until you attack or cast a spell.\nOnce you use this feature, you can't use it again until you finish a short or long rest.",
-            "activationType": "reaction"
-          },
-          {
-            "name": "Beguiling Defenses",
-            "level": 10,
-            "description": "Beginning at 10th level, your patron teaches you how to turn the mind-affecting magic of your enemies against them. You are immune to being charmed, and when another creature attempts to charm you, you can use your reaction to attempt to turn the charm back on that creature. The creature must succeed on a Wisdom saving throw against your warlock spell save DC or be charmed by you for 1 minute or until the creature takes any damage.",
-            "activationType": "reaction"
-          },
-          {
             "name": "Dark Delirium",
             "level": 14,
             "description": "Starting at 14th level, you can plunge a creature into an illusory realm. As an action, choose a creature that you can see within 60 feet of you. It must make a Wisdom saving throw against your warlock spell save DC. On a failed save, it is charmed or frightened by you (your choice) for 1 minute or until your concentration is broken (as if you are concentration on a spell). This effect ends early if the creature takes any damage.\nUntil this illusion ends, the creature thinks it is lost in a misty realm, the appearance of which you choose. The creature can see and hear only itself, you, and the illusion.\nYou must finish a short or long rest before you can use this feature again.",
@@ -10917,21 +9948,6 @@
             "description": "Starting at 1st level, when you reduce a hostile creature to 0 hit points, you gain temporary hit points equal to your Charisma modifier + your warlock level (minimum of 1)."
           },
           {
-            "name": "Dark One's Own Luck",
-            "level": 6,
-            "description": "Starting at 6th level, you can call on your patron to alter fate in your favor. When you make an ability check or a saving throw, you can use this feature to add a d10 to your roll. You can do so after seeing the initial roll but before any of the roll's effects occur.\nOnce you use this feature, you can't use it again until you finish a short or long rest."
-          },
-          {
-            "name": "Fiendish Resilience",
-            "level": 10,
-            "description": "Starting at 10th level, you can choose one damage type when you finish a short or long rest. You gain resistance to that damage type until you choose a different one with this feature. Damage from magical weapons or silver weapons ignores this resistance."
-          },
-          {
-            "name": "Hurl Through Hell",
-            "level": 14,
-            "description": "Starting at 14th level, when you hit a creature with an attack, you can use this feature to instantly transport the target through the lower planes. The creature disappears and hurtles through a nightmare landscape.\nAt the end of your next turn, the target returns to the space it previously occupied, or the nearest unoccupied space. If the target is not a fiend, it takes 10d10 psychic damage as it reels from its horrific experience.\nOnce you use this feature, you can't use it again until you finish a long rest."
-          },
-          {
             "name": "Fiend Patron",
             "level": 3,
             "description": "Make a Deal with the Lower Planes\nYour pact draws on the Lower Planes, the realms of perdition. You might forge a bargain with a demon lord such as Demogorgon or Orcus; an archdevil such as Asmodeus; or a pit fiend, balor, yugoloth, or night hag that is especially mighty. That patron's aims are evil—the corruption or destruction of all things, ultimately including you—and your path is defined by the extent to which you strive against those aims."
@@ -10977,21 +9993,6 @@
             "name": "Dark One's Blessing",
             "level": 1,
             "description": "Starting at 1st level, when you reduce a hostile creature to 0 hit points, you gain temporary hit points equal to your Charisma modifier + your warlock level (minimum of 1)."
-          },
-          {
-            "name": "Dark One's Own Luck",
-            "level": 6,
-            "description": "Starting at 6th level, you can call on your patron to alter fate in your favor. When you make an ability check or a saving throw, you can use this feature to add a d10 to your roll. You can do so after seeing the initial roll but before any of the roll's effects occur.\nOnce you use this feature, you can't use it again until you finish a short or long rest."
-          },
-          {
-            "name": "Fiendish Resilience",
-            "level": 10,
-            "description": "Starting at 10th level, you can choose one damage type when you finish a short or long rest. You gain resistance to that damage type until you choose a different one with this feature. Damage from magical weapons or silver weapons ignores this resistance."
-          },
-          {
-            "name": "Hurl Through Hell",
-            "level": 14,
-            "description": "Starting at 14th level, when you hit a creature with an attack, you can use this feature to instantly transport the target through the lower planes. The creature disappears and hurtles through a nightmare landscape.\nAt the end of your next turn, the target returns to the space it previously occupied, or the nearest unoccupied space. If the target is not a fiend, it takes 10d10 psychic damage as it reels from its horrific experience.\nOnce you use this feature, you can't use it again until you finish a long rest."
           },
           {
             "name": "Fiend Patron",
@@ -11045,17 +10046,6 @@
             "level": 6,
             "description": "At 6th level, you learn to magically ward yourself against attack and to turn an enemy's failed strike into good luck for yourself. When a creature makes an attack roll against you, you can use your reaction to impose disadvantage on that roll. If the attack misses you, your next attack roll against the creature has advantage if you make it before the end of your next turn.\nOnce you use this feature, you can't use it again until you finish a short or long rest.",
             "activationType": "reaction"
-          },
-          {
-            "name": "Thought Shield",
-            "level": 10,
-            "description": "Starting at 10th level, your thoughts can't be read by telepathy or other means unless you allow it. You also have resistance to psychic damage, and whenever a creature deals psychic damage to you, that creature takes the same amount of damage that you do."
-          },
-          {
-            "name": "Create Thrall",
-            "level": 14,
-            "description": "At 14th level, you gain the ability to infect a humanoid's mind with the alien magic of your patron. You can use your action to touch an incapacitated humanoid. That creature is then charmed by you until a remove curse spell is cast on it, the charmed condition is removed from it, or you use this feature again.\nYou can communicate telepathically with the charmed creature as long as the two of you are on the same plane of existence.",
-            "activationType": "action"
           },
           {
             "name": "Great Old One Patron",
@@ -11120,17 +10110,6 @@
             "level": 6,
             "description": "At 6th level, you learn to magically ward yourself against attack and to turn an enemy's failed strike into good luck for yourself. When a creature makes an attack roll against you, you can use your reaction to impose disadvantage on that roll. If the attack misses you, your next attack roll against the creature has advantage if you make it before the end of your next turn.\nOnce you use this feature, you can't use it again until you finish a short or long rest.",
             "activationType": "reaction"
-          },
-          {
-            "name": "Thought Shield",
-            "level": 10,
-            "description": "Starting at 10th level, your thoughts can't be read by telepathy or other means unless you allow it. You also have resistance to psychic damage, and whenever a creature deals psychic damage to you, that creature takes the same amount of damage that you do."
-          },
-          {
-            "name": "Create Thrall",
-            "level": 14,
-            "description": "At 14th level, you gain the ability to infect a humanoid's mind with the alien magic of your patron. You can use your action to touch an incapacitated humanoid. That creature is then charmed by you until a remove curse spell is cast on it, the charmed condition is removed from it, or you use this feature again.\nYou can communicate telepathically with the charmed creature as long as the two of you are on the same plane of existence.",
-            "activationType": "action"
           },
           {
             "name": "Great Old One Patron",
@@ -11190,18 +10169,6 @@
             "level": 1,
             "description": "Starting at 1st level, your patron bestows upon you the ability to project the beguiling and fearsome presence of the fey. As an action, you can cause each creature in a 10-foot cube originating from you to make a Wisdom saving throw against your warlock spell save DC. The creatures that fail their saving throws are all charmed or frightened by you (your choice) until the end of your next turn.\nOnce you use this feature, you can't use it again until you finish a short or long rest.",
             "activationType": "action"
-          },
-          {
-            "name": "Misty Escape",
-            "level": 6,
-            "description": "Starting at 6th level, you can vanish in a puff of mist in response to harm. When you take damage, you can use your reaction to turn invisible and teleport up to 60 feet to an unoccupied space you can see. You remain invisible until the start of your next turn or until you attack or cast a spell.\nOnce you use this feature, you can't use it again until you finish a short or long rest.",
-            "activationType": "reaction"
-          },
-          {
-            "name": "Beguiling Defenses",
-            "level": 10,
-            "description": "Beginning at 10th level, your patron teaches you how to turn the mind-affecting magic of your enemies against them. You are immune to being charmed, and when another creature attempts to charm you, you can use your reaction to attempt to turn the charm back on that creature. The creature must succeed on a Wisdom saving throw against your warlock spell save DC or be charmed by you for 1 minute or until the creature takes any damage.",
-            "activationType": "reaction"
           },
           {
             "name": "Dark Delirium",
@@ -11296,21 +10263,6 @@
             "description": "Starting at 1st level, when you reduce a hostile creature to 0 hit points, you gain temporary hit points equal to your Charisma modifier + your warlock level (minimum of 1)."
           },
           {
-            "name": "Dark One's Own Luck",
-            "level": 6,
-            "description": "Starting at 6th level, you can call on your patron to alter fate in your favor. When you make an ability check or a saving throw, you can use this feature to add a d10 to your roll. You can do so after seeing the initial roll but before any of the roll's effects occur.\nOnce you use this feature, you can't use it again until you finish a short or long rest."
-          },
-          {
-            "name": "Fiendish Resilience",
-            "level": 10,
-            "description": "Starting at 10th level, you can choose one damage type when you finish a short or long rest. You gain resistance to that damage type until you choose a different one with this feature. Damage from magical weapons or silver weapons ignores this resistance."
-          },
-          {
-            "name": "Hurl Through Hell",
-            "level": 14,
-            "description": "Starting at 14th level, when you hit a creature with an attack, you can use this feature to instantly transport the target through the lower planes. The creature disappears and hurtles through a nightmare landscape.\nAt the end of your next turn, the target returns to the space it previously occupied, or the nearest unoccupied space. If the target is not a fiend, it takes 10d10 psychic damage as it reels from its horrific experience.\nOnce you use this feature, you can't use it again until you finish a long rest."
-          },
-          {
             "name": "Fiend Patron",
             "level": 3,
             "description": "Make a Deal with the Lower Planes\nYour pact draws on the Lower Planes, the realms of perdition. You might forge a bargain with a demon lord such as Demogorgon or Orcus; an archdevil such as Asmodeus; or a pit fiend, balor, yugoloth, or night hag that is especially mighty. That patron's aims are evil—the corruption or destruction of all things, ultimately including you—and your path is defined by the extent to which you strive against those aims."
@@ -11362,17 +10314,6 @@
             "level": 6,
             "description": "At 6th level, you learn to magically ward yourself against attack and to turn an enemy's failed strike into good luck for yourself. When a creature makes an attack roll against you, you can use your reaction to impose disadvantage on that roll. If the attack misses you, your next attack roll against the creature has advantage if you make it before the end of your next turn.\nOnce you use this feature, you can't use it again until you finish a short or long rest.",
             "activationType": "reaction"
-          },
-          {
-            "name": "Thought Shield",
-            "level": 10,
-            "description": "Starting at 10th level, your thoughts can't be read by telepathy or other means unless you allow it. You also have resistance to psychic damage, and whenever a creature deals psychic damage to you, that creature takes the same amount of damage that you do."
-          },
-          {
-            "name": "Create Thrall",
-            "level": 14,
-            "description": "At 14th level, you gain the ability to infect a humanoid's mind with the alien magic of your patron. You can use your action to touch an incapacitated humanoid. That creature is then charmed by you until a remove curse spell is cast on it, the charmed condition is removed from it, or you use this feature again.\nYou can communicate telepathically with the charmed creature as long as the two of you are on the same plane of existence.",
-            "activationType": "action"
           },
           {
             "name": "Great Old One Patron",

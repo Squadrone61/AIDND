@@ -446,48 +446,9 @@ function computeAbilityScores(char: any, warnings: string[]): AbilityScores {
   }
 
   // Step 4: Modifiers
-  const hasAbilityScoreIncreasesTrait = (char.race?.racialTraits || []).some(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (t: any) => {
-      const name: string = t.definition?.name || "";
-      return name === "Ability Score Increases";
-    }
-  );
-
-  const skipAbilityModComponentIds = new Set<number>();
-  if (hasAbilityScoreIncreasesTrait) {
-    for (const mod of (char.modifiers?.race || []) as DDBModifier[]) {
-      if (
-        mod.type === "bonus" &&
-        mod.subType?.endsWith("-score") &&
-        mod.componentId != null
-      ) {
-        skipAbilityModComponentIds.add(mod.componentId);
-      }
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const bgAsiFeatIds = new Set<number>();
-    for (const feat of (char.feats || []) as any[]) {
-      const featName: string = feat.definition?.name || "";
-      if (featName.endsWith("Ability Score Improvements")) {
-        if (feat.componentId != null) bgAsiFeatIds.add(feat.componentId);
-        if (feat.id != null) bgAsiFeatIds.add(feat.id);
-        if (feat.definition?.id != null) bgAsiFeatIds.add(feat.definition.id);
-      }
-    }
-    for (const mod of (char.modifiers?.feat || []) as DDBModifier[]) {
-      if (
-        mod.type === "bonus" &&
-        mod.subType?.endsWith("-score") &&
-        mod.componentId != null &&
-        bgAsiFeatIds.has(mod.componentId)
-      ) {
-        skipAbilityModComponentIds.add(mod.componentId);
-      }
-    }
-  }
-
+  // DDB's modifier system is additive: base stats (char.stats) contain raw values
+  // (e.g., standard array) and all bonuses come through modifiers. We apply them all
+  // without filtering — DDB already handles deduplication on its end.
   const setValues: Partial<Record<keyof AbilityScores, number>> = {};
 
   for (const statId of [1, 2, 3, 4, 5, 6] as const) {
@@ -502,21 +463,10 @@ function computeAbilityScores(char: any, warnings: string[]): AbilityScores {
       setValues[key] = setBase;
     }
 
-    const bonusMods = getModifiers(char, {
+    const bonus = sumModifiers(char, {
       type: "bonus",
       subType: `${key}-score`,
     });
-    let bonus = 0;
-    for (const mod of bonusMods) {
-      if (
-        skipAbilityModComponentIds.size > 0 &&
-        mod.componentId != null &&
-        skipAbilityModComponentIds.has(mod.componentId)
-      ) {
-        continue;
-      }
-      bonus += mod.value || 0;
-    }
     if (bonus !== 0) {
       abilities[key] += bonus;
     }
@@ -601,6 +551,7 @@ function computeArmorClass(char: any, abilities: AbilityScores): number {
   }> = [];
   let shieldAC = 0;
 
+  // First pass: find explicitly equipped armor
   for (const item of char.inventory || []) {
     if (!item.equipped || item.definition?.filterType !== "Armor") continue;
     const typeId = item.definition.armorTypeId;
@@ -610,6 +561,28 @@ function computeArmorClass(char: any, abilities: AbilityScores): number {
       shieldAC = Math.max(shieldAC, ac);
     } else if (typeId) {
       equippedArmor.push({ armorClass: ac, armorTypeId: typeId });
+    }
+  }
+
+  // DDB fresh characters default to equipped=false on all items.
+  // If nothing is explicitly equipped, infer from inventory — a character
+  // with chain mail in their pack is obviously wearing it.
+  if (equippedArmor.length === 0 && shieldAC === 0) {
+    for (const item of char.inventory || []) {
+      if (item.definition?.filterType !== "Armor") continue;
+      const typeId = item.definition.armorTypeId;
+      const ac = item.definition.armorClass || 0;
+
+      if (typeId === ARMOR_TYPE_SHIELD) {
+        shieldAC = Math.max(shieldAC, ac);
+      } else if (typeId) {
+        equippedArmor.push({ armorClass: ac, armorTypeId: typeId });
+      }
+    }
+    // Use the highest-AC body armor
+    if (equippedArmor.length > 1) {
+      equippedArmor.sort((a, b) => b.armorClass - a.armorClass);
+      equippedArmor.length = 1;
     }
   }
 
@@ -653,10 +626,19 @@ function computeArmorClass(char: any, abilities: AbilityScores): number {
     baseAC = unarmoredAC;
   }
 
-  const bonusAC = sumModifiers(char, {
+  let bonusAC = sumModifiers(char, {
     type: "bonus",
     subType: "armor-class",
   });
+
+  // Defense fighting style uses "armored-armor-class" subType in DDB —
+  // only applies when wearing armor.
+  if (equippedArmor.length > 0) {
+    bonusAC += sumModifiers(char, {
+      type: "bonus",
+      subType: "armored-armor-class",
+    });
+  }
 
   return baseAC + shieldAC + bonusAC;
 }
@@ -1515,6 +1497,29 @@ function extractInventory(
       isAttuned: item.isAttuned || false,
       isMagicItem: def.magic || false,
     });
+  }
+
+  // DDB fresh characters default all items to equipped=false.
+  // Auto-equip armor, shields, and weapons if nothing is explicitly equipped.
+  const hasAnyEquipped = items.some((i) => i.equipped);
+  if (!hasAnyEquipped) {
+    // Equip the highest-AC body armor
+    let bestArmorIdx = -1;
+    let bestArmorAC = 0;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type === "Armor" && items[i].name !== "Shield" && (items[i].armorClass ?? 0) > bestArmorAC) {
+        bestArmorAC = items[i].armorClass ?? 0;
+        bestArmorIdx = i;
+      }
+    }
+    if (bestArmorIdx >= 0) items[bestArmorIdx].equipped = true;
+
+    // Equip shields and weapons
+    for (const item of items) {
+      if (item.type === "Weapon" || item.name === "Shield") {
+        item.equipped = true;
+      }
+    }
   }
 
   return items;

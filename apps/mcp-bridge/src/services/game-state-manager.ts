@@ -228,14 +228,7 @@ export class GameStateManager {
   // ─── Chat ───
 
   handleChat(playerName: string, content: string): void {
-    // Broadcast the chat message
-    this.broadcast({
-      type: "server:chat",
-      content,
-      playerName,
-      timestamp: Date.now(),
-      id: crypto.randomUUID(),
-    });
+    // Chat is already broadcast by the worker — no need to re-broadcast here.
 
     // Build dm_request for AI
     const character = this.findCharacterByPlayerName(playerName);

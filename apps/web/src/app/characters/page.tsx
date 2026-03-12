@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useCharacterLibrary } from "@/hooks/useCharacterLibrary";
-import { formatClassString, getTotalLevel } from "@aidnd/shared/utils";
+import { formatClassString } from "@aidnd/shared/utils";
 
 export default function CharactersPage() {
   const { characters, deleteCharacter } = useCharacterLibrary();
@@ -20,10 +20,16 @@ export default function CharactersPage() {
         </div>
         <div className="flex items-center gap-3">
           <Link
-            href="/characters/create"
+            href="/characters/builder"
             className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
           >
-            Import New Character
+            Create Character
+          </Link>
+          <Link
+            href="/characters/create"
+            className="bg-gray-700 hover:bg-gray-600 text-gray-300 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+          >
+            Import
           </Link>
           <Link
             href="/"
@@ -38,7 +44,7 @@ export default function CharactersPage() {
         <div className="text-center py-16">
           <div className="text-gray-600 text-lg mb-2">No characters yet</div>
           <p className="text-gray-500 text-sm mb-4">
-            Import a character from D&D Beyond or AideDD to get started.
+            Import a character from D&D Beyond to get started.
           </p>
           <Link
             href="/characters/create"
@@ -51,7 +57,6 @@ export default function CharactersPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {characters.map((saved) => {
             const s = saved.character.static;
-            const level = getTotalLevel(s.classes);
             const isConfirming = confirmDelete === saved.id;
 
             return (
@@ -60,14 +65,9 @@ export default function CharactersPage() {
                 className="bg-gray-800 border border-gray-700 rounded-lg p-4 hover:border-gray-600 transition-colors group relative"
               >
                 <Link href={`/characters/${saved.id}`} className="block">
-                  <div className="flex items-start justify-between mb-2">
-                    <h3 className="text-sm font-bold text-purple-400 truncate mr-2">
-                      {s.name}
-                    </h3>
-                    <span className="text-xs text-gray-500 shrink-0">
-                      Lvl {level}
-                    </span>
-                  </div>
+                  <h3 className="text-sm font-bold text-purple-400 truncate mb-2">
+                    {s.name}
+                  </h3>
                   <div className="text-xs text-gray-400 mb-3">
                     {s.race} &middot; {formatClassString(s.classes)}
                   </div>

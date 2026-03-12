@@ -25,6 +25,7 @@ const config: KnipConfig = {
       project: ["src/**/*.ts"],
     },
   },
+  ignore: ["scripts/**"],
   ignoreBinaries: ["tsx"],
 };
 

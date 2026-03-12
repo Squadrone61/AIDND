@@ -49,8 +49,10 @@ test.describe("Multiplayer", () => {
     await player1.getByPlaceholder("What do you do?").fill("I cast fireball!");
     await player1.getByRole("button", { name: "Send" }).click();
 
-    // Player 1 sees own message
-    await expect(player1.getByText("I cast fireball!")).toBeVisible();
+    // Player 1 sees own message (echoed back from server)
+    await expect(player1.getByText("I cast fireball!")).toBeVisible({
+      timeout: 10_000,
+    });
 
     // Player 2 sees the message too
     await expect(player2.getByText("I cast fireball!")).toBeVisible({
@@ -61,7 +63,9 @@ test.describe("Multiplayer", () => {
     await player2.getByPlaceholder("What do you do?").fill("I dodge!");
     await player2.getByRole("button", { name: "Send" }).click();
 
-    await expect(player2.getByText("I dodge!")).toBeVisible();
+    await expect(player2.getByText("I dodge!")).toBeVisible({
+      timeout: 10_000,
+    });
     await expect(player1.getByText("I dodge!")).toBeVisible({
       timeout: 5_000,
     });

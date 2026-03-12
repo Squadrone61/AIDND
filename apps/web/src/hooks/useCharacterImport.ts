@@ -19,7 +19,6 @@ interface UseCharacterImportResult {
   fallbackHint: string;
   importFromUrl: (url: string) => Promise<void>;
   importFromJson: (jsonString: string) => Promise<void>;
-  importFromAideDD: (xmlString: string) => Promise<void>;
   clearCharacter: () => void;
   /** Reset import state to idle (shows the form) without clearing character from storage */
   resetForReimport: () => void;
@@ -139,39 +138,6 @@ export function useCharacterImport(
     }
   }, [saveCharacter]);
 
-  const importFromAideDD = useCallback(async (xmlString: string) => {
-    setImportState("importing");
-    setError("");
-    setFallbackHint("");
-    setWarnings([]);
-
-    try {
-      const res = await fetch(`${getWorkerUrl()}/api/character/import`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode: "aidedd", xml: xmlString }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error || "Parse failed");
-        setImportState("error");
-        return;
-      }
-
-      const importWarnings = data.warnings ? [...data.warnings] : [];
-      if (existingRef.current) {
-        importWarnings.unshift("Re-imported: dynamic data (HP, conditions, etc.) preserved from previous version.");
-      }
-      setWarnings(importWarnings);
-      saveCharacter(data.character);
-    } catch {
-      setError("Failed to reach the server. Is it running?");
-      setImportState("error");
-    }
-  }, [saveCharacter]);
-
   const clearCharacter = useCallback(() => {
     setCharacter(null);
     setImportState("idle");
@@ -195,7 +161,6 @@ export function useCharacterImport(
     fallbackHint,
     importFromUrl,
     importFromJson,
-    importFromAideDD,
     clearCharacter,
     resetForReimport,
     setFreshImport,

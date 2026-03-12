@@ -3,6 +3,7 @@ import { clientMessageSchema } from "@aidnd/shared/schemas";
 import type {
   AuthUser,
   CharacterData,
+  ClientChatMessage,
   ClientMessage,
   DMBridgeConfig,
   PlayerInfo,
@@ -271,6 +272,11 @@ export class GameRoom extends DurableObject<Env> {
         break;
       }
       case "client:chat":
+        // Broadcast chat to all players immediately (no bridge needed)
+        await this.handleChat(ws, msg);
+        // Also forward to bridge for AI processing (if connected)
+        this.forwardToBridgeIfAvailable(ws, msg);
+        break;
       case "client:start_story":
       case "client:roll_dice":
       case "client:combat_action":
@@ -388,6 +394,45 @@ export class GameRoom extends DurableObject<Env> {
         message: "Failed to send to DM bridge — it may have disconnected",
         code: "DM_SEND_FAILED",
       });
+    }
+  }
+
+  /**
+   * Broadcast a chat message to all players and persist to chat log.
+   */
+  private async handleChat(ws: WebSocket, msg: ClientChatMessage): Promise<void> {
+    const session = this.sessions.get(ws);
+    if (!session?.playerName) return;
+
+    const chatMsg: ServerMessage = {
+      type: "server:chat",
+      content: msg.content,
+      playerName: session.playerName,
+      timestamp: Date.now(),
+      id: crypto.randomUUID(),
+    };
+    this.broadcast(chatMsg);
+    await this.appendToChatLog(chatMsg);
+  }
+
+  /**
+   * Forward to bridge if connected, silently skip if not.
+   */
+  private forwardToBridgeIfAvailable(ws: WebSocket, msg: ClientMessage): void {
+    const session = this.sessions.get(ws);
+    if (!session?.playerName) return;
+    const dmWs = this.findDMBridgeWebSocket();
+    if (!dmWs) return;
+    const requestId = crypto.randomUUID();
+    try {
+      dmWs.send(JSON.stringify({
+        type: "server:player_action",
+        playerName: session.playerName,
+        action: msg,
+        requestId,
+      }));
+    } catch {
+      // Bridge disconnected — chat still works
     }
   }
 
