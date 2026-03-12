@@ -1798,7 +1798,7 @@
       {
         "name": "Channel Divinity",
         "level": 2,
-        "description": "At 2nd level, you gain the ability to channel divine energy directly from your deity, using that energy to fuel magical effects. You start with two such effects: Turn Undead and an effect determined by your domain. Some domains grant you additional effects as you advance in levels, as noted in the domain description.\nWhen you use your Channel Divinity, you choose which effect to create. You must then finish a short or long rest to use your Channel Divinity again.\nSome Channel Divinity effects require saving throws. When you use such an effect from this class, the DC equals your cleric spell save DC.\nBeginning at 6th level, you can use your Channel Divinity twice between rests, and beginning at 18th level, you can use it three times between rests. When you finish a short or long rest, you regain your expended uses."
+        "description": "You can channel divine energy to fuel magical effects. When you use your Channel Divinity, you choose which effect to create from those available to you.\nYou can use this class's Channel Divinity a number of times as shown in the Cleric table (1 at 2nd level, 2 at 6th level, 3 at 15th level). You regain all expended uses when you finish a Long Rest. You can also regain one expended use when you finish a Short Rest.\nSome Channel Divinity effects require saving throws. The DC equals your cleric spell save DC."
       },
       {
         "name": "Channel Divinity: Turn Undead",
@@ -1885,7 +1885,7 @@
       {
         "name": "Channel Divinity",
         "level": 18,
-        "description": "Beginning at 18th level, you can use your Channel Divinity three times between rests."
+        "description": "Beginning at 18th level, you can use your Channel Divinity four times between Long Rests. You regain one expended use when you finish a Short Rest."
       },
       {
         "name": "Ability Score Improvement",
@@ -3042,12 +3042,12 @@
       {
         "name": "Channel Divinity",
         "levelAvailable": 2,
-        "resetType": "short",
-        "uses": 1,
+        "resetType": "long",
+        "uses": 2,
         "usesTable": {
-          "2": 1,
-          "6": 2,
-          "18": 3
+          "2": 2,
+          "6": 3,
+          "18": 4
         }
       }
     ],
@@ -7005,12 +7005,11 @@
       {
         "name": "Channel Divinity",
         "levelAvailable": 3,
-        "resetType": "short",
+        "resetType": "long",
         "uses": 2,
         "usesTable": {
           "3": 2,
-          "11": 3,
-          "15": 4
+          "11": 3
         }
       }
     ],

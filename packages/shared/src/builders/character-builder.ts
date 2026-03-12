@@ -624,9 +624,15 @@ function resolveResourceUses(
   level: number,
   abilities: AbilityScores
 ): number {
-  // Check usesTable first (level-specific overrides)
-  if (template.usesTable && template.usesTable[level] !== undefined) {
-    return template.usesTable[level];
+  // Check usesTable: find the highest level entry at or below current level
+  if (template.usesTable) {
+    const applicableLevels = Object.keys(template.usesTable)
+      .map(Number)
+      .filter((l) => l <= level)
+      .sort((a, b) => b - a);
+    if (applicableLevels.length > 0) {
+      return template.usesTable[applicableLevels[0]];
+    }
   }
 
   // Resolve uses value
