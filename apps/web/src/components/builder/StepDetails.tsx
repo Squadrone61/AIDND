@@ -3,7 +3,7 @@ import { ALIGNMENTS } from "./utils";
 
 export function StepDetails({ state, dispatch }: StepProps) {
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-6 max-w-3xl">
       <div>
         <h2 className="text-lg font-bold text-gray-200 mb-1">
           Character Details

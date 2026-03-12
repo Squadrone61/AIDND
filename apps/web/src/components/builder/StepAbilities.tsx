@@ -191,8 +191,9 @@ export function StepAbilities({ state, dispatch }: StepProps) {
               />
             )}
             <div className="text-[10px] text-gray-600 mt-1">
-              Mod: {getAbilityMod(state.baseAbilities[ability]) >= 0 ? "+" : ""}
-              {getAbilityMod(state.baseAbilities[ability])}
+              {state.baseAbilities[ability] > 0
+                ? `Mod: ${getAbilityMod(state.baseAbilities[ability]) >= 0 ? "+" : ""}${getAbilityMod(state.baseAbilities[ability])}`
+                : "\u00A0"}
             </div>
           </div>
         ))}
@@ -271,15 +272,14 @@ export function StepAbilities({ state, dispatch }: StepProps) {
                 <div className="text-[10px] text-gray-500 uppercase">
                   {ABILITY_SHORT[ability]}
                 </div>
-                <div className="text-lg font-bold text-gray-100">{final_}</div>
-                {asi > 0 && (
+                <div className="text-lg font-bold text-gray-100">{final_ > 0 ? final_ : "—"}</div>
+                {asi > 0 && base > 0 && (
                   <div className="text-[10px] text-purple-400">
                     {base}+{asi}
                   </div>
                 )}
                 <div className="text-xs text-gray-400">
-                  {mod >= 0 ? "+" : ""}
-                  {mod}
+                  {final_ > 0 ? `${mod >= 0 ? "+" : ""}${mod}` : "\u00A0"}
                 </div>
               </div>
             );

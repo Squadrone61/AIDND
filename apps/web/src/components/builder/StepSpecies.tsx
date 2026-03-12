@@ -56,23 +56,25 @@ export function StepSpecies({ state, dispatch }: StepProps) {
             placeholder="Search species..."
             className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent mb-3"
           />
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {filtered.map((sp) => (
-              <button
-                key={sp.name}
-                onClick={() => dispatch({ type: "SET_SPECIES", species: sp.name })}
-                className={`text-left px-3 py-2 rounded-lg border text-sm transition-colors ${
-                  state.species === sp.name
-                    ? "border-purple-500 bg-purple-600/10 text-purple-300"
-                    : "border-gray-700 bg-gray-800 text-gray-300 hover:border-gray-600 hover:bg-gray-750"
-                }`}
-              >
-                <div className="font-medium truncate">{sp.name}</div>
-                <div className="text-[10px] text-gray-500 mt-0.5">
-                  {sp.size.join("/")} &middot; {sp.speed} ft.
-                </div>
-              </button>
-            ))}
+          <div className="max-h-[420px] overflow-y-auto">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {filtered.map((sp) => (
+                <button
+                  key={sp.name}
+                  onClick={() => dispatch({ type: "SET_SPECIES", species: sp.name })}
+                  className={`text-left px-3 py-2 rounded-lg border text-sm transition-colors ${
+                    state.species === sp.name
+                      ? "border-purple-500 bg-purple-600/10 text-purple-300"
+                      : "border-gray-700 bg-gray-800 text-gray-300 hover:border-gray-600 hover:bg-gray-750"
+                  }`}
+                >
+                  <div className="font-medium truncate">{sp.name}</div>
+                  <div className="text-[10px] text-gray-500 mt-0.5">
+                    {sp.size.join("/")} &middot; {sp.speed} ft.
+                  </div>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 

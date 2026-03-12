@@ -85,6 +85,8 @@ export function StepSkills({ state, dispatch }: StepProps) {
         {ABILITY_ORDER.map((ability) => {
           const skills = skillsByAbility[ability];
           if (!skills || skills.length === 0) return null;
+          // Hide ability groups with no selectable skills (e.g. Constitution)
+          if (ability === "constitution") return null;
 
           return (
             <div key={ability}>

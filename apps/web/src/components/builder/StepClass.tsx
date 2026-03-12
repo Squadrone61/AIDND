@@ -294,7 +294,7 @@ function WeaponMasteryPicker({
         placeholder="Search weapons..."
         className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-[10px] text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-purple-500"
       />
-      <div className="max-h-40 overflow-y-auto space-y-0.5">
+      <div className="max-h-64 overflow-y-auto space-y-0.5">
         {eligibleWeapons.map((w) => {
           const isSelected = selected.includes(w.name);
           const atMax = selected.length >= config.count && !isSelected;
