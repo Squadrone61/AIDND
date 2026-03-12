@@ -14,10 +14,10 @@ interface ChatMessageProps {
 }
 
 const markdownComponents: Components = {
-  h1: ({ children }) => <h1 className="text-xl font-bold text-purple-300 mt-3 mb-1">{children}</h1>,
-  h2: ({ children }) => <h2 className="text-lg font-bold text-purple-300 mt-2.5 mb-1">{children}</h2>,
-  h3: ({ children }) => <h3 className="text-base font-bold text-purple-300 mt-2 mb-0.5">{children}</h3>,
-  h4: ({ children }) => <h4 className="text-sm font-bold text-purple-300 mt-1.5 mb-0.5">{children}</h4>,
+  h1: ({ children }) => <h1 className="text-xl font-bold text-amber-300 mt-3 mb-1">{children}</h1>,
+  h2: ({ children }) => <h2 className="text-lg font-bold text-amber-300 mt-2.5 mb-1">{children}</h2>,
+  h3: ({ children }) => <h3 className="text-base font-bold text-amber-300 mt-2 mb-0.5">{children}</h3>,
+  h4: ({ children }) => <h4 className="text-sm font-bold text-amber-300 mt-1.5 mb-0.5">{children}</h4>,
   p: ({ children }) => <p className="text-gray-200 mb-2 last:mb-0">{children}</p>,
   strong: ({ children }) => <strong className="font-bold text-gray-100">{children}</strong>,
   em: ({ children }) => <em className="italic text-gray-300">{children}</em>,
@@ -25,7 +25,7 @@ const markdownComponents: Components = {
   ol: ({ children }) => <ol className="list-decimal list-inside ml-2 mb-2 space-y-0.5 text-gray-200">{children}</ol>,
   li: ({ children }) => <li className="text-gray-200">{children}</li>,
   blockquote: ({ children }) => (
-    <blockquote className="border-l-2 border-purple-400/50 pl-3 my-2 italic text-gray-300">
+    <blockquote className="border-l-2 border-amber-400/50 pl-3 my-2 italic text-gray-300">
       {children}
     </blockquote>
   ),
@@ -33,27 +33,27 @@ const markdownComponents: Components = {
     const isBlock = className?.includes("language-");
     if (isBlock) {
       return (
-        <code className="block bg-gray-800 rounded p-2 my-2 text-sm font-mono text-gray-200 overflow-x-auto">
+        <code className="block bg-gray-800/60 rounded p-2 my-2 text-sm font-mono text-gray-200 overflow-x-auto">
           {children}
         </code>
       );
     }
-    return <code className="bg-gray-800 rounded px-1 py-0.5 text-sm font-mono text-purple-300">{children}</code>;
+    return <code className="bg-gray-800/60 rounded px-1 py-0.5 text-sm font-mono text-amber-300">{children}</code>;
   },
   pre: ({ children }) => <pre className="my-1">{children}</pre>,
   a: ({ href, children }) => (
-    <a href={href} className="text-purple-400 underline hover:text-purple-300" target="_blank" rel="noopener noreferrer">
+    <a href={href} className="text-amber-400 underline hover:text-amber-300" target="_blank" rel="noopener noreferrer">
       {children}
     </a>
   ),
-  hr: () => <hr className="border-gray-700 my-3" />,
+  hr: () => <hr className="border-gray-700/50 my-3" />,
   table: ({ children }) => (
     <div className="overflow-x-auto my-2">
       <table className="min-w-full text-sm text-gray-200">{children}</table>
     </div>
   ),
-  th: ({ children }) => <th className="border border-gray-700 px-2 py-1 bg-gray-800 font-semibold text-left">{children}</th>,
-  td: ({ children }) => <td className="border border-gray-700 px-2 py-1">{children}</td>,
+  th: ({ children }) => <th className="border border-gray-700/40 px-2 py-1 bg-gray-800/60 font-semibold text-left">{children}</th>,
+  td: ({ children }) => <td className="border border-gray-700/40 px-2 py-1">{children}</td>,
 };
 
 function TTSButton({ text }: { text: string }) {
@@ -62,7 +62,7 @@ function TTSButton({ text }: { text: string }) {
   return (
     <button
       onClick={() => (isSpeaking ? stop() : speak(text))}
-      className="p-1 rounded hover:bg-purple-800/40 text-purple-400 hover:text-purple-300 transition-colors shrink-0"
+      className="p-1 rounded hover:bg-amber-800/40 text-amber-400 hover:text-amber-300 transition-colors shrink-0"
       title={isSpeaking ? "Stop narration" : "Listen to narration"}
       aria-label={isSpeaking ? "Stop narration" : "Listen to narration"}
     >
@@ -314,9 +314,9 @@ export function ChatMessage({ message, onRollDice, myCharacterName }: ChatMessag
 
     case "server:ai":
       return (
-        <div className="bg-purple-900/20 border-l-4 border-purple-500 p-3 rounded-r-lg">
+        <div className="bg-amber-900/20 border-l-4 border-amber-500 p-3 rounded-r-lg">
           <div className="flex items-center justify-between mb-1">
-            <div className="text-xs text-purple-400 font-semibold">
+            <div className="text-xs text-amber-400 font-semibold" style={{ fontFamily: "var(--font-cinzel)" }}>
               Dungeon Master
             </div>
             <TTSButton text={message.content} />

@@ -30,7 +30,7 @@ export function ItemDetailPopup({ item, onClose, position }: ItemDetailPopupProp
             </span>
           )}
           {item.isMagicItem && (
-            <span className="text-xs bg-purple-900/40 text-purple-300 px-2 py-0.5 rounded-full border border-purple-700/50">
+            <span className="text-xs bg-amber-900/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-700/30">
               Magic
             </span>
           )}
@@ -88,7 +88,7 @@ export function ItemDetailPopup({ item, onClose, position }: ItemDetailPopupProp
         {/* Properties */}
         {item.properties && item.properties.length > 0 && (
           <div>
-            <div className="text-sm text-gray-400 font-medium mb-1">
+            <div className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1" style={{ fontFamily: "var(--font-cinzel)" }}>
               Properties
             </div>
             <div className="flex flex-wrap gap-1">
@@ -107,7 +107,7 @@ export function ItemDetailPopup({ item, onClose, position }: ItemDetailPopupProp
         {/* Description */}
         {item.description && (
           <div>
-            <div className="text-sm text-gray-400 font-medium mb-1">
+            <div className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1" style={{ fontFamily: "var(--font-cinzel)" }}>
               Description
             </div>
             <Prose className="text-gray-300">

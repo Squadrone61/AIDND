@@ -20,10 +20,10 @@ export function CharacterPopover({
   const hpPercent = s.maxHP > 0 ? Math.round((d.currentHP / s.maxHP) * 100) : 0;
 
   return (
-    <div className="bg-gray-800 border border-gray-600 rounded-lg p-3 shadow-xl w-64 z-50">
+    <div className="bg-gray-800/60 border border-gray-700/40 rounded-lg p-3 shadow-xl w-64 z-50 backdrop-blur-sm">
       {/* Header */}
       <div className="mb-2">
-        <div className="text-sm font-bold text-purple-400">{s.name}</div>
+        <div className="text-sm font-bold text-amber-300" style={{ fontFamily: "var(--font-cinzel)" }}>{s.name}</div>
         <div className="text-[10px] text-gray-400">
           {s.race} &middot; {formatClassString(s.classes)} &middot; Lvl{" "}
           {totalLevel}

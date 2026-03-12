@@ -61,10 +61,15 @@ export function SettingsModal({ onClose, isHost, onSetPassword, onDestroyRoom }:
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="bg-gray-800 rounded-xl w-full max-w-sm flex flex-col mx-4 border border-gray-700 shadow-2xl">
+      <div className="bg-gray-800/60 rounded-xl w-full max-w-sm flex flex-col mx-4 border border-gray-700/40 shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-700">
-          <h2 className="text-base font-semibold text-gray-200">Settings</h2>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-700/40">
+          <h2
+            className="text-base font-semibold text-amber-200/90"
+            style={{ fontFamily: "var(--font-cinzel)" }}
+          >
+            Settings
+          </h2>
           <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-300 transition-colors text-lg leading-none px-1"
@@ -92,7 +97,7 @@ export function SettingsModal({ onClose, isHost, onSetPassword, onDestroyRoom }:
               step="0.05"
               value={volume}
               onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
-              className="w-full h-1.5 accent-purple-500 cursor-pointer"
+              className="w-full h-1.5 accent-amber-500 cursor-pointer"
               aria-label="Narration volume"
             />
           </div>
@@ -101,9 +106,9 @@ export function SettingsModal({ onClose, isHost, onSetPassword, onDestroyRoom }:
           {isHost && (onSetPassword || onDestroyRoom) && (
             <>
               <div className="flex items-center gap-3">
-                <div className="flex-1 h-px bg-gray-700" />
-                <span className="text-xs text-gray-500 uppercase tracking-wider">Host</span>
-                <div className="flex-1 h-px bg-gray-700" />
+                <div className="flex-1 h-px bg-gradient-to-r from-transparent via-amber-500/20 to-transparent" />
+                <span className="text-[10px] text-gray-500 uppercase tracking-wider" style={{ fontFamily: "var(--font-cinzel)" }}>Host</span>
+                <div className="flex-1 h-px bg-gradient-to-r from-transparent via-amber-500/20 to-transparent" />
               </div>
 
               {/* Room Password */}
@@ -133,15 +138,15 @@ export function SettingsModal({ onClose, isHost, onSetPassword, onDestroyRoom }:
                         onChange={(e) => setPasswordInput(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && handleSetPassword()}
                         placeholder="Set password..."
-                        className="flex-1 bg-gray-900 border border-gray-700 rounded px-2 py-1.5
+                        className="flex-1 bg-gray-900/60 border border-gray-700/40 rounded px-2 py-1.5
                                    text-sm text-gray-100 placeholder-gray-500 focus:outline-none
-                                   focus:ring-1 focus:ring-purple-500 min-w-0"
+                                   focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/30 min-w-0"
                       />
                       <button
                         onClick={handleSetPassword}
                         disabled={!passwordInput.trim()}
-                        className="text-xs bg-purple-600/20 text-purple-400 hover:bg-purple-600/40
-                                   disabled:opacity-30 disabled:hover:bg-purple-600/20
+                        className="text-xs bg-amber-600/80 text-amber-50 hover:bg-amber-500/80
+                                   disabled:opacity-30 disabled:hover:bg-amber-600/80
                                    px-2.5 py-1.5 rounded transition-colors shrink-0"
                       >
                         Set

@@ -43,7 +43,7 @@ export default function CharacterDetailPage() {
           <div className="text-gray-400 text-lg">Character not found</div>
           <Link
             href="/characters"
-            className="text-sm text-purple-400 hover:text-purple-300 transition-colors"
+            className="text-sm text-amber-400 hover:text-amber-300 transition-colors"
           >
             Back to Characters
           </Link>
@@ -62,27 +62,32 @@ export default function CharacterDetailPage() {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Slim toolbar */}
-      <div className="bg-gray-800 border-b border-gray-700 px-6 py-3 shrink-0">
+      <div className="bg-gray-800/60 border-b border-gray-700/40 px-6 py-3 shrink-0">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <Link
             href="/characters"
-            className="text-sm px-4 py-2 text-gray-500 hover:text-gray-300 transition-colors"
+            className="text-sm px-4 py-2 text-amber-400/70 hover:text-amber-300 transition-colors"
           >
             &larr; All Characters
           </Link>
-          <span className="text-sm font-medium text-gray-300 truncate">{char.static.name}</span>
+          <span
+            className="text-sm font-medium text-amber-200/90 truncate"
+            style={{ fontFamily: "var(--font-cinzel)" }}
+          >
+            {char.static.name}
+          </span>
           <div className="flex items-center gap-2">
             {saved.builderChoices && (
               <Link
                 href={`/characters/builder?edit=${saved.id}`}
-                className="text-sm px-4 py-2 rounded bg-purple-600/20 text-purple-400 hover:bg-purple-600/30 transition-colors"
+                className="text-sm px-4 py-2 rounded bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 border border-amber-500/50 transition-colors"
               >
                 Edit
               </Link>
             )}
             <button
               onClick={() => exportNative(char)}
-              className="text-sm px-4 py-2 rounded bg-gray-700 text-gray-300 hover:bg-emerald-600 transition-colors"
+              className="text-sm px-4 py-2 rounded bg-gray-800/60 text-gray-300 hover:bg-emerald-600 border border-gray-700/50 transition-colors"
             >
               Export
             </button>
@@ -104,7 +109,7 @@ export default function CharacterDetailPage() {
             ) : (
               <button
                 onClick={() => setConfirmDelete(true)}
-                className="text-sm px-4 py-2 rounded bg-gray-700 text-gray-400 hover:bg-red-900/50 hover:text-red-400 transition-colors"
+                className="text-sm px-4 py-2 rounded bg-gray-800/60 text-gray-400 hover:bg-red-900/50 hover:text-red-400 border border-gray-700/50 transition-colors"
               >
                 Delete
               </button>

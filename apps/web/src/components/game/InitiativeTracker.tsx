@@ -17,9 +17,9 @@ export function InitiativeTracker({ combat, onCombatantClick }: InitiativeTracke
   if (combat.phase !== "active") return null;
 
   return (
-    <div className="bg-gray-850 border-b border-gray-700 px-4 py-2">
+    <div className="bg-gray-900/70 border-b border-gray-700/50 px-4 py-2">
       <div className="flex items-center gap-2 mb-1.5">
-        <span className="text-xs text-gray-500 uppercase tracking-wider">
+        <span className="text-xs text-gray-500 uppercase tracking-wider" style={{ fontFamily: "var(--font-cinzel)" }}>
           Combat
         </span>
         <span className="text-xs text-gray-600">Round {combat.round}</span>

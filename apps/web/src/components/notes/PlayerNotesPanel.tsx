@@ -20,7 +20,7 @@ export function PlayerNotesPanel({
 
   return (
     <div
-      className="fixed z-40 flex flex-col bg-gray-800/95 backdrop-blur-sm border border-gray-700 rounded-xl shadow-2xl"
+      className="fixed z-40 flex flex-col bg-gray-900/80 backdrop-blur-sm border border-gray-700/50 rounded-xl shadow-2xl"
       style={{
         left: geometry.x,
         top: geometry.y,
@@ -31,10 +31,10 @@ export function PlayerNotesPanel({
       {/* Header — drag handle */}
       <div
         {...dragHandleProps}
-        className="flex items-center justify-between px-4 py-2.5 border-b border-gray-700 select-none"
+        className="flex items-center justify-between px-4 py-2.5 border-b border-gray-700/50 select-none"
       >
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-gray-200">Notes</span>
+          <span className="text-sm font-medium text-gray-200 font-cinzel tracking-wide">Notes</span>
           <span
             className={`text-[10px] px-1.5 py-0.5 rounded-full ${
               saveState === "saved"

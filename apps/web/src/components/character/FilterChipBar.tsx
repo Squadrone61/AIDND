@@ -25,13 +25,13 @@ export function FilterChipBar({
             onClick={() => onSelect(chip.id)}
             className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-medium transition-colors ${
               isActive
-                ? "bg-purple-600 text-white"
-                : "bg-gray-700/50 text-gray-400 hover:text-gray-300 hover:bg-gray-700"
+                ? "bg-amber-500/80 text-white"
+                : "bg-gray-700/40 text-gray-400 hover:text-gray-300 hover:bg-gray-700/60"
             }`}
           >
             {chip.label}
             {chip.count != null && (
-              <span className={isActive ? "text-purple-200 ml-0.5" : "text-gray-500 ml-0.5"}>
+              <span className={isActive ? "text-amber-100 ml-0.5" : "text-gray-500 ml-0.5"}>
                 {chip.count}
               </span>
             )}

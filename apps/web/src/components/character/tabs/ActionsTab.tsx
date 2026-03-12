@@ -42,8 +42,8 @@ interface FeatureGroup {
 
 const SOURCE_BADGE_STYLES: Record<string, string> = {
   race: "text-emerald-400/70",
-  class: "text-purple-400/70",
-  feat: "text-amber-400/70",
+  class: "text-amber-400/70",
+  feat: "text-amber-300/70",
   background: "text-cyan-400/70",
 };
 
@@ -146,17 +146,17 @@ export function ActionsTab({
       {/* Weapon attacks */}
       {showWeapons && weapons.length > 0 && (
         <div>
-          <div className="text-[10px] text-gray-500 font-medium mb-0.5 px-1.5">
+          <div className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-0.5 px-1.5" style={{ fontFamily: "var(--font-cinzel)" }}>
             Weapons
           </div>
           <div className="space-y-0.5">
             {weapons.map((action, i) => (
               <div
                 key={`${action.name}-${i}`}
-                className="flex items-center gap-1.5 text-xs px-1.5 py-1 rounded cursor-pointer hover:bg-gray-700/30 transition-colors group"
+                className="flex items-center gap-1.5 text-xs px-1.5 py-1 rounded cursor-pointer hover:bg-gray-800/60 transition-colors group"
                 onClick={(e) => onItemClick(action.item, e)}
               >
-                <span className="text-gray-200 group-hover:text-purple-300 transition-colors truncate flex-1">
+                <span className="text-gray-200 group-hover:text-amber-300 transition-colors truncate flex-1">
                   {action.name}
                 </span>
                 <span className="text-gray-500 shrink-0 text-[10px]">
@@ -171,17 +171,17 @@ export function ActionsTab({
       {/* Feature-based actions grouped by type */}
       {visibleGroups.map((group) => (
         <div key={group.id}>
-          <div className="text-[10px] text-gray-500 font-medium mb-0.5 px-1.5">
+          <div className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-0.5 px-1.5" style={{ fontFamily: "var(--font-cinzel)" }}>
             {group.label}
           </div>
           <div className="space-y-0.5">
             {group.features.map((feature) => (
               <div
                 key={feature.name}
-                className="flex items-center gap-1.5 text-xs px-1.5 py-1 rounded cursor-pointer hover:bg-gray-700/30 transition-colors group"
+                className="flex items-center gap-1.5 text-xs px-1.5 py-1 rounded cursor-pointer hover:bg-gray-800/60 transition-colors group"
                 onClick={(e) => onFeatureClick(feature, e)}
               >
-                <span className="text-gray-200 group-hover:text-purple-300 transition-colors truncate flex-1">
+                <span className="text-gray-200 group-hover:text-amber-300 transition-colors truncate flex-1">
                   {feature.name}
                 </span>
                 <span
@@ -202,8 +202,8 @@ export function ActionsTab({
       )}
 
       {/* Standard combat actions (reference) */}
-      <div className="border-t border-gray-700/50 pt-2 mt-2">
-        <div className="text-[10px] text-gray-500 font-medium mb-0.5 px-1.5">
+      <div className="border-t border-gray-700/40 pt-2 mt-2">
+        <div className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-0.5 px-1.5" style={{ fontFamily: "var(--font-cinzel)" }}>
           Standard Actions
         </div>
         <div className="space-y-0.5">

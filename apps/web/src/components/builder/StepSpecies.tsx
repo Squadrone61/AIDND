@@ -26,23 +26,23 @@ export function StepSpecies({ state, dispatch }: StepProps) {
     : [];
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h2 className="text-lg font-bold text-gray-200 mb-1">Choose Your Species</h2>
-        <p className="text-xs text-gray-500">
-          Your species determines traits, speed, and special abilities.
-        </p>
-      </div>
+    <div className="space-y-5">
+      <StepHeader
+        title="Choose Your Species"
+        description="Your species determines traits, speed, and special abilities."
+      />
 
       {/* Character name (optional early entry) */}
       <div>
-        <label className="text-xs text-gray-400 block mb-1">Character Name (optional)</label>
+        <label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1.5" style={{ fontFamily: "var(--font-cinzel)" }}>
+          Character Name <span className="normal-case tracking-normal text-gray-600">(optional)</span>
+        </label>
         <input
           type="text"
           value={state.nameFromSpeciesStep}
           onChange={(e) => dispatch({ type: "SET_NAME_EARLY", name: e.target.value })}
           placeholder="Enter a name..."
-          className="w-full max-w-xs bg-gray-900 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+          className="w-full max-w-xs bg-gray-900/60 border border-gray-700/60 rounded-lg px-3 py-2 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/30 transition-colors"
         />
       </div>
 
@@ -54,18 +54,18 @@ export function StepSpecies({ state, dispatch }: StepProps) {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search species..."
-            className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent mb-3"
+            className="w-full bg-gray-900/60 border border-gray-700/60 rounded-lg px-3 py-2 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/30 transition-colors mb-3"
           />
-          <div className="max-h-[420px] overflow-y-auto">
+          <div className="max-h-[420px] overflow-y-auto pr-1">
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {filtered.map((sp) => (
                 <button
                   key={sp.name}
                   onClick={() => dispatch({ type: "SET_SPECIES", species: sp.name })}
-                  className={`text-left px-3 py-2 rounded-lg border text-sm transition-colors ${
+                  className={`text-left px-3 py-2.5 rounded-lg border text-sm transition-all duration-200 ${
                     state.species === sp.name
-                      ? "border-purple-500 bg-purple-600/10 text-purple-300"
-                      : "border-gray-700 bg-gray-800 text-gray-300 hover:border-gray-600 hover:bg-gray-750"
+                      ? "border-amber-500/50 bg-amber-500/10 text-amber-200 shadow-[0_0_12px_rgba(245,158,11,0.08)]"
+                      : "border-gray-700/50 bg-gray-800/50 text-gray-300 hover:border-gray-600 hover:bg-gray-800"
                   }`}
                 >
                   <div className="font-medium truncate">{sp.name}</div>
@@ -86,10 +86,10 @@ export function StepSpecies({ state, dispatch }: StepProps) {
         )}
       </div>
 
-      {/* Trait Choices — prominent section below the grid */}
+      {/* Trait Choices */}
       {selected && traitChoices.length > 0 && (
-        <div className="bg-gray-800 border-l-4 border-purple-500 border-y border-r border-gray-700 rounded-lg p-4 space-y-3">
-          <div className="text-xs font-medium text-purple-300">
+        <div className="bg-gray-800/60 border-l-2 border-amber-500/60 border-y border-r border-gray-700/40 rounded-r-lg p-4 space-y-3">
+          <div className="text-xs font-medium text-amber-300/80" style={{ fontFamily: "var(--font-cinzel)" }}>
             Trait Choices for {selected.name}
           </div>
           {traitChoices.map((def) => (
@@ -102,6 +102,23 @@ export function StepSpecies({ state, dispatch }: StepProps) {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── Shared Step Header ──────────────────────────────────
+
+function StepHeader({ title, description }: { title: string; description: string }) {
+  return (
+    <div className="space-y-1">
+      <h2
+        className="text-xl font-semibold text-amber-200/90 tracking-wide"
+        style={{ fontFamily: "var(--font-cinzel)" }}
+      >
+        {title}
+      </h2>
+      <p className="text-xs text-gray-500">{description}</p>
+      <div className="h-px bg-gradient-to-r from-amber-500/30 via-gray-700/50 to-transparent mt-2" />
     </div>
   );
 }
@@ -175,10 +192,10 @@ function TraitChoicePicker({
                     selected: opt,
                   })
                 }
-                className={`text-[10px] px-2 py-1 rounded border transition-colors ${
+                className={`text-[10px] px-2.5 py-1 rounded-md border transition-all duration-150 ${
                   value?.secondarySelected === opt
-                    ? "border-purple-500 bg-purple-600/10 text-purple-300"
-                    : "border-gray-700 bg-gray-900 text-gray-400 hover:border-gray-600"
+                    ? "border-amber-500/50 bg-amber-500/10 text-amber-300"
+                    : "border-gray-700 bg-gray-900/60 text-gray-400 hover:border-gray-600"
                 }`}
               >
                 {opt.charAt(0).toUpperCase() + opt.slice(1)}
@@ -228,12 +245,12 @@ function SkillPicker({
             key={skill}
             onClick={() => toggle(skill)}
             disabled={atMax}
-            className={`text-[10px] px-2 py-1 rounded border transition-colors ${
+            className={`text-[10px] px-2.5 py-1 rounded-md border transition-all duration-150 ${
               isSelected
-                ? "border-emerald-500 bg-emerald-600/10 text-emerald-300"
+                ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-300"
                 : atMax
-                  ? "border-gray-700 bg-gray-900 text-gray-600 opacity-40"
-                  : "border-gray-700 bg-gray-900 text-gray-400 hover:border-gray-600"
+                  ? "border-gray-700/30 bg-gray-900/30 text-gray-600 opacity-40"
+                  : "border-gray-700/60 bg-gray-900/40 text-gray-400 hover:border-gray-600"
             }`}
           >
             {formatSkillName(skill)}
@@ -289,7 +306,7 @@ function FeatPicker({
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder="Search feats..."
-        className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-[10px] text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-purple-500"
+        className="w-full bg-gray-900/60 border border-gray-700/60 rounded-md px-2.5 py-1.5 text-[10px] text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-amber-500/50"
       />
       <div className="max-h-64 overflow-y-auto space-y-1">
         {filtered.map((feat) => {
@@ -299,10 +316,10 @@ function FeatPicker({
           return (
             <div
               key={feat.name}
-              className={`rounded-lg border transition-colors ${
+              className={`rounded-lg border transition-all duration-150 ${
                 isSelected
-                  ? "border-purple-500/30 bg-purple-600/10"
-                  : "border-gray-700 bg-gray-900 hover:border-gray-600"
+                  ? "border-amber-500/30 bg-amber-500/5"
+                  : "border-gray-700/50 bg-gray-900/40 hover:border-gray-600"
               }`}
             >
               <div className="flex items-center gap-2 px-2.5 py-1.5">
@@ -310,9 +327,9 @@ function FeatPicker({
                   onClick={() =>
                     dispatch({ type: "SET_SPECIES_CHOICE", traitName, selected: feat.name })
                   }
-                  className={`w-4 h-4 rounded-full border shrink-0 flex items-center justify-center ${
+                  className={`w-4 h-4 rounded-full border shrink-0 flex items-center justify-center transition-colors ${
                     isSelected
-                      ? "border-purple-500 bg-purple-600"
+                      ? "border-amber-500 bg-amber-500/80"
                       : "border-gray-600 bg-gray-900 hover:border-gray-500"
                   }`}
                 >
@@ -328,7 +345,7 @@ function FeatPicker({
                   }
                   className="flex-1 min-w-0 text-left"
                 >
-                  <span className={`text-xs font-medium ${isSelected ? "text-purple-300" : "text-gray-200"}`}>
+                  <span className={`text-xs font-medium ${isSelected ? "text-amber-200" : "text-gray-200"}`}>
                     {feat.name}
                   </span>
                   {benefits.length > 0 && (
@@ -383,13 +400,13 @@ function LineagePicker({
           onClick={() =>
             dispatch({ type: "SET_SPECIES_CHOICE", traitName, selected: opt.name })
           }
-          className={`w-full text-left px-2.5 py-1.5 rounded-lg border text-[10px] transition-colors ${
+          className={`w-full text-left px-2.5 py-1.5 rounded-lg border text-[10px] transition-all duration-150 ${
             value === opt.name
-              ? "border-purple-500/30 bg-purple-600/10"
-              : "border-gray-700 bg-gray-900 hover:border-gray-600"
+              ? "border-amber-500/30 bg-amber-500/5"
+              : "border-gray-700/50 bg-gray-900/40 hover:border-gray-600"
           }`}
         >
-          <div className={`font-medium ${value === opt.name ? "text-purple-300" : "text-gray-200"}`}>
+          <div className={`font-medium ${value === opt.name ? "text-amber-200" : "text-gray-200"}`}>
             {opt.name}
           </div>
           <Prose className="text-gray-500 mt-0.5 text-xs">{opt.description}</Prose>
@@ -403,8 +420,13 @@ function LineagePicker({
 
 function SpeciesDetail({ species }: { species: SpeciesData }) {
   return (
-    <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 space-y-3">
-      <h3 className="text-sm font-bold text-purple-400">{species.name}</h3>
+    <div className="bg-gray-800/60 border border-gray-700/40 rounded-lg p-4 space-y-3">
+      <h3
+        className="text-sm font-semibold text-amber-300/90"
+        style={{ fontFamily: "var(--font-cinzel)" }}
+      >
+        {species.name}
+      </h3>
 
       {/* Stat badges */}
       <div className="flex flex-wrap gap-1.5">
@@ -424,7 +446,7 @@ function SpeciesDetail({ species }: { species: SpeciesData }) {
           {species.traits.map((t) => (
             <div
               key={t.name}
-              className="border-l-2 border-purple-500/40 pl-2.5"
+              className="border-l-2 border-amber-500/30 pl-2.5"
             >
               <div className="text-xs font-medium text-gray-200">{t.name}</div>
               <Prose className="text-xs text-gray-400 mt-0.5 line-clamp-4">{t.description}</Prose>
@@ -443,7 +465,7 @@ function SpeciesDetail({ species }: { species: SpeciesData }) {
             {species.resistances.map((r) => (
               <span
                 key={r}
-                className="text-[10px] bg-red-900/20 text-red-400 border border-red-800/30 rounded px-1.5 py-0.5"
+                className="text-[10px] bg-red-900/20 text-red-400 border border-red-800/30 rounded-md px-1.5 py-0.5"
               >
                 {r}
               </span>
@@ -462,7 +484,7 @@ function SpeciesDetail({ species }: { species: SpeciesData }) {
             {species.languages.map((l) => (
               <span
                 key={l}
-                className="text-[10px] bg-blue-900/20 text-blue-400 border border-blue-800/30 rounded px-1.5 py-0.5"
+                className="text-[10px] bg-blue-900/20 text-blue-400 border border-blue-800/30 rounded-md px-1.5 py-0.5"
               >
                 {l}
               </span>
@@ -479,7 +501,7 @@ function SpeciesDetail({ species }: { species: SpeciesData }) {
 
 function StatBadge({ label, value }: { label: string; value: string }) {
   return (
-    <div className="bg-gray-900 border border-gray-700 rounded px-2 py-1">
+    <div className="bg-gray-900/60 border border-gray-700/40 rounded-md px-2 py-1">
       <div className="text-[9px] text-gray-500 uppercase">{label}</div>
       <div className="text-xs text-gray-200 font-medium">{value}</div>
     </div>

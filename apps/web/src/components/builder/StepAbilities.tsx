@@ -66,14 +66,12 @@ export function StepAbilities({ state, dispatch }: StepProps) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-lg font-bold text-gray-200 mb-1">
+      <div className="space-y-1">
+        <h2 className="text-xl font-semibold text-amber-200/90 tracking-wide" style={{ fontFamily: "var(--font-cinzel)" }}>
           Ability Scores
         </h2>
-        <p className="text-xs text-gray-500">
-          Set your base ability scores, then apply your background ability score
-          increases.
-        </p>
+        <p className="text-xs text-gray-500">Set your base ability scores, then apply your background ability score increases.</p>
+        <div className="h-px bg-gradient-to-r from-amber-500/30 via-gray-700/50 to-transparent mt-2" />
       </div>
 
       {/* Method Tabs */}
@@ -86,7 +84,7 @@ export function StepAbilities({ state, dispatch }: StepProps) {
             }
             className={`px-4 py-2 text-xs font-medium transition-colors ${
               state.abilityMethod === m.value
-                ? "text-purple-400 border-b-2 border-purple-400"
+                ? "text-amber-300 border-b-2 border-amber-400/70"
                 : "text-gray-500 hover:text-gray-300"
             }`}
           >
@@ -98,7 +96,7 @@ export function StepAbilities({ state, dispatch }: StepProps) {
       {/* Point Buy info */}
       {state.abilityMethod === "point-buy" && (
         <div className="text-xs text-gray-400">
-          Points: <span className={pointsUsed > POINT_BUY_POOL ? "text-red-400" : "text-purple-400"}>
+          Points: <span className={pointsUsed > POINT_BUY_POOL ? "text-red-400" : "text-amber-300"}>
             {pointsUsed}
           </span>{" "}
           / {POINT_BUY_POOL} used
@@ -110,7 +108,7 @@ export function StepAbilities({ state, dispatch }: StepProps) {
         {ABILITY_KEYS.map((ability) => (
           <div
             key={ability}
-            className="bg-gray-800 border border-gray-700 rounded-lg p-3 text-center"
+            className="bg-gray-800/60 border border-gray-700/40 rounded-lg p-3 text-center"
           >
             <div className="text-[10px] text-gray-500 font-medium uppercase tracking-wider mb-2">
               {ABILITY_SHORT[ability]}
@@ -125,7 +123,7 @@ export function StepAbilities({ state, dispatch }: StepProps) {
                     value: Number(e.target.value),
                   })
                 }
-                className="w-full bg-gray-900 border border-gray-700 rounded px-1 py-1.5 text-center text-sm text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full bg-gray-900 border border-gray-700 rounded px-1 py-1.5 text-center text-sm text-gray-100 focus:outline-none focus:ring-1 focus:ring-amber-500/50"
               >
                 <option value={0}>--</option>
                 {STANDARD_ARRAY.map((v) => (
@@ -187,7 +185,7 @@ export function StepAbilities({ state, dispatch }: StepProps) {
                     value: Number(e.target.value) || 0,
                   })
                 }
-                className="w-full bg-gray-900 border border-gray-700 rounded px-1 py-1.5 text-center text-sm text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full bg-gray-900 border border-gray-700 rounded px-1 py-1.5 text-center text-sm text-gray-100 focus:outline-none focus:ring-1 focus:ring-amber-500/50"
               />
             )}
             <div className="text-[10px] text-gray-600 mt-1">
@@ -200,7 +198,7 @@ export function StepAbilities({ state, dispatch }: StepProps) {
       </div>
 
       {/* Background ASI */}
-      <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4 space-y-3">
+      <div className="bg-gray-800/40 border border-gray-700/40 rounded-lg p-4 space-y-3">
         <div className="flex items-center justify-between">
           <div>
             <div className="text-xs font-medium text-gray-200">
@@ -216,7 +214,7 @@ export function StepAbilities({ state, dispatch }: StepProps) {
               onClick={() => dispatch({ type: "SET_ASI_MODE", mode: "two-one" })}
               className={`text-[10px] px-2 py-1 rounded ${
                 state.asiMode === "two-one"
-                  ? "bg-purple-600/20 text-purple-400 border border-purple-500/30"
+                  ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
                   : "text-gray-500 border border-gray-700"
               }`}
             >
@@ -228,7 +226,7 @@ export function StepAbilities({ state, dispatch }: StepProps) {
               }
               className={`text-[10px] px-2 py-1 rounded ${
                 state.asiMode === "three-ones"
-                  ? "bg-purple-600/20 text-purple-400 border border-purple-500/30"
+                  ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
                   : "text-gray-500 border border-gray-700"
               }`}
             >
@@ -255,7 +253,7 @@ export function StepAbilities({ state, dispatch }: StepProps) {
 
       {/* Final Scores */}
       <div>
-        <div className="text-xs text-gray-400 font-medium mb-2">
+        <div className="text-xs text-amber-200/70 font-medium mb-2" style={{ fontFamily: "var(--font-cinzel)" }}>
           Final Ability Scores
         </div>
         <div className="grid grid-cols-6 gap-3">
@@ -267,14 +265,14 @@ export function StepAbilities({ state, dispatch }: StepProps) {
             return (
               <div
                 key={ability}
-                className="bg-gray-900 border border-gray-700 rounded-lg p-2 text-center"
+                className="bg-gray-900/60 border border-gray-700/40 rounded-lg p-2 text-center"
               >
                 <div className="text-[10px] text-gray-500 uppercase">
                   {ABILITY_SHORT[ability]}
                 </div>
                 <div className="text-lg font-bold text-gray-100">{final_ > 0 ? final_ : "—"}</div>
                 {asi > 0 && base > 0 && (
-                  <div className="text-[10px] text-purple-400">
+                  <div className="text-[10px] text-amber-400">
                     {base}+{asi}
                   </div>
                 )}

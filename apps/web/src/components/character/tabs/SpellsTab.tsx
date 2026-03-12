@@ -47,7 +47,7 @@ function SpellRow({
 
   return (
     <div
-      className={`text-xs flex items-center gap-1.5 cursor-pointer hover:text-purple-300 transition-colors px-1.5 py-0.5 rounded hover:bg-gray-700/30 ${styles.text}`}
+      className={`text-xs flex items-center gap-1.5 cursor-pointer hover:text-amber-300 transition-colors px-1.5 py-0.5 rounded hover:bg-gray-800/60 ${styles.text}`}
       onClick={onClick}
     >
       <span
@@ -57,7 +57,7 @@ function SpellRow({
 
       {/* Source badges */}
       {classBadge && (
-        <span className="text-[8px] text-purple-400/70 shrink-0">{classBadge}</span>
+        <span className="text-[8px] text-amber-400/70 shrink-0">{classBadge}</span>
       )}
       {spell.spellSource === "race" && (
         <span className="text-[8px] text-emerald-400/70 shrink-0">Race</span>
@@ -135,8 +135,8 @@ export function SpellsTab({ character, onSpellClick }: SpellsTabProps) {
 
       {/* Class Resources (Channel Divinity, Ki, Rage, etc.) */}
       {classResources.length > 0 && (
-        <div className="space-y-1 pb-2 border-b border-gray-700/50">
-          <div className="text-[10px] text-gray-500 font-medium px-1.5">
+        <div className="space-y-1 pb-2 border-b border-gray-700/40">
+          <div className="text-[10px] text-gray-500 uppercase tracking-wider font-medium px-1.5" style={{ fontFamily: "var(--font-cinzel)" }}>
             Class Resources
           </div>
           {classResources.map((resource) => {
@@ -153,7 +153,7 @@ export function SpellsTab({ character, onSpellClick }: SpellsTabProps) {
                 <span className="text-[9px] text-gray-500">
                   {resource.resetType === "short" ? "SR" : "LR"}
                 </span>
-                <span className="text-purple-400/80 shrink-0">
+                <span className="text-amber-400/80 shrink-0">
                   {remaining}/{resource.maxUses}
                 </span>
               </div>
@@ -164,12 +164,12 @@ export function SpellsTab({ character, onSpellClick }: SpellsTabProps) {
 
       {/* Pact Magic Slots (Warlock) */}
       {pactSlots.length > 0 && (
-        <div className="flex items-center gap-2 text-xs px-1.5 py-1 bg-purple-900/20 border border-purple-800/30 rounded">
-          <span className="text-purple-400 font-medium text-[10px]">Pact Slots</span>
+        <div className="flex items-center gap-2 text-xs px-1.5 py-1 bg-amber-500/10 border border-gray-700/50 rounded">
+          <span className="text-amber-400 font-medium text-[10px]">Pact Slots</span>
           {pactSlots.map((sl) => (
             <span key={sl.level} className="text-gray-300">
               <span className="text-gray-500 text-[10px]">Lvl {sl.level}:</span>{" "}
-              <span className="text-purple-400/80">
+              <span className="text-amber-400/80">
                 {sl.total - sl.used}/{sl.total}
               </span>
             </span>
@@ -200,7 +200,7 @@ export function SpellsTab({ character, onSpellClick }: SpellsTabProps) {
                   {lvl === 0 ? "Cantrips" : `Level ${lvl}`}
                 </span>
                 {slotData && slotData.total > 0 && (
-                  <span className="text-purple-400/80">
+                  <span className="text-amber-400/80">
                     {slotData.total - slotData.used}/{slotData.total} slots
                   </span>
                 )}

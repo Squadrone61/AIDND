@@ -623,14 +623,17 @@ function GameContent({
   if (passwordRequired) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="bg-gray-800 rounded-xl p-6 w-full max-w-sm space-y-4">
+        <div className="bg-gray-800/60 border border-gray-700/40 rounded-xl p-6 w-full max-w-sm space-y-4">
           <div className="text-center">
             <div className="text-3xl mb-2">&#128274;</div>
-            <h2 className="text-lg font-semibold text-gray-200">
+            <h2
+              className="text-lg font-semibold text-amber-200/90"
+              style={{ fontFamily: "var(--font-cinzel)" }}
+            >
               Room Password Required
             </h2>
             <p className="text-sm text-gray-500 mt-1">
-              Room <span className="font-mono text-purple-400">{roomCode}</span>{" "}
+              Room <span className="font-mono text-amber-300">{roomCode}</span>{" "}
               is password protected
             </p>
           </div>
@@ -646,15 +649,15 @@ function GameContent({
             onKeyDown={(e) => e.key === "Enter" && handlePasswordSubmit()}
             placeholder="Enter room password..."
             autoFocus
-            className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2.5
-                       text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2
-                       focus:ring-purple-500 focus:border-transparent"
+            className="w-full bg-gray-900/60 border border-gray-700/50 rounded-lg px-4 py-2.5
+                       text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-1
+                       focus:ring-amber-500/50 focus:border-amber-500/30"
           />
 
           <div className="flex gap-3">
             <button
               onClick={handlePasswordSubmit}
-              className="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-2.5 rounded-lg
+              className="flex-1 bg-amber-600/80 hover:bg-amber-500/80 text-amber-50 py-2.5 rounded-lg
                          font-medium transition-colors text-sm"
             >
               Join Room
@@ -676,9 +679,9 @@ function GameContent({
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="text-center space-y-3">
-          <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto" />
+          <div className="w-8 h-8 border-2 border-amber-500/70 border-t-transparent rounded-full animate-spin mx-auto" />
           <p className="text-sm text-gray-400">
-            Connecting to room <span className="font-mono text-purple-400">{roomCode}</span>...
+            Connecting to room <span className="font-mono text-amber-300">{roomCode}</span>...
           </p>
         </div>
       </div>
@@ -849,7 +852,7 @@ function CombatLayout({
       />
       {/* Resize handle */}
       <div
-        className="w-1 cursor-col-resize bg-gray-700 hover:bg-purple-500 active:bg-purple-400 transition-colors shrink-0"
+        className="w-1 cursor-col-resize bg-gray-700/50 hover:bg-amber-500/50 active:bg-amber-400/60 transition-colors shrink-0"
         onMouseDown={() => { draggingRef.current = true; }}
       />
       <ChatPanel

@@ -41,12 +41,15 @@ export function StepClass({ state, dispatch }: StepProps) {
   }, [state.className, state.level]);
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h2 className="text-lg font-bold text-gray-200 mb-1">Choose Your Class</h2>
+    <div className="space-y-5">
+      <div className="space-y-1">
+        <h2 className="text-xl font-semibold text-amber-200/90 tracking-wide" style={{ fontFamily: "var(--font-cinzel)" }}>
+          Choose Your Class
+        </h2>
         <p className="text-xs text-gray-500">
           Your class determines your hit dice, proficiencies, features, and spellcasting ability.
         </p>
+        <div className="h-px bg-gradient-to-r from-amber-500/30 via-gray-700/50 to-transparent mt-2" />
       </div>
 
       <div className="flex gap-6">
@@ -57,7 +60,7 @@ export function StepClass({ state, dispatch }: StepProps) {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search classes..."
-            className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className="w-full bg-gray-900/60 border border-gray-700/60 rounded-lg px-3 py-2 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/30"
           />
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -67,10 +70,10 @@ export function StepClass({ state, dispatch }: StepProps) {
                 onClick={() =>
                   dispatch({ type: "SET_CLASS", className: cls.name })
                 }
-                className={`text-left px-3 py-2 rounded-lg border text-sm transition-colors ${
+                className={`text-left px-3 py-2.5 rounded-lg border text-sm transition-all duration-200 ${
                   state.className === cls.name
-                    ? "border-purple-500 bg-purple-600/10 text-purple-300"
-                    : "border-gray-700 bg-gray-800 text-gray-300 hover:border-gray-600"
+                    ? "border-amber-500/50 bg-amber-500/10 text-amber-200 shadow-[0_0_12px_rgba(245,158,11,0.08)]"
+                    : "border-gray-700/50 bg-gray-800/50 text-gray-300 hover:border-gray-600 hover:bg-gray-800"
                 }`}
               >
                 <div className="font-medium">{cls.name}</div>
@@ -93,7 +96,7 @@ export function StepClass({ state, dispatch }: StepProps) {
                 onChange={(e) =>
                   dispatch({ type: "SET_LEVEL", level: Number(e.target.value) })
                 }
-                className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="bg-gray-900/60 border border-gray-700/60 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/30"
               >
                 {Array.from({ length: 20 }, (_, i) => i + 1).map((l) => (
                   <option key={l} value={l}>
@@ -114,7 +117,7 @@ export function StepClass({ state, dispatch }: StepProps) {
                         subclass: e.target.value || null,
                       })
                     }
-                    className="bg-gray-900 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="bg-gray-900/60 border border-gray-700/60 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/30"
                   >
                     <option value="">None</option>
                     {deduplicateSubclasses(selected.subclasses).map((sc) => (
@@ -202,7 +205,7 @@ function FeatureChoicePicker({
   };
 
   return (
-    <div className="bg-gray-800 border border-gray-700 rounded-lg p-3 space-y-2">
+    <div className="bg-gray-800/60 border border-gray-700/40 rounded-lg p-3 space-y-2">
       <div className="flex items-center justify-between">
         <div className="text-xs font-medium text-gray-200">{featureName}</div>
         <div className="text-[10px] text-gray-500">
@@ -220,13 +223,13 @@ function FeatureChoicePicker({
               disabled={atMax}
               className={`w-full text-left px-2.5 py-1.5 rounded border text-[10px] transition-colors ${
                 isSelected
-                  ? "border-purple-500/30 bg-purple-600/10"
+                  ? "border-amber-500/30 bg-amber-500/15"
                   : atMax
-                    ? "border-gray-700 bg-gray-900 opacity-30"
-                    : "border-gray-700 bg-gray-900 hover:border-gray-600"
+                    ? "border-gray-700/60 bg-gray-900 opacity-30"
+                    : "border-gray-700/60 bg-gray-900 hover:border-gray-600"
               }`}
             >
-              <div className={isSelected ? "text-purple-300 font-medium" : "text-gray-200"}>
+              <div className={isSelected ? "text-amber-300 font-medium" : "text-gray-200"}>
                 {opt.name}
               </div>
               <Prose className="text-gray-500 mt-0.5 text-xs">{opt.description}</Prose>
@@ -276,7 +279,7 @@ function WeaponMasteryPicker({
   const parseMastery = (mastery: string) => mastery.split("|")[0];
 
   return (
-    <div className="bg-gray-800 border border-gray-700 rounded-lg p-3 space-y-2">
+    <div className="bg-gray-800/60 border border-gray-700/40 rounded-lg p-3 space-y-2">
       <div className="flex items-center justify-between">
         <div className="text-xs font-medium text-gray-200">Weapon Mastery</div>
         <div className="text-[10px] text-gray-500">
@@ -292,7 +295,7 @@ function WeaponMasteryPicker({
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder="Search weapons..."
-        className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1 text-[10px] text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-purple-500"
+        className="w-full bg-gray-900/60 border border-gray-700/60 rounded px-2 py-1 text-[10px] text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/30"
       />
       <div className="max-h-64 overflow-y-auto space-y-0.5">
         {eligibleWeapons.map((w) => {
@@ -305,7 +308,7 @@ function WeaponMasteryPicker({
               disabled={atMax}
               className={`w-full text-left flex items-center justify-between px-2 py-1 rounded text-[10px] transition-colors ${
                 isSelected
-                  ? "bg-purple-600/10 text-purple-300 border border-purple-500/30"
+                  ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
                   : atMax
                     ? "text-gray-600 opacity-40 border border-transparent"
                     : "text-gray-300 hover:bg-gray-700/50 border border-transparent"
@@ -339,8 +342,8 @@ function ClassDetail({
   level: number;
 }) {
   return (
-    <div className="w-72 shrink-0 bg-gray-800 border border-gray-700 rounded-lg p-4 space-y-3 self-start">
-      <h3 className="text-sm font-bold text-purple-400">{cls.name}</h3>
+    <div className="w-72 shrink-0 bg-gray-800/60 border border-gray-700/40 rounded-lg p-4 space-y-3 self-start">
+      <h3 className="text-sm font-bold text-amber-300/90" style={{ fontFamily: "var(--font-cinzel)" }}>{cls.name}</h3>
 
       {/* Core stats */}
       <div className="flex flex-wrap gap-1.5">
@@ -450,7 +453,7 @@ function ClassFeaturesSection({
   if (totalCount === 0) return null;
 
   return (
-    <div className="bg-gray-800 border border-gray-700 rounded-lg overflow-hidden">
+    <div className="bg-gray-800/60 border border-gray-700/40 rounded-lg overflow-hidden">
       <button
         onClick={() => setOpen(!open)}
         className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-gray-750 transition-colors"
@@ -518,7 +521,7 @@ function ClassFeaturesSection({
           {/* Subclass Features */}
           {subclassFeatures.length > 0 && subclassData && (
             <div>
-              <div className="text-[10px] text-amber-400/60 font-medium uppercase tracking-wider mb-1 border-t border-gray-700 pt-2">
+              <div className="text-[10px] text-amber-400/80 font-medium uppercase tracking-wider mb-1 border-t border-gray-700 pt-2">
                 {subclassData.name}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-0.5">

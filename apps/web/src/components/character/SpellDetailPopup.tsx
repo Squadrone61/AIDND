@@ -21,7 +21,7 @@ export function SpellDetailPopup({ spell, onClose, position }: SpellDetailPopupP
       <div className="space-y-3">
         {/* Level & School */}
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs bg-purple-900/40 text-purple-300 px-2 py-0.5 rounded-full border border-purple-700/50">
+          <span className="text-xs bg-amber-900/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-700/30">
             {levelStr}
           </span>
           {spell.school && spell.level === 0 && (
@@ -76,7 +76,7 @@ export function SpellDetailPopup({ spell, onClose, position }: SpellDetailPopupP
         {/* Description */}
         {spell.description && (
           <div>
-            <div className="text-sm text-gray-400 font-medium mb-1">
+            <div className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1" style={{ fontFamily: "var(--font-cinzel)" }}>
               Description
             </div>
             <Prose className="text-gray-300">

@@ -41,10 +41,10 @@ export function CharacterImport({
   if (importState === "success" && character) {
     const s = character.static;
     return (
-      <div className="bg-gray-900/50 border border-gray-700 rounded-lg p-3">
+      <div className="bg-gray-800/60 border border-gray-700/40 rounded-lg p-3">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-sm font-medium text-purple-400">
+            <div className="text-sm font-medium text-amber-300">
               {s.name}
             </div>
             <div className="text-xs text-gray-400">
@@ -73,12 +73,12 @@ export function CharacterImport({
   return (
     <div className="space-y-2">
       {/* Tab Selector */}
-      <div className="flex border-b border-gray-700">
+      <div className="flex border-b border-gray-700/50">
         <button
           onClick={() => setTab("ddb")}
           className={`flex-1 text-xs py-1.5 font-medium transition-colors ${
             tab === "ddb"
-              ? "text-purple-400 border-b-2 border-purple-400"
+              ? "text-amber-300 border-b-2 border-amber-400/70"
               : "text-gray-500 hover:text-gray-300"
           }`}
         >
@@ -89,7 +89,7 @@ export function CharacterImport({
             onClick={() => setTab("native")}
             className={`flex-1 text-xs py-1.5 font-medium transition-colors ${
               tab === "native"
-                ? "text-blue-400 border-b-2 border-blue-400"
+                ? "text-amber-300 border-b-2 border-amber-400/70"
                 : "text-gray-500 hover:text-gray-300"
             }`}
           >
@@ -108,15 +108,15 @@ export function CharacterImport({
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               placeholder="D&D Beyond URL..."
-              className="flex-1 bg-gray-900 border border-gray-700 rounded-lg px-3 py-1.5
+              className="flex-1 bg-gray-900/60 border border-gray-700/50 rounded-lg px-3 py-1.5
                          text-sm text-gray-100 placeholder-gray-500 focus:outline-none
-                         focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                         focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/30"
             />
             <button
               onClick={() => onImportUrl(url)}
               disabled={!url.trim() || importState === "importing"}
-              className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-700
-                         text-white px-3 py-1.5 rounded-lg text-sm font-medium
+              className="bg-amber-600/80 hover:bg-amber-500/80 disabled:bg-gray-700
+                         text-amber-50 px-3 py-1.5 rounded-lg text-sm font-medium
                          transition-colors whitespace-nowrap"
             >
               {importState === "importing" ? "..." : "Import"}
@@ -127,7 +127,7 @@ export function CharacterImport({
           {!showJson && (
             <button
               onClick={() => setShowJsonMode(true)}
-              className="text-xs text-gray-400 hover:text-purple-400 transition-colors"
+              className="text-xs text-gray-400 hover:text-amber-300 transition-colors"
             >
               Or paste character JSON...
             </button>
@@ -141,16 +141,16 @@ export function CharacterImport({
                 onChange={(e) => setJsonText(e.target.value)}
                 placeholder="Paste D&D Beyond character JSON here..."
                 rows={4}
-                className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2
+                className="w-full bg-gray-900/60 border border-gray-700/50 rounded-lg px-3 py-2
                            text-xs text-gray-100 placeholder-gray-500 focus:outline-none
-                           focus:ring-2 focus:ring-purple-500 focus:border-transparent
+                           focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/30
                            font-mono resize-y"
               />
               <button
                 onClick={() => onImportJson(jsonText)}
                 disabled={!jsonText.trim() || importState === "importing"}
-                className="w-full bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800
-                           text-white py-1.5 rounded-lg text-sm font-medium transition-colors"
+                className="w-full bg-amber-600/80 hover:bg-amber-500/80 disabled:bg-gray-800
+                           text-amber-50 py-1.5 rounded-lg text-sm font-medium transition-colors"
               >
                 {importState === "importing" ? "Parsing..." : "Parse JSON"}
               </button>
@@ -184,8 +184,8 @@ export function CharacterImport({
           <button
             onClick={() => nativeFileInputRef.current?.click()}
             disabled={importState === "importing"}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700
-                       text-white py-1.5 rounded-lg text-sm font-medium transition-colors"
+            className="w-full bg-amber-600/80 hover:bg-amber-500/80 disabled:bg-gray-700
+                       text-amber-50 py-1.5 rounded-lg text-sm font-medium transition-colors"
           >
             {importState === "importing" ? "Importing..." : "Upload .aidnd.json"}
           </button>

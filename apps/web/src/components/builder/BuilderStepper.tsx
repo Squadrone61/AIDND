@@ -12,7 +12,7 @@ export function BuilderStepper({ state, onStepClick }: BuilderStepperProps) {
   const visibleSteps = BUILDER_STEPS.filter((s) => !skip.has(s));
 
   return (
-    <div className="flex items-center gap-1 overflow-x-auto pb-1">
+    <div className="flex items-center gap-0.5 overflow-x-auto pb-1">
       {visibleSteps.map((step, i) => {
         const isActive = step === state.currentStep;
         const touched = isStepTouched(state, step);
@@ -21,44 +21,53 @@ export function BuilderStepper({ state, onStepClick }: BuilderStepperProps) {
         const isInvalid = !isActive && touched && !valid;
 
         return (
-          <button
-            key={step}
-            onClick={() => onStepClick(step)}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors hover:bg-gray-800 cursor-pointer ${
-              isActive
-                ? "bg-purple-600/20 text-purple-400 border border-purple-500/30"
-                : isInvalid
-                  ? "text-red-400"
-                  : isCompleted
-                    ? "text-emerald-400"
-                    : "text-gray-500"
-            }`}
-          >
-            <span
-              className={`flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold shrink-0 ${
+          <div key={step} className="flex items-center">
+            <button
+              onClick={() => onStepClick(step)}
+              className={`group flex items-center gap-1.5 px-2 py-1.5 rounded text-xs font-medium whitespace-nowrap transition-all duration-200 cursor-pointer ${
                 isActive
-                  ? "bg-purple-600 text-white"
+                  ? "text-amber-300"
                   : isInvalid
-                    ? "bg-red-600/30 text-red-400"
+                    ? "text-red-400 hover:text-red-300"
                     : isCompleted
-                      ? "bg-emerald-600/30 text-emerald-400"
-                      : "bg-gray-800 text-gray-600"
+                      ? "text-emerald-400 hover:text-emerald-300"
+                      : "text-gray-500 hover:text-gray-300"
               }`}
             >
-              {isInvalid ? (
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-                </svg>
-              ) : isCompleted ? (
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                </svg>
-              ) : (
-                i + 1
-              )}
-            </span>
-            <span className="hidden sm:inline">{STEP_LABELS[step]}</span>
-          </button>
+              <span
+                className={`relative flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold shrink-0 transition-all duration-200 ${
+                  isActive
+                    ? "bg-amber-500/20 text-amber-300 ring-1 ring-amber-400/50 shadow-[0_0_8px_rgba(245,158,11,0.3)]"
+                    : isInvalid
+                      ? "bg-red-600/20 text-red-400 ring-1 ring-red-500/30"
+                      : isCompleted
+                        ? "bg-emerald-600/20 text-emerald-400 ring-1 ring-emerald-500/30"
+                        : "bg-gray-800 text-gray-600 group-hover:bg-gray-700"
+                }`}
+              >
+                {isInvalid ? (
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                  </svg>
+                ) : isCompleted ? (
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                  </svg>
+                ) : (
+                  i + 1
+                )}
+              </span>
+              <span className="hidden sm:inline">{STEP_LABELS[step]}</span>
+            </button>
+            {/* Connector line */}
+            {i < visibleSteps.length - 1 && (
+              <div
+                className={`w-3 h-px mx-0.5 transition-colors ${
+                  isCompleted ? "bg-emerald-500/30" : "bg-gray-700/50"
+                }`}
+              />
+            )}
+          </div>
         );
       })}
     </div>

@@ -56,8 +56,8 @@ export function InventoryTab({ character, onItemClick }: InventoryTabProps) {
     <div className="space-y-2">
       {/* Currency */}
       {hasCurrency && (
-        <div className="px-1.5 pb-1 border-b border-gray-700/50">
-          <div className="text-[10px] text-gray-500 font-medium mb-0.5">
+        <div className="px-1.5 pb-1 border-b border-gray-700/40">
+          <div className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-0.5" style={{ fontFamily: "var(--font-cinzel)" }}>
             Currency
           </div>
           <div className="flex flex-wrap gap-2 text-xs">
@@ -100,7 +100,7 @@ export function InventoryTab({ character, onItemClick }: InventoryTabProps) {
           return (
             <div
               key={`${item.name}-${i}`}
-              className="flex items-center gap-1.5 text-xs px-1.5 py-1 rounded cursor-pointer hover:bg-gray-700/30 transition-colors group"
+              className="flex items-center gap-1.5 text-xs px-1.5 py-1 rounded cursor-pointer hover:bg-gray-800/60 transition-colors group"
               onClick={(e) => onItemClick(item, e)}
             >
               {/* Equipped indicator */}
@@ -112,11 +112,11 @@ export function InventoryTab({ character, onItemClick }: InventoryTabProps) {
 
               {/* Name */}
               <span
-                className={`truncate flex-1 group-hover:text-purple-300 transition-colors ${rarityColor}`}
+                className={`truncate flex-1 group-hover:text-amber-300 transition-colors ${rarityColor}`}
               >
                 {item.name}
                 {item.isMagicItem && (
-                  <span className="text-purple-400 ml-0.5">✦</span>
+                  <span className="text-amber-400 ml-0.5">✦</span>
                 )}
               </span>
 
@@ -124,7 +124,7 @@ export function InventoryTab({ character, onItemClick }: InventoryTabProps) {
               {item.attunement && (
                 <span
                   className={`text-[9px] shrink-0 ${
-                    item.isAttuned ? "text-purple-400" : "text-gray-600"
+                    item.isAttuned ? "text-amber-400" : "text-gray-600"
                   }`}
                   title={item.isAttuned ? "Attuned" : "Requires attunement"}
                 >

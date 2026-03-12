@@ -67,7 +67,7 @@ export function FeaturesTab({ character, onFeatureClick }: FeaturesTabProps) {
       {groups.map((group) => (
         <div key={group.key}>
           {group.label && (
-            <div className="text-[10px] text-gray-500 font-medium mb-0.5 px-1.5">
+            <div className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-0.5 px-1.5" style={{ fontFamily: "var(--font-cinzel)" }}>
               {group.label} ({group.features.length})
             </div>
           )}
@@ -77,7 +77,7 @@ export function FeaturesTab({ character, onFeatureClick }: FeaturesTabProps) {
                 key={feat.name}
                 className={`text-xs px-1.5 py-0.5 rounded flex items-center gap-1 ${
                   feat.description
-                    ? "text-gray-300 cursor-pointer hover:text-purple-300 hover:bg-gray-700/30 transition-colors"
+                    ? "text-gray-300 cursor-pointer hover:text-amber-300 hover:bg-gray-800/60 transition-colors"
                     : "text-gray-400"
                 }`}
                 onClick={
@@ -88,7 +88,7 @@ export function FeaturesTab({ character, onFeatureClick }: FeaturesTabProps) {
               >
                 <span className="truncate">{feat.name}</span>
                 {feat.source === "class" && feat.sourceLabel && (
-                  <span className="text-[9px] text-purple-400/60 shrink-0">
+                  <span className="text-[9px] text-amber-400/60 shrink-0">
                     {feat.sourceLabel}
                   </span>
                 )}
@@ -106,7 +106,7 @@ export function FeaturesTab({ character, onFeatureClick }: FeaturesTabProps) {
 
       {/* Divider — traits & appearance */}
       {(hasTraits || s.appearance) && (
-        <div className="border-t border-gray-700/50 pt-2 mt-2 space-y-1.5">
+        <div className="border-t border-gray-700/40 pt-2 mt-2 space-y-1.5">
           {/* Traits */}
           {hasTraits && (
             <div>

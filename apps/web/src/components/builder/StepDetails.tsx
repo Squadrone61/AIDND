@@ -4,19 +4,18 @@ import { ALIGNMENTS } from "./utils";
 export function StepDetails({ state, dispatch }: StepProps) {
   return (
     <div className="space-y-6 max-w-3xl">
-      <div>
-        <h2 className="text-lg font-bold text-gray-200 mb-1">
+      <div className="space-y-1">
+        <h2 className="text-xl font-semibold text-amber-200/90 tracking-wide" style={{ fontFamily: "var(--font-cinzel)" }}>
           Character Details
         </h2>
-        <p className="text-xs text-gray-500">
-          Personalize your character with a name, appearance, and personality.
-        </p>
+        <p className="text-xs text-gray-500">Personalize your character with a name, appearance, and personality.</p>
+        <div className="h-px bg-gradient-to-r from-amber-500/30 via-gray-700/50 to-transparent mt-2" />
       </div>
 
       {/* Name + Alignment row */}
       <div className="flex gap-4">
         <div className="flex-1">
-          <label className="text-xs text-gray-400 block mb-1">
+          <label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1" style={{ fontFamily: "var(--font-cinzel)" }}>
             Character Name
           </label>
           <input
@@ -24,11 +23,11 @@ export function StepDetails({ state, dispatch }: StepProps) {
             value={state.name || state.nameFromSpeciesStep}
             onChange={(e) => dispatch({ type: "SET_NAME", name: e.target.value })}
             placeholder="Enter your character's name..."
-            className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className="w-full bg-gray-900/60 border border-gray-700/60 rounded-lg px-3 py-2 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-amber-500/50 focus:border-transparent"
           />
         </div>
         <div className="w-48">
-          <label className="text-xs text-gray-400 block mb-1">
+          <label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1" style={{ fontFamily: "var(--font-cinzel)" }}>
             Alignment
           </label>
           <select
@@ -36,7 +35,7 @@ export function StepDetails({ state, dispatch }: StepProps) {
             onChange={(e) =>
               dispatch({ type: "SET_ALIGNMENT", alignment: e.target.value })
             }
-            className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className="w-full bg-gray-900/60 border border-gray-700/60 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:ring-1 focus:ring-amber-500/50"
           >
             <option value="">None</option>
             {ALIGNMENTS.map((a) => (
@@ -50,7 +49,7 @@ export function StepDetails({ state, dispatch }: StepProps) {
 
       {/* Appearance */}
       <div>
-        <div className="text-xs text-gray-400 font-medium mb-2">
+        <div className="text-xs text-amber-200/60 font-medium mb-2" style={{ fontFamily: "var(--font-cinzel)" }}>
           Appearance
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -79,7 +78,7 @@ export function StepDetails({ state, dispatch }: StepProps) {
                   })
                 }
                 placeholder={label}
-                className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1.5 text-xs text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                className="w-full bg-gray-900/60 border border-gray-700/60 rounded px-2 py-1.5 text-xs text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-amber-500/50"
               />
             </div>
           ))}
@@ -88,7 +87,7 @@ export function StepDetails({ state, dispatch }: StepProps) {
 
       {/* Traits */}
       <div>
-        <div className="text-xs text-gray-400 font-medium mb-2">
+        <div className="text-xs text-amber-200/60 font-medium mb-2" style={{ fontFamily: "var(--font-cinzel)" }}>
           Personality
         </div>
         <div className="space-y-3">
@@ -114,7 +113,7 @@ export function StepDetails({ state, dispatch }: StepProps) {
                 }
                 placeholder={`Describe your character's ${label.toLowerCase()}...`}
                 rows={2}
-                className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1.5 text-xs text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-purple-500 resize-y"
+                className="w-full bg-gray-900/60 border border-gray-700/60 rounded px-2 py-1.5 text-xs text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-amber-500/50 resize-y"
               />
             </div>
           ))}
@@ -123,7 +122,7 @@ export function StepDetails({ state, dispatch }: StepProps) {
 
       {/* Backstory */}
       <div>
-        <div className="text-xs text-gray-400 font-medium mb-2">
+        <div className="text-xs text-amber-200/60 font-medium mb-2" style={{ fontFamily: "var(--font-cinzel)" }}>
           Backstory
         </div>
         <textarea
@@ -133,7 +132,7 @@ export function StepDetails({ state, dispatch }: StepProps) {
           }
           placeholder="Write your character's backstory..."
           rows={5}
-          className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1.5 text-xs text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-purple-500 resize-y"
+          className="w-full bg-gray-900/60 border border-gray-700/60 rounded px-2 py-1.5 text-xs text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-amber-500/50 resize-y"
         />
       </div>
     </div>

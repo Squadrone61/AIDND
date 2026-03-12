@@ -18,7 +18,7 @@ export function LeftSidebar({ character, onCharacterImported }: LeftSidebarProps
 
   if (collapsed) {
     return (
-      <div className="w-10 bg-gray-800 border-r border-gray-700 flex flex-col items-center pt-3 shrink-0">
+      <div className="w-10 bg-gray-800/60 border-r border-gray-700/40 flex flex-col items-center pt-3 shrink-0">
         <button
           onClick={() => setCollapsed(false)}
           className="text-gray-500 hover:text-gray-300 transition-colors p-1"
@@ -43,9 +43,9 @@ export function LeftSidebar({ character, onCharacterImported }: LeftSidebarProps
   }
 
   return (
-    <div className="w-80 bg-gray-800 border-r border-gray-700 flex flex-col shrink-0 relative">
+    <div className="w-80 bg-gray-800/60 border-r border-gray-700/40 flex flex-col shrink-0 relative">
       {/* Top bar */}
-      <div className="flex items-center justify-between px-3 py-1.5 border-b border-gray-700 shrink-0">
+      <div className="flex items-center justify-between px-3 py-1.5 border-b border-gray-700/40 shrink-0">
         <Link
           href="/"
           className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
@@ -79,11 +79,11 @@ export function LeftSidebar({ character, onCharacterImported }: LeftSidebarProps
           <div className="flex flex-col flex-1 min-h-0">
             <CharacterSheet character={character} />
             {/* Link to library */}
-            <div className="p-2 border-t border-gray-700 shrink-0">
+            <div className="p-2 border-t border-gray-700/40 shrink-0">
               <Link
                 href="/characters"
                 target="_blank"
-                className="text-[10px] text-gray-500 hover:text-purple-400 transition-colors"
+                className="text-[10px] text-gray-500 hover:text-amber-300 transition-colors"
               >
                 View in library &rarr;
               </Link>
@@ -113,33 +113,41 @@ function CharacterPicker({
   if (characters.length === 0) {
     return (
       <div className="p-4 text-center space-y-3">
-        <div className="text-gray-500 text-sm">No characters</div>
+        <div className="text-gray-400 text-sm" style={{ fontFamily: "var(--font-cinzel)" }}>No characters</div>
+        <div className="w-12 h-px bg-gradient-to-r from-transparent via-amber-500/30 to-transparent mx-auto" />
         <p className="text-gray-600 text-xs">
-          Import a character to get started.
+          Create or import a character to get started.
         </p>
-        <Link
-          href="/characters/create"
-          target="_blank"
-          className="inline-block bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-xs font-medium transition-colors"
-        >
-          Import Character
-        </Link>
-        <div>
+        <div className="flex flex-col gap-2">
           <Link
-            href="/characters"
+            href="/characters/builder"
             target="_blank"
-            className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+            className="inline-block bg-amber-600/80 hover:bg-amber-500/80 text-amber-50 px-4 py-2 rounded-lg text-xs font-medium transition-colors"
           >
-            Manage Characters &rarr;
+            Create Character
+          </Link>
+          <Link
+            href="/characters/create"
+            target="_blank"
+            className="inline-block bg-gray-800/60 hover:bg-gray-700/60 border border-gray-700/40 text-gray-300 px-4 py-2 rounded-lg text-xs font-medium transition-colors"
+          >
+            Import
           </Link>
         </div>
+        <Link
+          href="/characters"
+          target="_blank"
+          className="text-xs text-gray-500 hover:text-amber-300 transition-colors"
+        >
+          Manage Characters &rarr;
+        </Link>
       </div>
     );
   }
 
   return (
     <div className="p-3 space-y-2 overflow-y-auto">
-      <div className="text-xs text-gray-400 font-medium mb-1">
+      <div className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-2" style={{ fontFamily: "var(--font-cinzel)" }}>
         Select a character
       </div>
       {characters.map((saved) => {
@@ -148,9 +156,9 @@ function CharacterPicker({
           <button
             key={saved.id}
             onClick={() => onSelect(saved)}
-            className="w-full text-left bg-gray-900/50 hover:bg-gray-700/50 border border-gray-700 hover:border-gray-600 rounded-lg p-2.5 transition-colors"
+            className="w-full text-left bg-gray-900/50 hover:bg-gray-700/50 border border-gray-700/40 hover:border-gray-600/60 rounded-lg p-2.5 transition-colors"
           >
-            <div className="text-sm font-medium text-purple-400 truncate">
+            <div className="text-sm font-medium text-amber-300 truncate" style={{ fontFamily: "var(--font-cinzel)" }}>
               {s.name}
             </div>
             <div className="text-[11px] text-gray-400 truncate">

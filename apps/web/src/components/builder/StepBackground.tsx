@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
-import { backgroundsArray, getBackground, getFeat, getSpellsByClass, getSpellsByLevel } from "@aidnd/shared/data";
-import type { BackgroundData, SpellData } from "@aidnd/shared/data";
+import { backgroundsArray, getBackground, getFeat, getSpellsByClass } from "@aidnd/shared/data";
+import type { BackgroundData } from "@aidnd/shared/data";
 import type { StepProps } from "./types";
 import { parseBackgroundFeat, parseBackgroundAbilityScores, formatSkillName, ALL_SKILLS } from "./utils";
 import { Prose } from "../Prose";
@@ -17,12 +17,18 @@ export function StepBackground({ state, dispatch }: StepProps) {
   const selected = state.background ? getBackground(state.background) : null;
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h2 className="text-lg font-bold text-gray-200 mb-1">Choose Your Background</h2>
+    <div className="space-y-5">
+      <div className="space-y-1">
+        <h2
+          className="text-xl font-semibold text-amber-200/90 tracking-wide"
+          style={{ fontFamily: "var(--font-cinzel)" }}
+        >
+          Choose Your Background
+        </h2>
         <p className="text-xs text-gray-500">
           Your background provides skill proficiencies, a tool proficiency, an origin feat, and ability score increases.
         </p>
+        <div className="h-px bg-gradient-to-r from-amber-500/30 via-gray-700/50 to-transparent mt-2" />
       </div>
 
       <div className="flex gap-6">
@@ -33,9 +39,9 @@ export function StepBackground({ state, dispatch }: StepProps) {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search backgrounds..."
-            className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent mb-3"
+            className="w-full bg-gray-900/60 border border-gray-700/60 rounded-lg px-3 py-2 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/30 transition-colors mb-3"
           />
-          <div className="max-h-[420px] overflow-y-auto">
+          <div className="max-h-[420px] overflow-y-auto pr-1">
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {filtered.map((bg) => (
                 <button
@@ -43,10 +49,10 @@ export function StepBackground({ state, dispatch }: StepProps) {
                   onClick={() =>
                     dispatch({ type: "SET_BACKGROUND", background: bg.name })
                   }
-                  className={`text-left px-3 py-2 rounded-lg border text-sm transition-colors ${
+                  className={`text-left px-3 py-2.5 rounded-lg border text-sm transition-all duration-200 ${
                     state.background === bg.name
-                      ? "border-purple-500 bg-purple-600/10 text-purple-300"
-                      : "border-gray-700 bg-gray-800 text-gray-300 hover:border-gray-600"
+                      ? "border-amber-500/50 bg-amber-500/10 text-amber-200 shadow-[0_0_12px_rgba(245,158,11,0.08)]"
+                      : "border-gray-700/50 bg-gray-800/50 text-gray-300 hover:border-gray-600 hover:bg-gray-800"
                   }`}
                 >
                   <div className="font-medium truncate">{bg.name}</div>
@@ -77,8 +83,13 @@ function BackgroundDetail({ bg, state, dispatch }: { bg: BackgroundData } & Step
       : parseBackgroundAbilityScores(bg.description);
 
   return (
-    <div className="w-72 shrink-0 bg-gray-800 border border-gray-700 rounded-lg p-4 space-y-3 self-start">
-      <h3 className="text-sm font-bold text-purple-400">{bg.name}</h3>
+    <div className="w-72 shrink-0 bg-gray-800/60 border border-gray-700/40 rounded-lg p-4 space-y-3 self-start">
+      <h3
+        className="text-sm font-semibold text-amber-300/90"
+        style={{ fontFamily: "var(--font-cinzel)" }}
+      >
+        {bg.name}
+      </h3>
 
       {/* Skill Proficiencies */}
       <div>
@@ -89,7 +100,7 @@ function BackgroundDetail({ bg, state, dispatch }: { bg: BackgroundData } & Step
           {bg.skillProficiencies.map((s) => (
             <span
               key={s}
-              className="text-[10px] bg-purple-900/20 text-purple-400 border border-purple-800/30 rounded px-1.5 py-0.5"
+              className="text-[10px] bg-purple-900/20 text-purple-400 border border-purple-800/30 rounded-md px-1.5 py-0.5"
             >
               {formatSkillName(s)}
             </span>
@@ -103,7 +114,7 @@ function BackgroundDetail({ bg, state, dispatch }: { bg: BackgroundData } & Step
           <div className="text-[10px] text-gray-500 font-medium uppercase tracking-wider mb-1">
             Tool Proficiency
           </div>
-          <span className="text-[10px] bg-gray-900 text-gray-300 border border-gray-700 rounded px-1.5 py-0.5">
+          <span className="text-[10px] bg-gray-900/60 text-gray-300 border border-gray-700/50 rounded-md px-1.5 py-0.5">
             {bg.toolProficiency}
           </span>
         </div>
@@ -119,7 +130,7 @@ function BackgroundDetail({ bg, state, dispatch }: { bg: BackgroundData } & Step
             {abilityScores.map((a) => (
               <span
                 key={a}
-                className="text-[10px] bg-blue-900/20 text-blue-400 border border-blue-800/30 rounded px-1.5 py-0.5 capitalize"
+                className="text-[10px] bg-blue-900/20 text-blue-400 border border-blue-800/30 rounded-md px-1.5 py-0.5 capitalize"
               >
                 {a}
               </span>
@@ -134,7 +145,7 @@ function BackgroundDetail({ bg, state, dispatch }: { bg: BackgroundData } & Step
           <div className="text-[10px] text-gray-500 font-medium uppercase tracking-wider mb-1">
             Origin Feat
           </div>
-          <div className="border-l-2 border-purple-500/40 pl-2.5">
+          <div className="border-l-2 border-amber-500/30 pl-2.5">
             <div className="text-xs font-medium text-gray-200">{featName}</div>
             {featData && (
               <div className="line-clamp-4 mt-0.5">
@@ -173,7 +184,6 @@ function MagicInitiateChoices({
 }: {
   featName: string;
 } & StepProps) {
-  // Extract the class from feat name (e.g. "Magic Initiate (Druid)")
   const matchedClass = MI_CLASSES.find((c) =>
     featName.toLowerCase().includes(c.toLowerCase())
   );
@@ -193,10 +203,9 @@ function MagicInitiateChoices({
   const selectedSpell = overrides.spell ?? "";
 
   return (
-    <div className="mt-2 space-y-2 border-t border-gray-700 pt-2">
+    <div className="mt-2 space-y-2 border-t border-gray-700/50 pt-2">
       <div className="text-[10px] text-gray-500 font-medium">Magic Initiate Choices</div>
 
-      {/* Spellcasting class (if not fixed by feat name) */}
       {!matchedClass && (
         <div>
           <div className="text-[10px] text-gray-500 mb-1">Spell List</div>
@@ -210,10 +219,10 @@ function MagicInitiateChoices({
                     overrides: { spellClass: c, cantrips: [], spell: "" },
                   })
                 }
-                className={`text-[10px] px-2 py-0.5 rounded ${
+                className={`text-[10px] px-2.5 py-1 rounded-md transition-all duration-150 ${
                   spellClass === c
-                    ? "bg-purple-600/20 text-purple-400 border border-purple-500/30"
-                    : "text-gray-500 border border-gray-700"
+                    ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
+                    : "text-gray-500 border border-gray-700/60"
                 }`}
               >
                 {c}
@@ -223,7 +232,6 @@ function MagicInitiateChoices({
         </div>
       )}
 
-      {/* Spellcasting ability */}
       <div>
         <div className="text-[10px] text-gray-500 mb-1">Spellcasting Ability</div>
         <div className="flex gap-1">
@@ -236,10 +244,10 @@ function MagicInitiateChoices({
                   overrides: { abilityChoice: a },
                 })
               }
-              className={`text-[10px] px-2 py-0.5 rounded ${
+              className={`text-[10px] px-2.5 py-1 rounded-md transition-all duration-150 ${
                 (overrides.abilityChoice ?? "").toLowerCase() === a.toLowerCase()
-                  ? "bg-purple-600/20 text-purple-400 border border-purple-500/30"
-                  : "text-gray-500 border border-gray-700"
+                  ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
+                  : "text-gray-500 border border-gray-700/60"
               }`}
             >
               {a.slice(0, 3).toUpperCase()}
@@ -248,7 +256,6 @@ function MagicInitiateChoices({
         </div>
       </div>
 
-      {/* 2 Cantrips */}
       <div>
         <div className="text-[10px] text-gray-500 mb-1">
           Cantrips ({selectedCantrips.length}/2)
@@ -271,12 +278,12 @@ function MagicInitiateChoices({
                   });
                 }}
                 disabled={!isSelected && selectedCantrips.length >= 2}
-                className={`text-[10px] px-1.5 py-0.5 rounded transition-colors ${
+                className={`text-[10px] px-1.5 py-0.5 rounded-md transition-colors ${
                   isSelected
-                    ? "bg-purple-600/20 text-purple-400 border border-purple-500/30"
+                    ? "bg-purple-600/15 text-purple-400 border border-purple-500/30"
                     : selectedCantrips.length >= 2
                       ? "text-gray-700 border border-gray-800"
-                      : "text-gray-400 border border-gray-700 hover:text-gray-200"
+                      : "text-gray-400 border border-gray-700/60 hover:text-gray-200"
                 }`}
               >
                 {s.name}
@@ -286,7 +293,6 @@ function MagicInitiateChoices({
         </div>
       </div>
 
-      {/* 1 Level 1 Spell */}
       <div>
         <div className="text-[10px] text-gray-500 mb-1">
           Level 1 Spell {selectedSpell ? `(${selectedSpell})` : "(pick one)"}
@@ -303,10 +309,10 @@ function MagicInitiateChoices({
                     overrides: { spell: isSelected ? "" : s.name },
                   })
                 }
-                className={`text-[10px] px-1.5 py-0.5 rounded transition-colors ${
+                className={`text-[10px] px-1.5 py-0.5 rounded-md transition-colors ${
                   isSelected
-                    ? "bg-purple-600/20 text-purple-400 border border-purple-500/30"
-                    : "text-gray-400 border border-gray-700 hover:text-gray-200"
+                    ? "bg-purple-600/15 text-purple-400 border border-purple-500/30"
+                    : "text-gray-400 border border-gray-700/60 hover:text-gray-200"
                 }`}
               >
                 {s.name}
@@ -326,7 +332,7 @@ function SkilledChoices({ state, dispatch }: StepProps) {
   const selectedSkills = overrides.skillChoices ?? [];
 
   return (
-    <div className="mt-2 space-y-2 border-t border-gray-700 pt-2">
+    <div className="mt-2 space-y-2 border-t border-gray-700/50 pt-2">
       <div className="text-[10px] text-gray-500 font-medium">
         Skilled: Choose 3 skill proficiencies ({selectedSkills.length}/3)
       </div>
@@ -348,12 +354,12 @@ function SkilledChoices({ state, dispatch }: StepProps) {
                 });
               }}
               disabled={!isSelected && selectedSkills.length >= 3}
-              className={`text-[10px] px-1.5 py-0.5 rounded transition-colors ${
+              className={`text-[10px] px-1.5 py-0.5 rounded-md transition-colors ${
                 isSelected
-                  ? "bg-purple-600/20 text-purple-400 border border-purple-500/30"
+                  ? "bg-purple-600/15 text-purple-400 border border-purple-500/30"
                   : selectedSkills.length >= 3
                     ? "text-gray-700 border border-gray-800"
-                    : "text-gray-400 border border-gray-700 hover:text-gray-200"
+                    : "text-gray-400 border border-gray-700/60 hover:text-gray-200"
               }`}
             >
               {formatSkillName(skill)}

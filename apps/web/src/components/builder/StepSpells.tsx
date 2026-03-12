@@ -125,19 +125,22 @@ export function StepSpells({ state, dispatch }: StepProps) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <div>
-        <h2 className="text-lg font-bold text-gray-200 mb-1">Spells</h2>
+        <h2 className="text-xl font-semibold text-amber-200/90 tracking-wide" style={{ fontFamily: "var(--font-cinzel)" }}>
+          Spells
+        </h2>
         <p className="text-xs text-gray-500">
           Select your cantrips and {spellInfo.type === "known" ? "known" : "prepared"} spells.
           {castingAbility && (
-            <span className="ml-1 text-purple-400">
+            <span className="ml-1 text-amber-300">
               Casting: {castingAbility.charAt(0).toUpperCase() + castingAbility.slice(1)} (
               {abilityMod >= 0 ? "+" : ""}
               {abilityMod})
             </span>
           )}
         </p>
+        <div className="h-px bg-gradient-to-r from-amber-500/30 via-gray-700/50 to-transparent mt-2" />
         {isRitualCaster && (
           <p className="text-[10px] text-gray-600 mt-0.5">
             {isWizard
@@ -156,7 +159,7 @@ export function StepSpells({ state, dispatch }: StepProps) {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search spells..."
-            className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className="w-full bg-gray-900/60 border border-gray-700/60 rounded-lg px-3 py-1.5 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/30"
           />
 
           {/* Cantrips (collapsible) */}
@@ -180,7 +183,7 @@ export function StepSpells({ state, dispatch }: StepProps) {
                 </span>
               </div>
               {!cantripsExpanded && state.selectedCantrips.length > 0 && (
-                <span className="text-[10px] text-purple-400/70 truncate max-w-[60%] text-right">
+                <span className="text-[10px] text-amber-400/70 truncate max-w-[60%] text-right">
                   {state.selectedCantrips.join(", ")}
                 </span>
               )}
@@ -226,7 +229,7 @@ export function StepSpells({ state, dispatch }: StepProps) {
                       onClick={() => setLevelFilter(null)}
                       className={`text-[10px] px-1.5 py-0.5 rounded ${
                         levelFilter === null
-                          ? "bg-purple-600/20 text-purple-400"
+                          ? "bg-amber-500/15 text-amber-300"
                           : "text-gray-500 hover:text-gray-300"
                       }`}
                     >
@@ -239,7 +242,7 @@ export function StepSpells({ state, dispatch }: StepProps) {
                           onClick={() => setLevelFilter(l)}
                           className={`text-[10px] px-1.5 py-0.5 rounded ${
                             levelFilter === l
-                              ? "bg-purple-600/20 text-purple-400"
+                              ? "bg-amber-500/15 text-amber-300"
                               : "text-gray-500 hover:text-gray-300"
                           }`}
                         >
@@ -335,8 +338,8 @@ function SpellRow({
         locked
           ? "border-amber-500/20 bg-amber-600/5"
           : selected
-            ? "border-purple-500/30 bg-purple-600/5"
-            : "border-gray-700 bg-gray-800"
+            ? "border-amber-500/30 bg-amber-500/5"
+            : "border-gray-700/50 bg-gray-800/50"
       }`}
     >
       <div className="flex items-center gap-2 px-2.5 py-1.5">
@@ -352,7 +355,7 @@ function SpellRow({
             disabled={disabled}
             className={`w-4 h-4 rounded border shrink-0 flex items-center justify-center ${
               selected
-                ? "border-purple-500 bg-purple-600"
+                ? "border-amber-500 bg-amber-500/80"
                 : disabled
                   ? "border-gray-700 bg-gray-900 opacity-30"
                   : "border-gray-600 bg-gray-900 hover:border-gray-500"
@@ -453,7 +456,7 @@ function SelectedSpellsSidebar({
 
   if (!hasSpells) {
     return (
-      <div className="w-56 shrink-0 bg-gray-800 border border-gray-700 rounded-lg p-4 self-start">
+      <div className="w-56 shrink-0 bg-gray-800/60 border border-gray-700/40 rounded-lg p-4 self-start">
         <div className="text-xs text-gray-500 text-center">
           No spells selected
         </div>
@@ -462,7 +465,7 @@ function SelectedSpellsSidebar({
   }
 
   return (
-    <div className="w-56 shrink-0 bg-gray-800 border border-gray-700 rounded-lg p-4 space-y-3 self-start max-h-[600px] overflow-y-auto">
+    <div className="w-56 shrink-0 bg-gray-800/60 border border-gray-700/40 rounded-lg p-4 space-y-3 self-start max-h-[600px] overflow-y-auto">
       <div className="text-xs font-medium text-gray-300">Selected Spells</div>
 
       {/* Always-Prepared Spells */}

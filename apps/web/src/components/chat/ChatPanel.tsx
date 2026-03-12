@@ -108,11 +108,9 @@ export function ChatPanel({ messages, onSend, connectionState, onRollDice, myCha
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
         {messages.length === 0 && (
-          <div className="text-center text-gray-600 mt-8">
-            <p className="text-lg mb-1">Waiting for the adventure to begin...</p>
-            <p className="text-sm">
-              Make sure someone has configured an AI provider.
-            </p>
+          <div className="text-center text-gray-600 mt-16">
+            <p className="text-lg mb-2 text-gray-500" style={{ fontFamily: "var(--font-cinzel)" }}>Waiting for the adventure to begin&hellip;</p>
+            <div className="w-16 h-px bg-gradient-to-r from-transparent via-amber-500/30 to-transparent mx-auto" />
           </div>
         )}
         {messages.map((msg, i) => (
@@ -129,7 +127,7 @@ export function ChatPanel({ messages, onSend, connectionState, onRollDice, myCha
       )}
 
       {/* Input */}
-      <form onSubmit={handleSubmit} className="border-t border-gray-700 p-4 shrink-0">
+      <form onSubmit={handleSubmit} className="border-t border-gray-700/40 p-4 shrink-0">
         <div className="flex gap-2">
           <input
             type="text"
@@ -138,9 +136,9 @@ export function ChatPanel({ messages, onSend, connectionState, onRollDice, myCha
             placeholder={isConnected ? "What do you do?" : "Connecting..."}
             disabled={!isConnected}
             maxLength={2000}
-            className="flex-1 bg-gray-800 border border-gray-600 rounded-lg px-4 py-2.5
-                       text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2
-                       focus:ring-purple-500 disabled:opacity-50"
+            className="flex-1 bg-gray-900/60 border border-gray-700/50 rounded-lg px-4 py-2.5
+                       text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-1
+                       focus:ring-amber-500/50 focus:border-amber-500/30 disabled:opacity-50"
           />
           {isMyTurn && onEndTurn && (
             <button
@@ -155,7 +153,7 @@ export function ChatPanel({ messages, onSend, connectionState, onRollDice, myCha
           <button
             type="submit"
             disabled={!isConnected || !input.trim()}
-            className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-700
+            className="bg-amber-600/80 hover:bg-amber-600 disabled:bg-gray-700
                        disabled:text-gray-500 text-white px-6 py-2.5 rounded-lg
                        font-medium transition-colors"
           >

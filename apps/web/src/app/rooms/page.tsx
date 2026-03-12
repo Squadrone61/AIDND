@@ -66,17 +66,23 @@ export default function RoomsPage() {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <div>
-              <h1 className="text-2xl font-bold text-purple-400">Browse Rooms</h1>
-              <p className="text-sm text-gray-500 mt-1">
+              <h1
+                className="text-2xl font-bold text-amber-200/90"
+                style={{ fontFamily: "var(--font-cinzel)" }}
+              >
+                Browse Rooms
+              </h1>
+              <p className="text-xs text-gray-500 mt-1">
                 Join an active game session
               </p>
+              <div className="h-px bg-gradient-to-r from-amber-500/30 via-gray-700/50 to-transparent mt-2" />
               <span className="text-[11px] text-gray-600">Auto-refreshes every 15s</span>
             </div>
             <button
               onClick={() => fetchRooms(true)}
               disabled={refreshing}
-              className="mt-1 flex items-center gap-1.5 bg-gray-800 px-3 py-1.5 rounded-lg border border-gray-700
-                         text-gray-500 hover:text-purple-400 hover:border-purple-500/50 transition-all disabled:opacity-50"
+              className="mt-1 flex items-center gap-1.5 bg-gray-800/60 px-3 py-1.5 rounded-lg border border-gray-700/50
+                         text-gray-500 hover:text-amber-300 hover:border-amber-500/50 transition-all disabled:opacity-50"
               title="Refresh"
             >
               <svg
@@ -97,7 +103,7 @@ export default function RoomsPage() {
           </div>
           <Link
             href="/"
-            className="text-sm text-gray-400 hover:text-gray-200 transition-colors"
+            className="text-sm text-amber-400/70 hover:text-amber-300 transition-colors"
           >
             &larr; Back to Home
           </Link>
@@ -113,13 +119,13 @@ export default function RoomsPage() {
           </div>
         ) : rooms.length === 0 ? (
           <div className="text-center py-16">
-            <p className="text-lg text-gray-400 mb-2">No active rooms</p>
+            <p className="text-lg text-gray-400 mb-2" style={{ fontFamily: "var(--font-cinzel)" }}>No active rooms</p>
             <p className="text-sm text-gray-600 mb-4">
               Be the first to start an adventure.
             </p>
             <Link
               href="/"
-              className="inline-block mt-3 bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-colors"
+              className="inline-block mt-3 bg-amber-600/80 hover:bg-amber-500/80 text-amber-50 px-5 py-2.5 rounded-lg text-sm font-medium transition-colors"
             >
               Create a Room
             </Link>
@@ -130,11 +136,11 @@ export default function RoomsPage() {
               <button
                 key={room.roomCode}
                 onClick={() => handleRoomClick(room.roomCode)}
-                className="bg-gray-800 hover:bg-gray-750 border border-gray-700 hover:border-purple-500/50
-                           rounded-xl p-5 text-left transition-all group"
+                className="relative bg-gray-800/40 hover:bg-gray-800/60 border border-gray-700/30 hover:border-amber-500/20
+                           rounded-xl p-5 text-left transition-all duration-200 group overflow-hidden"
               >
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-xl font-mono font-bold text-purple-400 tracking-widest group-hover:text-purple-300 transition-colors">
+                  <span className="text-xl font-mono font-bold text-amber-300 tracking-widest group-hover:text-amber-200 transition-colors">
                     {room.roomCode}
                   </span>
                   {room.hasPassword && (

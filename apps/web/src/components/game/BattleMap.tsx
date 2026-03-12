@@ -243,21 +243,21 @@ export function BattleMap({
         <div className="absolute top-2 right-2 z-10 bg-gray-800/80 rounded flex gap-1 p-1">
           <button
             onClick={() => setZoom((z) => Math.max(0.5, z - 0.25))}
-            className="w-6 h-6 flex items-center justify-center text-xs text-gray-400 hover:text-gray-200 rounded hover:bg-gray-700 transition-colors"
+            className="w-6 h-6 flex items-center justify-center text-xs text-gray-400 hover:text-gray-200 rounded hover:bg-gray-700/60 transition-colors"
             title="Zoom out"
           >
             -
           </button>
           <button
             onClick={() => setZoom(1)}
-            className="px-1.5 h-6 flex items-center justify-center text-[10px] text-gray-400 hover:text-gray-200 rounded hover:bg-gray-700 transition-colors font-mono"
+            className="px-1.5 h-6 flex items-center justify-center text-[10px] text-gray-400 hover:text-gray-200 rounded hover:bg-gray-700/60 transition-colors font-mono"
             title="Reset zoom"
           >
             {Math.round(zoom * 100)}%
           </button>
           <button
             onClick={() => setZoom((z) => Math.min(2, z + 0.25))}
-            className="w-6 h-6 flex items-center justify-center text-xs text-gray-400 hover:text-gray-200 rounded hover:bg-gray-700 transition-colors"
+            className="w-6 h-6 flex items-center justify-center text-xs text-gray-400 hover:text-gray-200 rounded hover:bg-gray-700/60 transition-colors"
             title="Zoom in"
           >
             +

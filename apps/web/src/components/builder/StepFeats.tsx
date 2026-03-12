@@ -27,13 +27,12 @@ export function StepFeats({ state, dispatch }: StepProps) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-lg font-bold text-gray-200 mb-1">
-          Ability Score Improvements & Feats
+      <div className="space-y-1">
+        <h2 className="text-xl font-semibold text-amber-200/90 tracking-wide" style={{ fontFamily: "var(--font-cinzel)" }}>
+          Ability Score Improvements &amp; Feats
         </h2>
-        <p className="text-xs text-gray-500">
-          At certain class levels, you can increase your ability scores or take a feat.
-        </p>
+        <p className="text-xs text-gray-500">At certain class levels, you can increase your ability scores or take a feat.</p>
+        <div className="h-px bg-gradient-to-r from-amber-500/30 via-gray-700/50 to-transparent mt-2" />
       </div>
 
       {asiLevels.map((level) => {
@@ -54,8 +53,8 @@ export function StepFeats({ state, dispatch }: StepProps) {
       })}
 
       {/* Final Ability Score Preview */}
-      <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
-        <div className="text-xs text-gray-400 font-medium mb-2">
+      <div className="bg-gray-800/40 border border-gray-700/40 rounded-lg p-4">
+        <div className="text-xs text-amber-200/70 font-medium mb-2" style={{ fontFamily: "var(--font-cinzel)" }}>
           Final Ability Scores (with all ASI/feat bonuses)
         </div>
         <div className="grid grid-cols-6 gap-3">
@@ -65,7 +64,7 @@ export function StepFeats({ state, dispatch }: StepProps) {
             return (
               <div
                 key={ability}
-                className="bg-gray-900 border border-gray-700 rounded-lg p-2 text-center"
+                className="bg-gray-900/60 border border-gray-700/40 rounded-lg p-2 text-center"
               >
                 <div className="text-[10px] text-gray-500 uppercase">
                   {ABILITY_ABBREV[ability]}
@@ -101,11 +100,11 @@ function ASICard({
   const type = selection?.type ?? "asi";
 
   return (
-    <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 space-y-3">
+    <div className="bg-gray-800/60 border border-gray-700/40 rounded-lg p-4 space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-600/20 text-purple-400 border border-purple-500/30 font-medium">
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 font-medium">
             Level {level}
           </span>
           <span className="text-xs text-gray-400">
@@ -119,7 +118,7 @@ function ASICard({
             }
             className={`text-[10px] px-2.5 py-1 rounded transition-colors ${
               type === "asi"
-                ? "bg-purple-600/20 text-purple-400 border border-purple-500/30"
+                ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
                 : "text-gray-500 border border-gray-700 hover:text-gray-300"
             }`}
           >
@@ -129,7 +128,7 @@ function ASICard({
             onClick={() => onChange({ level, type: "feat" })}
             className={`text-[10px] px-2.5 py-1 rounded transition-colors ${
               type === "feat"
-                ? "bg-purple-600/20 text-purple-400 border border-purple-500/30"
+                ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
                 : "text-gray-500 border border-gray-700 hover:text-gray-300"
             }`}
           >
@@ -182,7 +181,7 @@ function ASIContent({
           }
           className={`text-[10px] px-2 py-1 rounded ${
             mode === "two"
-              ? "bg-purple-600/20 text-purple-400 border border-purple-500/30"
+              ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
               : "text-gray-500 border border-gray-700"
           }`}
         >
@@ -194,7 +193,7 @@ function ASIContent({
           }
           className={`text-[10px] px-2 py-1 rounded ${
             mode === "one-one"
-              ? "bg-purple-600/20 text-purple-400 border border-purple-500/30"
+              ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
               : "text-gray-500 border border-gray-700"
           }`}
         >
@@ -277,7 +276,7 @@ function FeatContent({
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search feats..."
-          className="flex-1 bg-gray-900 border border-gray-700 rounded px-2.5 py-1.5 text-xs text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
+          className="flex-1 bg-gray-900/60 border border-gray-700/60 rounded px-2.5 py-1.5 text-xs text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-amber-500/50"
         />
         <div className="flex gap-1">
           {(["all", "general", "epic-boon"] as const).map((cat) => (
@@ -286,7 +285,7 @@ function FeatContent({
               onClick={() => setCategory(cat)}
               className={`text-[10px] px-2 py-1 rounded whitespace-nowrap ${
                 category === cat
-                  ? "bg-purple-600/20 text-purple-400 border border-purple-500/30"
+                  ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
                   : "text-gray-500 border border-gray-700"
               }`}
             >
@@ -352,8 +351,8 @@ function FeatCard({
       onClick={onSelect}
       className={`text-left p-2.5 rounded-lg border transition-colors ${
         isSelected
-          ? "border-purple-500 bg-purple-600/10 text-purple-300"
-          : "border-gray-700 bg-gray-900 text-gray-300 hover:border-gray-600"
+          ? "border-amber-500/50 bg-amber-500/10 text-amber-200"
+          : "border-gray-700/50 bg-gray-900/60 text-gray-300 hover:border-gray-600"
       }`}
     >
       <div className="text-xs font-medium truncate">{feat.name}</div>
@@ -392,9 +391,9 @@ function SelectedFeatDetail({
   const needsAbilityChoice = abilityChoices.length > 1;
 
   return (
-    <div className="bg-gray-900 border border-purple-500/20 rounded-lg p-3 space-y-2">
+    <div className="bg-gray-900/60 border border-amber-500/20 rounded-lg p-3 space-y-2">
       <div className="flex items-center justify-between">
-        <div className="text-sm font-medium text-purple-400">{feat.name}</div>
+        <div className="text-sm font-medium text-amber-300/90" style={{ fontFamily: "var(--font-cinzel)" }}>{feat.name}</div>
         <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-800 text-gray-500 capitalize">
           {feat.category.replace("-", " ")}
         </span>
@@ -433,7 +432,7 @@ function SelectedFeatDetail({
                     }
                     className={`text-[10px] px-2 py-1 rounded transition-colors ${
                       isChosen
-                        ? "bg-purple-600 text-white"
+                        ? "bg-amber-500/80 text-white"
                         : "bg-gray-800 text-gray-400 hover:text-gray-200"
                     }`}
                   >
@@ -536,7 +535,7 @@ function FeatSubChoices({
                 disabled={!isSelected && selected.length >= 3}
                 className={`text-[10px] px-1.5 py-0.5 rounded ${
                   isSelected
-                    ? "bg-purple-600/20 text-purple-400 border border-purple-500/30"
+                    ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
                     : selected.length >= 3
                       ? "text-gray-700 border border-gray-800"
                       : "text-gray-400 border border-gray-700 hover:text-gray-200"
@@ -570,7 +569,7 @@ function FeatSubChoices({
                 }
                 className={`text-[10px] px-1.5 py-0.5 rounded ${
                   isSelected
-                    ? "bg-purple-600/20 text-purple-400 border border-purple-500/30"
+                    ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
                     : "text-gray-400 border border-gray-700 hover:text-gray-200"
                 }`}
               >
@@ -609,7 +608,7 @@ function FeatSubChoices({
               }
               className={`text-[10px] px-2 py-0.5 rounded ${
                 spellClass === c
-                  ? "bg-purple-600/20 text-purple-400 border border-purple-500/30"
+                  ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
                   : "text-gray-500 border border-gray-700"
               }`}
             >
@@ -640,7 +639,7 @@ function FeatSubChoices({
                   disabled={!isSel && selectedCantrips.length >= 2}
                   className={`text-[10px] px-1.5 py-0.5 rounded ${
                     isSel
-                      ? "bg-purple-600/20 text-purple-400 border border-purple-500/30"
+                      ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
                       : selectedCantrips.length >= 2
                         ? "text-gray-700 border border-gray-800"
                         : "text-gray-400 border border-gray-700 hover:text-gray-200"
@@ -669,7 +668,7 @@ function FeatSubChoices({
                   }
                   className={`text-[10px] px-1.5 py-0.5 rounded ${
                     isSel
-                      ? "bg-purple-600/20 text-purple-400 border border-purple-500/30"
+                      ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
                       : "text-gray-400 border border-gray-700 hover:text-gray-200"
                   }`}
                 >

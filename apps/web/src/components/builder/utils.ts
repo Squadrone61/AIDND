@@ -702,6 +702,15 @@ function equipmentToInventoryItem(entry: EquipmentEntry): InventoryItem {
       item.type = entry.itemType || "Gear";
       if (entry.weight) item.weight = entry.weight;
       if (entry.description) item.description = entry.description;
+      if (entry.armorClass != null) item.armorClass = entry.armorClass;
+      if (entry.damage) item.damage = entry.damage;
+      if (entry.damageType) item.damageType = entry.damageType;
+      if (entry.range) item.range = entry.range;
+      if (entry.attackBonus != null) item.attackBonus = entry.attackBonus;
+      if (entry.properties?.length) item.properties = entry.properties;
+      if (entry.rarity) item.rarity = entry.rarity;
+      if (entry.attunement) item.attunement = true;
+      if (entry.isMagicItem) item.isMagicItem = true;
       break;
     }
   }

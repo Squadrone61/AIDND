@@ -80,7 +80,7 @@ export function DetailPopover({
   return (
     <div
       ref={cardRef}
-      className="fixed z-50 bg-gray-800 border border-gray-600 rounded-lg shadow-xl max-w-sm w-[384px] max-h-[70vh] flex flex-col"
+      className="fixed z-50 bg-gray-800/60 border border-gray-700/40 rounded-lg shadow-xl max-w-sm w-[384px] max-h-[70vh] flex flex-col backdrop-blur-sm"
       style={{
         left: coords?.left ?? -9999,
         top: coords?.top ?? -9999,
@@ -88,8 +88,8 @@ export function DetailPopover({
       }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700 shrink-0">
-        <h3 className="text-base font-semibold text-gray-200 truncate pr-2">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700/40 shrink-0">
+        <h3 className="text-base font-semibold text-amber-200/90 truncate pr-2" style={{ fontFamily: "var(--font-cinzel)" }}>
           {title}
         </h3>
         <button

@@ -70,14 +70,14 @@ export function StepSkills({ state, dispatch }: StepProps) {
   }, []);
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h2 className="text-lg font-bold text-gray-200 mb-1">
+    <div className="space-y-5">
+      <div className="space-y-1">
+        <h2 className="text-xl font-semibold text-amber-200/90 tracking-wide" style={{ fontFamily: "var(--font-cinzel)" }}>
           Skill Proficiencies
         </h2>
         <p className="text-xs text-gray-500">
           Background and species skills are automatically included. Choose{" "}
-          <span className="text-purple-400">{maxClassPicks}</span> class skills
+          <span className="text-amber-300">{maxClassPicks}</span> class skills
           from the available options.
           {state.skillProficiencies.length > 0 && (
             <span className="ml-1">
@@ -85,6 +85,7 @@ export function StepSkills({ state, dispatch }: StepProps) {
             </span>
           )}
         </p>
+        <div className="h-px bg-gradient-to-r from-amber-500/30 via-gray-700/50 to-transparent mt-2" />
       </div>
 
       <div className="space-y-4">
@@ -126,8 +127,8 @@ export function StepSkills({ state, dispatch }: StepProps) {
                         isGranted
                           ? "border-emerald-800/30 bg-emerald-900/10"
                           : isClassPick
-                            ? "border-purple-500/30 bg-purple-600/10"
-                            : "border-gray-700 bg-gray-800"
+                            ? "border-amber-500/30 bg-amber-500/8"
+                            : "border-gray-700/50 bg-gray-800/50"
                       }`}
                     >
                       {/* Checkbox / indicator */}
@@ -155,7 +156,7 @@ export function StepSkills({ state, dispatch }: StepProps) {
                           disabled={!inClassPool || (!isClassPick && atMax)}
                           className={`w-4 h-4 rounded border shrink-0 flex items-center justify-center ${
                             isClassPick
-                              ? "border-purple-500 bg-purple-600"
+                              ? "border-amber-500 bg-amber-500/80"
                               : !inClassPool || atMax
                                 ? "border-gray-700 bg-gray-900 opacity-30"
                                 : "border-gray-600 bg-gray-900 hover:border-gray-500"
@@ -240,7 +241,7 @@ export function StepSkills({ state, dispatch }: StepProps) {
           Background / Species
         </span>
         <span className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded bg-purple-600/50 inline-block" />
+          <span className="w-2 h-2 rounded bg-amber-500/50 inline-block" />
           Class Pick
         </span>
         {canHaveExpertise && (

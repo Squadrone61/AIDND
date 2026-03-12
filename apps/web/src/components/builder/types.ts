@@ -81,6 +81,15 @@ export interface EquipmentEntry {
   description?: string;
   weight?: number;
   itemType?: string;
+  armorClass?: number;
+  damage?: string;
+  damageType?: string;
+  range?: string;
+  attackBonus?: number;
+  properties?: string[];
+  rarity?: string;
+  attunement?: boolean;
+  isMagicItem?: boolean;
 }
 
 // ─── Builder State ──────────────────────────────────────

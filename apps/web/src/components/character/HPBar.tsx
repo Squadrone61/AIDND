@@ -17,7 +17,7 @@ export function HPBar({ current, max, temp = 0 }: HPBarProps) {
       : "bg-red-600/40";
 
   return (
-    <div className="relative bg-gray-900/50 border border-gray-700 rounded py-1 overflow-hidden text-center">
+    <div className="relative bg-gray-900/60 border border-gray-700/50 rounded py-1 overflow-hidden text-center">
       {/* Fill background */}
       <div
         className={`absolute inset-0 ${fillColor} transition-all duration-300`}

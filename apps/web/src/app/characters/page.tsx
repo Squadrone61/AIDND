@@ -13,15 +13,21 @@ export default function CharactersPage() {
     <div className="min-h-screen p-6 max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-purple-400">My Characters</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            {characters.length} character{characters.length !== 1 ? "s" : ""}
+          <h1
+            className="text-2xl font-bold text-amber-200/90"
+            style={{ fontFamily: "var(--font-cinzel)" }}
+          >
+            My Characters
+          </h1>
+          <p className="text-xs text-gray-500 mt-1">
+            {characters.length} character{characters.length !== 1 ? "s" : ""} in your library
           </p>
+          <div className="h-px bg-gradient-to-r from-amber-500/30 via-gray-700/50 to-transparent mt-2" />
         </div>
         <div className="flex items-center gap-3">
           <Link
             href="/characters/builder"
-            className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            className="bg-amber-600/80 hover:bg-amber-500/80 text-amber-50 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
           >
             Create Character
           </Link>
@@ -33,23 +39,23 @@ export default function CharactersPage() {
           </Link>
           <Link
             href="/"
-            className="bg-gray-800 border border-gray-700 text-gray-400 hover:text-gray-200 px-4 py-2 rounded-lg text-sm transition-colors"
+            className="text-sm text-amber-400/70 hover:text-amber-300 transition-colors px-2 py-2"
           >
-            Back to Home
+            &larr; Home
           </Link>
         </div>
       </div>
 
       {characters.length === 0 ? (
         <div className="text-center py-16">
-          <div className="text-gray-600 text-lg mb-2">No characters yet</div>
+          <div className="text-gray-500 text-lg mb-2" style={{ fontFamily: "var(--font-cinzel)" }}>No characters yet</div>
           <p className="text-gray-500 text-sm mb-4">
             Create a character or import one from D&D Beyond to get started.
           </p>
           <div className="flex items-center justify-center gap-3">
             <Link
               href="/characters/builder"
-              className="inline-block bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-colors"
+              className="inline-block bg-amber-600/80 hover:bg-amber-500/80 text-amber-50 px-5 py-2.5 rounded-lg text-sm font-medium transition-colors"
             >
               Create Character
             </Link>
@@ -70,16 +76,16 @@ export default function CharactersPage() {
             return (
               <div
                 key={saved.id}
-                className={`bg-gray-800 border border-gray-700 rounded-lg p-4 hover:border-purple-500/40 hover:shadow-lg hover:shadow-purple-900/10 transition-all duration-200 group relative border-l-2 ${
-                  ["border-l-purple-500", "border-l-blue-500", "border-l-green-500", "border-l-amber-500", "border-l-red-500", "border-l-cyan-500"][s.name.charCodeAt(0) % 6]
+                className={`bg-gray-800/60 border border-gray-700/40 rounded-lg p-4 hover:border-gray-600 hover:bg-gray-800 transition-all duration-200 group relative border-l-2 ${
+                  ["border-l-amber-500/50", "border-l-blue-500/50", "border-l-green-500/50", "border-l-amber-500", "border-l-red-500/50", "border-l-cyan-500/50"][s.name.charCodeAt(0) % 6]
                 }`}
               >
                 <Link href={`/characters/${saved.id}`} className="block">
                   <div className="flex items-center gap-2 mb-2">
-                    <h3 className="text-base font-bold text-purple-400 truncate">
+                    <h3 className="text-base font-bold text-amber-300 truncate" style={{ fontFamily: "var(--font-cinzel)" }}>
                       {s.name}
                     </h3>
-                    <span className="text-[10px] bg-purple-600/20 text-purple-400 font-bold px-2 py-0.5 rounded-full">
+                    <span className="text-[10px] bg-amber-500/10 text-amber-300 font-bold px-2 py-0.5 rounded-full">
                       Lvl {getTotalLevel(s.classes)}
                     </span>
                   </div>
@@ -87,7 +93,7 @@ export default function CharactersPage() {
                     {s.race} &middot; {formatClassString(s.classes)}
                   </div>
                   {saved.campaignSlug && (
-                    <div className="inline-block text-[10px] bg-purple-900/30 text-purple-400 border border-purple-800/50 rounded px-1.5 py-0.5 mb-2">
+                    <div className="inline-block text-[10px] bg-amber-500/10 text-amber-300 border border-amber-500/50 rounded px-1.5 py-0.5 mb-2">
                       {saved.campaignSlug}
                     </div>
                   )}

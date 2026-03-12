@@ -116,23 +116,28 @@ function HomePageInner() {
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-2xl">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-purple-400 mb-2" style={{ textShadow: '0 0 40px rgba(192,132,252,0.3)' }}>
+          <h1
+            className="text-4xl font-bold text-amber-200/90 mb-2"
+            style={{ fontFamily: "var(--font-cinzel)", textShadow: '0 0 40px rgba(245,158,11,0.25)' }}
+          >
             AI Dungeon Master
           </h1>
           <p className="text-gray-500 tracking-wide uppercase text-xs font-medium">D&D 5e with an AI Game Master</p>
-          <div className="w-16 h-0.5 bg-purple-500/30 mx-auto mt-3" />
+          <div className="w-24 h-px bg-gradient-to-r from-transparent via-amber-500/40 to-transparent mx-auto mt-4" />
         </div>
 
         {/* Kick/Reject message */}
         {kickMessage && (
-          <div className="bg-red-900/20 border border-red-700 rounded-lg p-3 mb-4 text-center">
+          <div className="bg-red-900/20 border border-red-700/50 rounded-lg p-3 mb-4 text-center">
             <p className="text-sm text-red-400">{kickMessage}</p>
           </div>
         )}
 
-        <div className="bg-gray-800 rounded-xl p-6 space-y-5">
+        <div className="relative bg-gray-800/40 backdrop-blur-sm rounded-xl border border-gray-700/30 p-6 space-y-5 shadow-[0_0_60px_rgba(0,0,0,0.3)]">
+          {/* Top accent line */}
+          <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-amber-500/20 to-transparent" />
           {/* Auth Section */}
-          <div className="flex items-center justify-between pb-3 border-b border-gray-700">
+          <div className="flex items-center justify-between pb-3 border-b border-gray-700/40">
             {authLoading ? (
               <span className="text-sm text-gray-500">Loading...</span>
             ) : user ? (
@@ -193,7 +198,7 @@ function HomePageInner() {
 
           {/* Character Name */}
           <div>
-            <label className="block text-sm text-gray-400 mb-1">
+            <label className="block text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1.5" style={{ fontFamily: "var(--font-cinzel)" }}>
               Player Name
             </label>
             <input
@@ -202,19 +207,19 @@ function HomePageInner() {
               onChange={(e) => setPlayerName(e.target.value)}
               placeholder="What should we call you?"
               maxLength={30}
-              className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2.5
-                         text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2
-                         focus:ring-purple-500 focus:border-transparent"
+              className="w-full bg-gray-900/60 border border-gray-700/50 rounded-lg px-4 py-2.5
+                         text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-1
+                         focus:ring-amber-500/50 focus:border-amber-500/30"
             />
           </div>
 
           {error && <p className="text-red-400 text-sm">{error}</p>}
 
           {/* Two-column: Create Room | Join Room */}
-          <div className="grid grid-cols-2 gap-4 pt-1">
+          <div className="grid grid-cols-2 gap-6 pt-1">
             {/* Left column: Create Room */}
             <div className="space-y-3">
-              <div className="text-xs text-gray-500 uppercase tracking-wider font-medium">
+              <div className="text-[10px] text-amber-200/50 uppercase tracking-wider font-medium" style={{ fontFamily: "var(--font-cinzel)" }}>
                 Create Room
               </div>
 
@@ -225,9 +230,9 @@ function HomePageInner() {
               <button
                 onClick={handleCreate}
                 disabled={loading}
-                className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-700
-                           text-white py-3 rounded-lg font-medium transition-colors text-sm
-                           shadow-[0_0_20px_rgba(147,51,234,0.15)]"
+                className="w-full bg-amber-600/80 hover:bg-amber-500/80 disabled:bg-gray-700
+                           text-amber-50 py-3 rounded-lg font-medium transition-colors text-sm
+                           shadow-[0_0_12px_rgba(245,158,11,0.15)]"
               >
                 {loading ? "Creating..." : "Create Room"}
               </button>
@@ -235,7 +240,7 @@ function HomePageInner() {
 
             {/* Right column: Join Room */}
             <div className="space-y-3">
-              <div className="text-xs text-gray-500 uppercase tracking-wider font-medium">
+              <div className="text-[10px] text-amber-200/50 uppercase tracking-wider font-medium" style={{ fontFamily: "var(--font-cinzel)" }}>
                 Join Room
               </div>
 
@@ -251,9 +256,9 @@ function HomePageInner() {
                   }
                   placeholder="ABCDEF"
                   maxLength={6}
-                  className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2
-                             text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2
-                             focus:ring-purple-500 focus:border-transparent font-mono text-center
+                  className="w-full bg-gray-900/60 border border-gray-700/50 rounded-lg px-3 py-2
+                             text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-1
+                             focus:ring-amber-500/50 focus:border-amber-500/30 font-mono text-center
                              text-lg tracking-widest"
                 />
               </div>
@@ -267,16 +272,16 @@ function HomePageInner() {
                   value={joinPassword}
                   onChange={(e) => setJoinPassword(e.target.value)}
                   placeholder="Leave blank if none"
-                  className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2
+                  className="w-full bg-gray-900/60 border border-gray-700/50 rounded-lg px-3 py-2
                              text-sm text-gray-100 placeholder-gray-500 focus:outline-none
-                             focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                             focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/30"
                 />
               </div>
 
               <button
                 onClick={handleJoin}
-                className="w-full bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-lg
-                           font-medium transition-colors text-sm"
+                className="w-full bg-gray-800/60 hover:bg-gray-700/60 border border-gray-600/50 hover:border-amber-500/30
+                           text-gray-200 py-2.5 rounded-lg font-medium transition-all text-sm"
               >
                 Join Room
               </button>
@@ -284,18 +289,18 @@ function HomePageInner() {
           </div>
 
           {/* Browse Rooms & Characters */}
-          <div className="pt-2 border-t border-gray-700 grid grid-cols-2 gap-3">
+          <div className="pt-2 border-t border-gray-700/40 grid grid-cols-2 gap-3">
             <Link
               href="/rooms"
-              className="text-center py-2.5 rounded-lg border border-gray-700 text-sm text-gray-300
-                         hover:border-purple-500/50 hover:text-purple-400 transition-all"
+              className="text-center py-2.5 rounded-lg border border-gray-700/50 text-sm text-gray-300
+                         hover:border-amber-500/50 hover:text-amber-300 transition-all"
             >
               Browse Rooms
             </Link>
             <Link
               href="/characters"
-              className="text-center py-2.5 rounded-lg border border-gray-700 text-sm text-gray-300
-                         hover:border-purple-500/50 hover:text-purple-400 transition-all"
+              className="text-center py-2.5 rounded-lg border border-gray-700/50 text-sm text-gray-300
+                         hover:border-amber-500/50 hover:text-amber-300 transition-all"
             >
               My Characters
             </Link>

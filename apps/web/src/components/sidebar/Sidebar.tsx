@@ -117,7 +117,7 @@ export function Sidebar({
   // Collapsed sidebar — thin strip with expand button + DM status dot
   if (collapsed) {
     return (
-      <div className="w-10 border-l border-gray-700 flex flex-col items-center bg-gray-850 shrink-0 py-3 gap-3">
+      <div className="w-10 border-l border-gray-700/40 flex flex-col items-center bg-gray-800/60 shrink-0 py-3 gap-3">
         <button
           onClick={onToggleCollapse}
           className="text-gray-500 hover:text-gray-300 transition-colors"
@@ -150,15 +150,15 @@ export function Sidebar({
   }
 
   return (
-    <div className="w-72 border-l border-gray-700 flex flex-col bg-gray-850 shrink-0">
+    <div className="w-72 border-l border-gray-700/40 flex flex-col bg-gray-800/60 shrink-0">
       {/* Room Code */}
-      <div className="p-4 border-b border-gray-700">
+      <div className="p-4 border-b border-gray-700/40">
         <div className="flex items-center gap-2">
-          <div className="text-xs text-gray-500 uppercase tracking-wider">
+          <div className="text-xs text-gray-500 uppercase tracking-wider" style={{ fontFamily: "var(--font-cinzel)" }}>
             Room Code
           </div>
           {isHost && (
-            <span className="text-[10px] bg-purple-600/30 text-purple-400 px-1.5 py-0.5 rounded-full font-medium uppercase tracking-wider">
+            <span className="text-[10px] bg-amber-500/10 text-amber-300 border border-amber-500/50 px-1.5 py-0.5 rounded-full font-medium uppercase tracking-wider">
               Host
             </span>
           )}
@@ -176,8 +176,8 @@ export function Sidebar({
         </div>
         <button
           onClick={copyRoomCode}
-          className="text-2xl font-mono font-bold text-purple-400 tracking-widest mt-1
-                     hover:text-purple-300 transition-colors"
+          className="text-2xl font-mono font-bold text-amber-300 tracking-widest mt-1
+                     hover:text-amber-200 transition-colors"
           title="Click to copy"
         >
           {roomCode}
@@ -185,11 +185,12 @@ export function Sidebar({
         {copied && (
           <span className="text-xs text-green-400 ml-2">Copied!</span>
         )}
+        <div className="h-px bg-gradient-to-r from-amber-500/30 via-gray-700/50 to-transparent mt-2" />
       </div>
 
       {/* Players */}
-      <div className="p-4 border-b border-gray-700">
-        <div className="text-xs text-gray-500 uppercase tracking-wider mb-3">
+      <div className="p-4 border-b border-gray-700/40">
+        <div className="text-xs text-gray-500 uppercase tracking-wider mb-3" style={{ fontFamily: "var(--font-cinzel)" }}>
           Party ({displayPlayers.length})
         </div>
         {displayPlayers.length === 0 ? (
@@ -220,7 +221,7 @@ export function Sidebar({
                         {player.name}
                       </span>
                       {player.isHost && (
-                        <span className="text-[10px] text-purple-400 shrink-0">
+                        <span className="text-[10px] text-amber-300 shrink-0">
                           (host)
                         </span>
                       )}
@@ -271,7 +272,7 @@ export function Sidebar({
 
       {/* Campaign & Start Story (Host only, before story starts) */}
       {isHost && !storyStarted && (
-        <div className="p-4 border-b border-gray-700 space-y-2">
+        <div className="p-4 border-b border-gray-700/40 space-y-2">
           {campaignConfigured && activeCampaignName ? (
             <>
               <div className="flex items-center gap-2">
@@ -284,7 +285,7 @@ export function Sidebar({
                 <>
                   <button
                     onClick={onStartStory}
-                    className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2.5 rounded-lg
+                    className="w-full bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/50 text-amber-300 hover:text-amber-200 py-2.5 rounded-lg
                                font-medium transition-colors text-sm flex items-center justify-center gap-2"
                   >
                     <span className="text-lg">&#9876;</span>
@@ -297,22 +298,30 @@ export function Sidebar({
               )}
             </>
           ) : (
-            <button
-              onClick={onOpenCampaignConfig}
-              disabled={!dmConnected}
-              className="w-full bg-gray-700 hover:bg-gray-600 disabled:opacity-40
-                         disabled:hover:bg-gray-700 text-gray-200 py-2.5 rounded-lg
-                         font-medium transition-colors text-sm"
-            >
-              Configure Campaign
-            </button>
+            <>
+              <button
+                onClick={onOpenCampaignConfig}
+                disabled={!dmConnected}
+                className="w-full bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30
+                           disabled:opacity-40 disabled:hover:bg-amber-500/10
+                           text-amber-300 py-2.5 rounded-lg
+                           font-medium transition-colors text-sm"
+              >
+                Configure Campaign
+              </button>
+              {!dmConnected && (
+                <p className="text-[10px] text-gray-600 text-center">
+                  Waiting for DM to connect...
+                </p>
+              )}
+            </>
           )}
         </div>
       )}
 
       {/* Active campaign label (after story started) */}
       {storyStarted && activeCampaignName && (
-        <div className="px-4 py-2 border-b border-gray-700">
+        <div className="px-4 py-2 border-b border-gray-700/40">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
             <span className="text-xs text-emerald-400/80 font-medium truncate">
@@ -324,12 +333,12 @@ export function Sidebar({
 
       {/* Notes toggle (visible when campaign is active) */}
       {activeCampaignName && onToggleNotes && (
-        <div className="px-4 py-2 border-b border-gray-700">
+        <div className="px-4 py-2 border-b border-gray-700/40">
           <button
             onClick={onToggleNotes}
             className={`w-full flex items-center gap-2 text-sm py-1.5 px-2 rounded-lg transition-colors ${
               showNotes
-                ? "bg-purple-600/20 text-purple-400"
+                ? "bg-amber-500/10 text-amber-300 border border-amber-500/50"
                 : "text-gray-400 hover:text-gray-200 hover:bg-gray-700/50"
             }`}
           >
@@ -340,10 +349,10 @@ export function Sidebar({
       )}
 
       {/* Settings */}
-      <div className="px-4 py-2 border-b border-gray-700">
+      <div className="px-4 py-2 border-b border-gray-700/40">
         <button
           onClick={() => setShowSettings(true)}
-          className="w-full flex items-center gap-2 text-sm py-1.5 px-2 rounded-lg transition-colors text-gray-400 hover:text-gray-200 hover:bg-gray-700/50"
+          className="w-full flex items-center gap-2 text-sm py-1.5 px-2 rounded-lg transition-colors text-gray-400 hover:text-amber-300 hover:bg-gray-700/50"
         >
           <span className="text-base">&#9881;</span>
           <span>Settings</span>
@@ -359,7 +368,7 @@ export function Sidebar({
       )}
 
       {/* Activity Log */}
-      <div className="border-b border-gray-700 flex flex-col min-h-0 flex-1">
+      <div className="border-b border-gray-700/40 flex flex-col min-h-0 flex-1">
         <button
           onClick={() => setLogCollapsed(!logCollapsed)}
           className="flex items-center gap-1 p-4 pb-2 w-full text-left"
@@ -369,7 +378,7 @@ export function Sidebar({
           >
             &#9654;
           </span>
-          <span className="text-xs text-gray-500 uppercase tracking-wider">
+          <span className="text-xs text-gray-500 uppercase tracking-wider" style={{ fontFamily: "var(--font-cinzel)" }}>
             Activity Log
           </span>
           {logMessages.length > 0 && (
@@ -407,7 +416,7 @@ export function Sidebar({
 
       {/* Event Log (Host only) */}
       {isHost && eventLog && eventLog.length > 0 && (
-        <div className="border-b border-gray-700 flex flex-col min-h-0">
+        <div className="border-b border-gray-700/40 flex flex-col min-h-0">
           <button
             onClick={() => setEventLogCollapsed(!eventLogCollapsed)}
             className="flex items-center gap-1 p-4 pb-2 w-full text-left"
@@ -417,7 +426,7 @@ export function Sidebar({
             >
               &#9654;
             </span>
-            <span className="text-xs text-gray-500 uppercase tracking-wider">
+            <span className="text-xs text-gray-500 uppercase tracking-wider" style={{ fontFamily: "var(--font-cinzel)" }}>
               Event Log
             </span>
             <span className="text-[10px] text-gray-600 ml-auto">
@@ -474,7 +483,7 @@ export function Sidebar({
       )}
 
       {/* DM Status + Connection */}
-      <div className="px-4 py-3 border-t border-gray-700 space-y-1.5">
+      <div className="px-4 py-3 border-t border-gray-700/40 space-y-1.5">
         {dmConnected ? (
           <div className="text-sm text-green-400 flex items-center gap-1.5">
             <div className="w-2 h-2 rounded-full bg-green-500" />

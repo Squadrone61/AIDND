@@ -99,12 +99,12 @@ function TwoOnePicker({
                   }
                   onChange(next);
                 }}
-                className={`text-[10px] px-1 py-0.5 rounded ${
+                className={`text-[10px] px-1 py-0.5 rounded transition-colors ${
                   is2
-                    ? "bg-purple-600 text-white"
+                    ? "bg-amber-500/80 text-white"
                     : isDisabled
-                      ? "bg-gray-900 text-gray-700 cursor-not-allowed"
-                      : "bg-gray-900 text-gray-500 hover:text-gray-300"
+                      ? "bg-gray-900/60 text-gray-700 cursor-not-allowed"
+                      : "bg-gray-900/60 text-gray-500 hover:text-gray-300"
                 }`}
               >
                 +2
@@ -120,12 +120,12 @@ function TwoOnePicker({
                   }
                   onChange(next);
                 }}
-                className={`text-[10px] px-1 py-0.5 rounded ${
+                className={`text-[10px] px-1 py-0.5 rounded transition-colors ${
                   is1
-                    ? "bg-purple-600/60 text-white"
+                    ? "bg-amber-500/60 text-white"
                     : isDisabled
-                      ? "bg-gray-900 text-gray-700 cursor-not-allowed"
-                      : "bg-gray-900 text-gray-500 hover:text-gray-300"
+                      ? "bg-gray-900/60 text-gray-700 cursor-not-allowed"
+                      : "bg-gray-900/60 text-gray-500 hover:text-gray-300"
                 }`}
               >
                 +1
@@ -183,14 +183,14 @@ function ThreeOnesPicker({
                 }
               }}
               disabled={isDisabled || (!isSelected && selected.length >= 3)}
-              className={`text-[10px] px-2 py-1 rounded w-full ${
+              className={`text-[10px] px-2 py-1 rounded w-full transition-colors ${
                 isSelected
-                  ? "bg-purple-600/60 text-white"
+                  ? "bg-amber-500/60 text-white"
                   : isDisabled
-                    ? "bg-gray-900 text-gray-700 cursor-not-allowed"
+                    ? "bg-gray-900/60 text-gray-700 cursor-not-allowed"
                     : selected.length >= 3
-                      ? "bg-gray-900 text-gray-700"
-                      : "bg-gray-900 text-gray-500 hover:text-gray-300"
+                      ? "bg-gray-900/60 text-gray-700"
+                      : "bg-gray-900/60 text-gray-500 hover:text-gray-300"
               }`}
             >
               +1
@@ -232,17 +232,17 @@ export function ClassASIPicker({
             <button
               key={ability}
               onClick={() => onChange(isSelected ? {} : { [ability]: 2 })}
-              className={`text-center p-2 rounded border transition-colors ${
+              className={`text-center p-2 rounded-lg border transition-all duration-200 ${
                 isSelected
-                  ? "border-purple-500 bg-purple-600/20 text-purple-300"
-                  : "border-gray-700 bg-gray-800 text-gray-400 hover:border-gray-600"
+                  ? "border-amber-500/50 bg-amber-500/10 text-amber-200"
+                  : "border-gray-700/50 bg-gray-800/50 text-gray-400 hover:border-gray-600"
               }`}
             >
               <div className="text-[10px] text-gray-500 uppercase">{ABILITY_SHORT[ability]}</div>
               {score !== undefined && (
                 <div className="text-sm font-medium">{score}</div>
               )}
-              <div className={`text-[10px] ${isSelected ? "text-purple-400" : "text-gray-600"}`}>
+              <div className={`text-[10px] ${isSelected ? "text-amber-400" : "text-gray-600"}`}>
                 +2
               </div>
             </button>
@@ -275,19 +275,19 @@ export function ClassASIPicker({
               }
             }}
             disabled={!isSelected && selected.length >= 2}
-            className={`text-center p-2 rounded border transition-colors ${
+            className={`text-center p-2 rounded-lg border transition-all duration-200 ${
               isSelected
-                ? "border-purple-500 bg-purple-600/20 text-purple-300"
+                ? "border-amber-500/50 bg-amber-500/10 text-amber-200"
                 : selected.length >= 2
-                  ? "border-gray-700 bg-gray-800 text-gray-600"
-                  : "border-gray-700 bg-gray-800 text-gray-400 hover:border-gray-600"
+                  ? "border-gray-700/50 bg-gray-800/50 text-gray-600"
+                  : "border-gray-700/50 bg-gray-800/50 text-gray-400 hover:border-gray-600"
             }`}
           >
             <div className="text-[10px] text-gray-500 uppercase">{ABILITY_SHORT[ability]}</div>
             {score !== undefined && (
               <div className="text-sm font-medium">{score}</div>
             )}
-            <div className={`text-[10px] ${isSelected ? "text-purple-400" : "text-gray-600"}`}>
+            <div className={`text-[10px] ${isSelected ? "text-amber-400" : "text-gray-600"}`}>
               +1
             </div>
           </button>

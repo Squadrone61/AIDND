@@ -75,11 +75,14 @@ export function CampaignConfigModal({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="bg-gray-800 rounded-xl w-full max-w-lg max-h-[85vh] flex flex-col mx-4 border border-gray-700 shadow-2xl">
+      <div className="bg-gray-800/60 rounded-xl w-full max-w-lg max-h-[85vh] flex flex-col mx-4 border border-gray-700/40 shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-700">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-700/40">
           <div>
-            <h2 className="text-base font-semibold text-gray-200">
+            <h2
+              className="text-base font-semibold text-amber-200/90"
+              style={{ fontFamily: "var(--font-cinzel)" }}
+            >
               Configure Campaign
             </h2>
             <p className="text-xs text-gray-500 mt-0.5">
@@ -104,8 +107,8 @@ export function CampaignConfigModal({
                   onClick={() => setMode("existing")}
                   className={`flex-1 py-1.5 text-sm rounded-lg border transition-colors ${
                     mode === "existing"
-                      ? "border-purple-500 bg-purple-600/20 text-purple-300"
-                      : "border-gray-700 text-gray-400 hover:border-gray-600"
+                      ? "border-amber-500 bg-amber-600/20 text-amber-300"
+                      : "border-gray-700/40 text-gray-400 hover:border-gray-600"
                   }`}
                 >
                   Load Existing
@@ -114,8 +117,8 @@ export function CampaignConfigModal({
                   onClick={() => setMode("new")}
                   className={`flex-1 py-1.5 text-sm rounded-lg border transition-colors ${
                     mode === "new"
-                      ? "border-purple-500 bg-purple-600/20 text-purple-300"
-                      : "border-gray-700 text-gray-400 hover:border-gray-600"
+                      ? "border-amber-500 bg-amber-600/20 text-amber-300"
+                      : "border-gray-700/40 text-gray-400 hover:border-gray-600"
                   }`}
                 >
                   New Campaign
@@ -127,8 +130,8 @@ export function CampaignConfigModal({
               <select
                 value={selectedSlug}
                 onChange={(e) => setSelectedSlug(e.target.value)}
-                className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2
-                           text-sm text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                className="w-full bg-gray-900/60 border border-gray-700/40 rounded-lg px-3 py-2
+                           text-sm text-gray-200 focus:outline-none focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/30"
               >
                 {campaigns.map((c) => (
                   <option key={c.slug} value={c.slug}>
@@ -138,7 +141,7 @@ export function CampaignConfigModal({
               </select>
             ) : (
               <div>
-                <label className="text-[11px] text-gray-500 block mb-1">
+                <label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1" style={{ fontFamily: "var(--font-cinzel)" }}>
                   Campaign Name
                 </label>
                 <input
@@ -147,17 +150,20 @@ export function CampaignConfigModal({
                   onChange={(e) => setCampaignName(e.target.value)}
                   placeholder="e.g. The Lost Mines of Phandelver"
                   autoFocus
-                  className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2
+                  className="w-full bg-gray-900/60 border border-gray-700/40 rounded-lg px-3 py-2
                              text-sm text-gray-100 placeholder-gray-500 focus:outline-none
-                             focus:ring-1 focus:ring-purple-500"
+                             focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/30"
                 />
               </div>
             )}
           </div>
 
+          {/* Gradient divider */}
+          <div className="h-px bg-gradient-to-r from-amber-500/30 via-gray-700/50 to-transparent" />
+
           {/* Pacing */}
           <div>
-            <label className="text-[11px] text-gray-500 block mb-1">
+            <label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1" style={{ fontFamily: "var(--font-cinzel)" }}>
               Pacing
             </label>
             <select
@@ -165,8 +171,8 @@ export function CampaignConfigModal({
               onChange={(e) =>
                 setPacingProfile(e.target.value as PacingProfile)
               }
-              className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2
-                         text-sm text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500"
+              className="w-full bg-gray-900/60 border border-gray-700/40 rounded-lg px-3 py-2
+                         text-sm text-gray-200 focus:outline-none focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/30"
             >
               <option value="story-heavy">Story-Heavy</option>
               <option value="balanced">Balanced</option>
@@ -176,7 +182,7 @@ export function CampaignConfigModal({
 
           {/* Encounter Length */}
           <div>
-            <label className="text-[11px] text-gray-500 block mb-1">
+            <label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1" style={{ fontFamily: "var(--font-cinzel)" }}>
               Encounter Length
             </label>
             <select
@@ -184,8 +190,8 @@ export function CampaignConfigModal({
               onChange={(e) =>
                 setEncounterLength(e.target.value as EncounterLength)
               }
-              className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2
-                         text-sm text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500"
+              className="w-full bg-gray-900/60 border border-gray-700/40 rounded-lg px-3 py-2
+                         text-sm text-gray-200 focus:outline-none focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/30"
             >
               <option value="quick">Quick</option>
               <option value="standard">Standard</option>
@@ -217,10 +223,10 @@ export function CampaignConfigModal({
                   value={systemPrompt}
                   onChange={(e) => setSystemPrompt(e.target.value)}
                   placeholder="e.g. Use a dark gothic horror tone. NPCs speak in riddles. Be generous with loot..."
-                  className="w-full h-48 bg-gray-900 border border-gray-700 rounded-lg px-3 py-2
+                  className="w-full h-48 bg-gray-900/60 border border-gray-700/40 rounded-lg px-3 py-2
                              text-sm text-gray-200 font-mono leading-relaxed resize-y
                              placeholder-gray-600
-                             focus:outline-none focus:ring-1 focus:ring-purple-500"
+                             focus:outline-none focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/30"
                   spellCheck={false}
                 />
                 <div className="flex items-center justify-between text-xs text-gray-500">
@@ -244,7 +250,7 @@ export function CampaignConfigModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-gray-700">
+        <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-gray-700/40">
           <button
             onClick={onClose}
             className="px-4 py-2 text-sm text-gray-400 hover:text-gray-200 transition-colors"
@@ -254,8 +260,8 @@ export function CampaignConfigModal({
           <button
             onClick={handleSubmit}
             disabled={mode === "new" && !campaignName.trim()}
-            className="px-5 py-2 bg-purple-600 hover:bg-purple-700 disabled:opacity-40
-                       disabled:hover:bg-purple-600 text-white text-sm rounded-lg
+            className="px-5 py-2 bg-amber-600/80 hover:bg-amber-500/80 disabled:opacity-40
+                       disabled:hover:bg-amber-600/80 text-amber-50 text-sm rounded-lg
                        font-medium transition-colors"
           >
             Configure
