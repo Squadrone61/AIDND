@@ -11,13 +11,9 @@ import type {
 } from "@aidnd/shared/types";
 import {
   ABILITY_NAMES,
-  SKILL_DISPLAY_NAMES,
-  ABILITY_FULL_NAMES,
   formatBonus,
   formatClassString,
   getTotalLevel,
-  getSkillModifier,
-  getSavingThrowModifier,
   getModifier,
   formatModifier,
 } from "@aidnd/shared/utils";
@@ -30,19 +26,7 @@ import { ActionsTab } from "./tabs/ActionsTab";
 import { SpellsTab } from "./tabs/SpellsTab";
 import { InventoryTab } from "./tabs/InventoryTab";
 import { FeaturesTab } from "./tabs/FeaturesTab";
-
-// ─── Constants ───
-
-/** SubTypes that are already displayed as markers on specific abilities/saves/skills */
-const ABILITY_SPECIFIC_SUBTYPES = new Set([
-  "strength-saving-throws", "dexterity-saving-throws", "constitution-saving-throws",
-  "intelligence-saving-throws", "wisdom-saving-throws", "charisma-saving-throws",
-  "strength-ability-checks", "dexterity-ability-checks", "constitution-ability-checks",
-  "intelligence-ability-checks", "wisdom-ability-checks", "charisma-ability-checks",
-  "acrobatics", "animal-handling", "arcana", "athletics", "deception", "history",
-  "insight", "intimidation", "investigation", "medicine", "nature", "perception",
-  "performance", "persuasion", "religion", "sleight-of-hand", "stealth", "survival",
-]);
+import { StatsTab } from "./tabs/StatsTab";
 
 // ─── Helpers ───
 
@@ -94,7 +78,7 @@ type PopupState =
   | { type: "feature"; feature: CharacterFeature; position: ClickPosition }
   | null;
 
-type TabId = "actions" | "spells" | "inventory" | "features";
+type TabId = "stats" | "actions" | "spells" | "inventory" | "features";
 
 interface CharacterSheetProps {
   character: CharacterData;
@@ -112,10 +96,11 @@ function TabBar({
   showSpells: boolean;
 }) {
   const tabs: { id: TabId; label: string }[] = [
+    { id: "stats", label: "Stats" },
     { id: "actions", label: "Actions" },
     ...(showSpells ? [{ id: "spells" as TabId, label: "Spells" }] : []),
-    { id: "inventory", label: "Inventory" },
-    { id: "features", label: "Features" },
+    { id: "inventory", label: "Items" },
+    { id: "features", label: "Feats" },
   ];
 
   return (
@@ -142,8 +127,6 @@ function TabBar({
 export function CharacterSheet({ character }: CharacterSheetProps) {
   const s = character.static;
   const d = character.dynamic;
-  const [skillsOpen, setSkillsOpen] = useState(false);
-  const [profsOpen, setProfsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TabId>("actions");
   const [popup, setPopup] = useState<PopupState>(null);
 
@@ -151,7 +134,7 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
 
   return (
     <div className="flex flex-col h-full text-sm">
-      {/* ═══ UPPER SECTION (not constrained) ═══ */}
+      {/* ═══ UPPER SECTION (compact, never overflows) ═══ */}
       <div className="shrink-0 p-3 space-y-3">
         {/* Character Identity */}
         <div>
@@ -235,7 +218,7 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
         </div>
 
         {/* Heroic Inspiration */}
-        <div className={`flex items-center gap-1.5 rounded px-2 py-1 ${
+        <div className={`flex items-center gap-1.5 rounded px-2 py-0.5 ${
           d.heroicInspiration
             ? "bg-yellow-900/20 border border-yellow-700/40"
             : "bg-gray-900/30 border border-gray-700/30"
@@ -364,264 +347,6 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
           })}
         </div>
 
-        {/* Saving Throws */}
-        <div>
-          <div className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-1.5" style={{ fontFamily: "var(--font-cinzel)" }}>
-            Saving Throws
-          </div>
-          <div className="grid grid-cols-2 gap-x-2 gap-y-0.5">
-            {s.savingThrows.map((save) => {
-              const mod = getSavingThrowModifier(
-                save,
-                s.abilities,
-                s.proficiencyBonus
-              );
-              const saveAdvs = findAdvantages(
-                s.advantages,
-                `${save.ability}-saving-throws`
-              );
-              return (
-                <div
-                  key={save.ability}
-                  className="flex items-center gap-1.5 rounded px-2 py-1"
-                >
-                  <span
-                    className={`inline-block w-2 h-2 rounded-full shrink-0 ${
-                      save.proficient
-                        ? "bg-green-500"
-                        : "bg-gray-600 ring-1 ring-gray-500"
-                    }`}
-                  />
-                  <span className="text-xs text-gray-400">
-                    {ABILITY_FULL_NAMES[save.ability]}
-                  </span>
-                  <AdvMarker entries={saveAdvs} />
-                  <span
-                    className={`ml-auto text-xs font-semibold ${
-                      save.proficient
-                        ? mod >= 0
-                          ? "text-green-400"
-                          : "text-red-400"
-                        : mod >= 0
-                        ? "text-gray-400"
-                        : "text-red-400"
-                    }`}
-                  >
-                    {formatBonus(mod)}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Advantages / Disadvantages summary — only restricted, non-ability-specific */}
-        {(() => {
-          const globalAdvs = s.advantages.filter(
-            (a) => a.restriction && !ABILITY_SPECIFIC_SUBTYPES.has(a.subType)
-          );
-          if (globalAdvs.length === 0) return null;
-          return (
-            <div className="space-y-0.5">
-              <div className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-1" style={{ fontFamily: "var(--font-cinzel)" }}>
-                Advantages &amp; Disadvantages
-              </div>
-              {globalAdvs.map((a, i) => {
-                const isAdv = a.type === "advantage";
-                return (
-                  <div
-                    key={`${a.type}-${a.subType}-${i}`}
-                    className="flex items-start gap-1.5 px-2 py-0.5 text-xs"
-                  >
-                    <span
-                      className={`shrink-0 text-xs font-bold mt-0.5 ${
-                        isAdv ? "text-green-400" : "text-red-400"
-                      }`}
-                    >
-                      {isAdv ? "▲" : "▼"}
-                    </span>
-                    <span className="text-gray-300">
-                      {a.subType.replace(/-/g, " ")}
-                      <span className="text-gray-500 italic ml-1">
-                        ({a.restriction})
-                      </span>
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          );
-        })()}
-
-        {/* Skills (collapsible) */}
-        {s.skills.length > 0 && (
-          <div>
-            <button
-              onClick={() => setSkillsOpen(!skillsOpen)}
-              className="flex items-center justify-between w-full text-sm text-gray-500 uppercase tracking-wider font-medium"
-              style={{ fontFamily: "var(--font-cinzel)" }}
-            >
-              <span>
-                Skills (
-                {s.skills.filter((sk) => sk.proficient || sk.expertise).length}{" "}
-                proficient)
-              </span>
-              <span className="text-gray-600">
-                {skillsOpen ? "\u2212" : "+"}
-              </span>
-            </button>
-            {skillsOpen && (
-              <div className="mt-1.5 space-y-0.5">
-                {s.skills.map((skill) => {
-                  const mod = getSkillModifier(
-                    skill,
-                    s.abilities,
-                    s.proficiencyBonus
-                  );
-                  const skillAdvs = findAdvantages(
-                    s.advantages,
-                    skill.name
-                  );
-                  return (
-                    <div
-                      key={skill.name}
-                      className={`flex items-center gap-1.5 rounded px-2 py-0.5 ${
-                        skill.proficient || skill.expertise
-                          ? "bg-gray-900/30"
-                          : ""
-                      }`}
-                    >
-                      <span
-                        className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${
-                          skill.expertise
-                            ? "bg-yellow-500"
-                            : skill.proficient
-                            ? "bg-green-500"
-                            : "bg-gray-700"
-                        }`}
-                      />
-                      <span
-                        className={`text-xs ${
-                          skill.proficient || skill.expertise
-                            ? "text-gray-300"
-                            : "text-gray-500"
-                        }`}
-                      >
-                        {SKILL_DISPLAY_NAMES[skill.name] || skill.name}
-                      </span>
-                      {skill.expertise && (
-                        <span className="text-xs text-yellow-500 font-bold uppercase">
-                          E
-                        </span>
-                      )}
-                      <AdvMarker entries={skillAdvs} />
-                      <span
-                        className={`ml-auto text-xs font-semibold ${
-                          skill.proficient || skill.expertise
-                            ? mod >= 0
-                              ? "text-gray-300"
-                              : "text-red-400"
-                            : "text-gray-600"
-                        }`}
-                      >
-                        {formatBonus(mod)}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Proficiencies (collapsible) */}
-        {(s.proficiencies.armor.length > 0 ||
-          s.proficiencies.weapons.length > 0 ||
-          s.proficiencies.tools.length > 0 ||
-          s.proficiencies.other.length > 0) && (
-          <div>
-            <button
-              onClick={() => setProfsOpen(!profsOpen)}
-              className="flex items-center justify-between w-full text-sm text-gray-500 uppercase tracking-wider font-medium"
-              style={{ fontFamily: "var(--font-cinzel)" }}
-            >
-              <span>Proficiencies</span>
-              <span className="text-gray-600">
-                {profsOpen ? "\u2212" : "+"}
-              </span>
-            </button>
-            {profsOpen && (
-              <div className="mt-1.5 space-y-1.5">
-                {s.proficiencies.armor.length > 0 && (
-                  <div>
-                    <div className="text-sm text-gray-500 font-medium">
-                      Armor
-                    </div>
-                    <div className="text-xs text-gray-300">
-                      {s.proficiencies.armor.join(", ")}
-                    </div>
-                  </div>
-                )}
-                {s.proficiencies.weapons.length > 0 && (
-                  <div>
-                    <div className="text-sm text-gray-500 font-medium">
-                      Weapons
-                    </div>
-                    <div className="text-xs text-gray-300">
-                      {s.proficiencies.weapons.join(", ")}
-                    </div>
-                  </div>
-                )}
-                {s.proficiencies.tools.length > 0 && (
-                  <div>
-                    <div className="text-sm text-gray-500 font-medium">
-                      Tools
-                    </div>
-                    <div className="text-xs text-gray-300">
-                      {s.proficiencies.tools.join(", ")}
-                    </div>
-                  </div>
-                )}
-                {s.proficiencies.other.length > 0 && (
-                  <div>
-                    <div className="text-sm text-gray-500 font-medium">
-                      Other
-                    </div>
-                    <div className="text-xs text-gray-300">
-                      {s.proficiencies.other.join(", ")}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Languages & Senses */}
-        {(s.languages.length > 0 || s.senses.length > 0) && (
-          <div className="space-y-1.5">
-            {s.languages.length > 0 && (
-              <div>
-                <div className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-0.5" style={{ fontFamily: "var(--font-cinzel)" }}>
-                  Languages
-                </div>
-                <div className="text-xs text-gray-300">
-                  {s.languages.join(", ")}
-                </div>
-              </div>
-            )}
-            {s.senses.length > 0 && (
-              <div>
-                <div className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-0.5" style={{ fontFamily: "var(--font-cinzel)" }}>
-                  Senses
-                </div>
-                <div className="text-xs text-gray-300">
-                  {s.senses.join(", ")}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
       {/* ═══ TAB BAR ═══ */}
@@ -633,6 +358,9 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
 
       {/* ═══ TAB CONTENT (scrollable, fills remaining space) ═══ */}
       <div className="flex-1 overflow-y-auto p-3">
+        {activeTab === "stats" && (
+          <StatsTab character={character} />
+        )}
         {activeTab === "actions" && (
           <ActionsTab
             character={character}
