@@ -38,6 +38,46 @@ import {
 } from "@unseen-servant/shared";
 import type { BuilderState, BuilderStep, EquipmentEntry, TraitChoiceDefinition, ClassEntry } from "./types";
 
+// ─── Tool Proficiency Constants ──────────────────────────
+
+export const MUSICAL_INSTRUMENTS = [
+  "Bagpipes", "Drum", "Dulcimer", "Flute", "Lute",
+  "Lyre", "Horn", "Pan Flute", "Shawm", "Viol",
+];
+
+export const ARTISAN_TOOLS = [
+  "Carpenter's Tools", "Leatherworker's Tools", "Mason's Tools",
+  "Potter's Tools", "Smith's Tools", "Tinker's Tools",
+  "Weaver's Tools", "Woodcarver's Tools",
+];
+
+/**
+ * Detect whether a feat grants tool proficiency choices (Musician, Crafter).
+ * Returns the option list and count, or null if no tool choice needed.
+ */
+export function getFeatToolChoiceInfo(featName: string): { options: string[]; count: number } | null {
+  const feat = getFeat(featName);
+  if (!feat?.toolProficiencies) return null;
+  for (const tp of feat.toolProficiencies) {
+    const rec = tp as Record<string, unknown>;
+    if (typeof rec["anyMusicalInstrument"] === "number") {
+      return { options: MUSICAL_INSTRUMENTS, count: rec["anyMusicalInstrument"] as number };
+    }
+    if (typeof rec["anyArtisansTool"] === "number") {
+      return { options: ARTISAN_TOOLS, count: rec["anyArtisansTool"] as number };
+    }
+    const choose = rec["choose"] as { from?: string[]; count?: number } | undefined;
+    if (choose?.from) {
+      // Capitalize tool names from data (they're lowercase in feats.json)
+      const options = choose.from.map((t: string) =>
+        t.replace(/\b\w/g, (c) => c.toUpperCase())
+      );
+      return { options, count: choose.count ?? 1 };
+    }
+  }
+  return null;
+}
+
 // ─── Ability Score Helpers ──────────────────────────────
 
 export const STANDARD_ARRAY = [15, 14, 13, 12, 10, 8];
@@ -426,10 +466,17 @@ function deriveSpeciesChoices(species: SpeciesData): TraitChoiceDefinition[] {
     });
   }
 
-  // Lineage spells from additionalSpells (Elf, Gnome, Tiefling, etc.)
+  // Lineage spells from additionalSpells (Elf, Tiefling, etc.)
   if (species.additionalSpells && species.additionalSpells.length > 0) {
-    // Check if there are multiple lineage options (entries describe the lineage names)
     const lineageChoices = extractLineageChoices(species);
+    if (lineageChoices) {
+      choices.push(lineageChoices);
+    }
+  }
+
+  // Fallback: lineages defined in _versions (e.g., Gnome has lineages only in _versions)
+  if (!choices.some(c => c.choiceType === "lineage") && species._versions && species._versions.length > 1) {
+    const lineageChoices = extractLineageChoicesFromVersions(species);
     if (lineageChoices) {
       choices.push(lineageChoices);
     }
@@ -512,6 +559,64 @@ function extractLineageChoices(species: SpeciesData): TraitChoiceDefinition | nu
   return null;
 }
 
+/** Extract lineage choices from _versions — e.g., Gnome has Forest/Rock lineages only in _versions */
+function extractLineageChoicesFromVersions(species: SpeciesData): TraitChoiceDefinition | null {
+  if (!species._versions || species._versions.length < 2) return null;
+
+  const prefix = `${species.name}; `;
+  const lineageVersions = species._versions.filter(v => v.name?.startsWith(prefix));
+  if (lineageVersions.length < 2) return null;
+
+  const lineageOptions = lineageVersions.map(v => {
+    const rawName = v.name!.replace(prefix, "");
+    const name = rawName.replace(/ Lineage$/, "");
+
+    // Extract spell names from version's additionalSpells for description
+    const spellNames: string[] = [];
+    if (v.additionalSpells) {
+      for (const as of v.additionalSpells) {
+        if (as.known) {
+          for (const [, spells] of Object.entries(as.known)) {
+            if (Array.isArray(spells)) {
+              for (const s of spells) {
+                if (typeof s === "string") spellNames.push(s.split("|")[0].replace(/#c$/, ""));
+              }
+            }
+          }
+        }
+      }
+    }
+
+    return {
+      name,
+      description: spellNames.length > 0 ? `Spells: ${spellNames.join(", ")}` : name,
+    };
+  });
+
+  // Check for spellcasting ability choice in any version
+  let abilityChoices: string[] | undefined;
+  for (const v of lineageVersions) {
+    if (v.additionalSpells) {
+      const withAbility = v.additionalSpells.find(
+        as => as.ability && typeof as.ability === "object" && "choose" in as.ability
+      );
+      if (withAbility?.ability && typeof withAbility.ability === "object" && "choose" in withAbility.ability) {
+        abilityChoices = (withAbility.ability as { choose: string[] }).choose;
+        break;
+      }
+    }
+  }
+
+  return {
+    traitName: getLineageTraitName(species.name),
+    choiceType: "lineage",
+    lineageOptions,
+    secondaryChoice: abilityChoices
+      ? { type: "spellcasting-ability", options: abilityChoices }
+      : undefined,
+  };
+}
+
 function getLineageTraitName(speciesName: string): string {
   const map: Record<string, string> = {
     elf: "Elven Lineage",
@@ -570,6 +675,18 @@ const ANCESTRY_CHOICES: Record<string, TraitChoiceDefinition[]> = {
         { name: "Earth", description: "Blade Ward cantrip, Pass without Trace — Earth Walk (ignore difficult terrain)" },
         { name: "Fire", description: "Fire Resistance, Produce Flame cantrip, Burning Hands, Flame Blade" },
         { name: "Water", description: "Acid Resistance, Acid Splash cantrip, Create or Destroy Water, Water Walk — Swim speed" },
+      ],
+    },
+  ],
+  shifter: [
+    {
+      traitName: "Shifting",
+      choiceType: "ancestry",
+      lineageOptions: [
+        { name: "Beasthide", description: "Extra temp HP (+1d6) + AC bonus (+1) while shifted" },
+        { name: "Longtooth", description: "Fanged unarmed strike (1d6 piercing + STR) while shifted" },
+        { name: "Swiftstride", description: "+10 ft. speed + reactive movement while shifted" },
+        { name: "Wildhunt", description: "Advantage on WIS checks, no advantage against you while shifted" },
       ],
     },
   ],

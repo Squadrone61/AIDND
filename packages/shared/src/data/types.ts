@@ -398,6 +398,7 @@ export interface SpeciesVersion {
   _mod?: unknown;
   _abstract?: { name: string; source: string; _mod: unknown };
   _implementations?: unknown[];
+  additionalSpells?: AdditionalSpellEntry[];
 }
 
 // ─── Backgrounds ────────────────────────────────────────

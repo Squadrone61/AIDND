@@ -10,6 +10,7 @@ import {
   getFilteredSpecies,
   getSpeciesTraitChoices,
   formatSkillName,
+  getFeatToolChoiceInfo,
   ALL_SKILLS,
 } from "./utils";
 import { formatSpeciesSize, getSpeciesSpeed, entriesToText, SIZE_MAP } from "@unseen-servant/shared";
@@ -238,6 +239,9 @@ function TraitChoicePicker({
           )}
           {typeof value?.selected === "string" && value.selected.toLowerCase().startsWith("magic initiate") && (
             <SpeciesMagicInitiateChoices featName={value.selected} state={state} dispatch={dispatch} />
+          )}
+          {typeof value?.selected === "string" && getFeatToolChoiceInfo(value.selected) && (
+            <SpeciesToolChoices featName={value.selected} state={state} dispatch={dispatch} />
           )}
         </>
       )}
@@ -676,6 +680,59 @@ function SpeciesMagicInitiateChoices({
             );
           })}
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Species Tool Choices (Musician/Crafter) ────────────
+
+function SpeciesToolChoices({
+  featName,
+  state,
+  dispatch,
+}: { featName: string } & StepProps) {
+  const toolInfo = getFeatToolChoiceInfo(featName);
+  if (!toolInfo) return null;
+
+  const overrides = state.speciesOriginFeatOverrides;
+  const selectedTools = overrides.toolChoices ?? [];
+
+  return (
+    <div className="mt-2 space-y-2 border-t border-gray-700/50 pt-2">
+      <div className="text-xs text-gray-500 font-medium">
+        {featName}: Choose {toolInfo.count} tool proficiencies ({selectedTools.length}/{toolInfo.count})
+      </div>
+      <div className="flex flex-wrap gap-1">
+        {toolInfo.options.map((tool) => {
+          const isSelected = selectedTools.includes(tool);
+          return (
+            <button
+              key={tool}
+              onClick={() => {
+                const next = isSelected
+                  ? selectedTools.filter((t) => t !== tool)
+                  : selectedTools.length < toolInfo.count
+                    ? [...selectedTools, tool]
+                    : selectedTools;
+                dispatch({
+                  type: "SET_SPECIES_ORIGIN_FEAT_OVERRIDES",
+                  overrides: { toolChoices: next },
+                });
+              }}
+              disabled={!isSelected && selectedTools.length >= toolInfo.count}
+              className={`text-xs px-1.5 py-0.5 rounded-md transition-colors ${
+                isSelected
+                  ? "bg-purple-600/15 text-purple-400 border border-purple-500/30"
+                  : selectedTools.length >= toolInfo.count
+                    ? "text-gray-700 border border-gray-800"
+                    : "text-gray-400 border border-gray-700/60 hover:text-gray-200"
+              }`}
+            >
+              {tool}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

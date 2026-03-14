@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { backgroundsArray, getBackground, getFeat, getSpellsByClass, languagesArray } from "@unseen-servant/shared/data";
 import type { BackgroundData } from "@unseen-servant/shared/data";
 import type { StepProps } from "./types";
-import { formatSkillName, ALL_SKILLS } from "./utils";
+import { formatSkillName, ALL_SKILLS, getFeatToolChoiceInfo } from "./utils";
 import {
   getBackgroundSkills,
   getBackgroundTools,
@@ -272,9 +272,11 @@ function BackgroundDetailContent({ bg, state, dispatch }: { bg: BackgroundData }
 
   if (!featName) return null;
 
+  const toolInfo = getFeatToolChoiceInfo(featName);
   const needsChoices =
     featName.toLowerCase().startsWith("magic initiate") ||
-    featName.toLowerCase() === "skilled";
+    featName.toLowerCase() === "skilled" ||
+    toolInfo !== null;
 
   if (!needsChoices) return null;
 
@@ -285,6 +287,9 @@ function BackgroundDetailContent({ bg, state, dispatch }: { bg: BackgroundData }
       )}
       {featName.toLowerCase() === "skilled" && (
         <SkilledChoices state={state} dispatch={dispatch} />
+      )}
+      {toolInfo && (
+        <ToolChoices featName={featName} toolInfo={toolInfo} state={state} dispatch={dispatch} />
       )}
     </div>
   );
@@ -480,6 +485,60 @@ function SkilledChoices({ state, dispatch }: StepProps) {
               }`}
             >
               {formatSkillName(skill)}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Tool Proficiency Choices (Musician/Crafter) ─────────
+
+function ToolChoices({
+  featName,
+  toolInfo,
+  state,
+  dispatch,
+}: {
+  featName: string;
+  toolInfo: { options: string[]; count: number };
+} & StepProps) {
+  const overrides = state.originFeatOverrides;
+  const selectedTools = overrides.toolChoices ?? [];
+
+  return (
+    <div className="mt-2 space-y-2 border-t border-gray-700/50 pt-2">
+      <div className="text-xs text-gray-500 font-medium">
+        {featName}: Choose {toolInfo.count} tool proficiencies ({selectedTools.length}/{toolInfo.count})
+      </div>
+      <div className="flex flex-wrap gap-1">
+        {toolInfo.options.map((tool) => {
+          const isSelected = selectedTools.includes(tool);
+          return (
+            <button
+              key={tool}
+              onClick={() => {
+                const next = isSelected
+                  ? selectedTools.filter((t) => t !== tool)
+                  : selectedTools.length < toolInfo.count
+                    ? [...selectedTools, tool]
+                    : selectedTools;
+                dispatch({
+                  type: "SET_ORIGIN_FEAT_OVERRIDES",
+                  overrides: { toolChoices: next },
+                });
+              }}
+              disabled={!isSelected && selectedTools.length >= toolInfo.count}
+              className={`text-xs px-1.5 py-0.5 rounded-md transition-colors ${
+                isSelected
+                  ? "bg-purple-600/15 text-purple-400 border border-purple-500/30"
+                  : selectedTools.length >= toolInfo.count
+                    ? "text-gray-700 border border-gray-800"
+                    : "text-gray-400 border border-gray-700/60 hover:text-gray-200"
+              }`}
+            >
+              {tool}
             </button>
           );
         })}
