@@ -91,6 +91,8 @@ export interface ClientCampaignConfiguredAckMessage {
   encounterLength: EncounterLength;
   systemPrompt?: string;
   restoredCharacters?: Record<string, CharacterData>;
+  /** Mapping of playerName → userId for stable character matching across sessions */
+  characterUserIds?: Record<string, string>;
 }
 
 /** DM Bridge → Server: campaign loaded confirmation */
@@ -428,6 +430,7 @@ export interface ServerCampaignConfiguredMessage {
 export interface ServerCharacterForCampaignMessage {
   type: "server:character_for_campaign";
   playerName: string;
+  userId?: string;
   character: CharacterData;
 }
 
@@ -442,6 +445,7 @@ export interface ServerDMRollRequestMessage {
 export interface ServerPlayerActionMessage {
   type: "server:player_action";
   playerName: string;
+  userId?: string;
   action: ClientMessage;
   requestId: string;
 }

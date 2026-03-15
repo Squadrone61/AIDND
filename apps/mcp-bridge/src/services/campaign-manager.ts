@@ -264,7 +264,8 @@ export class CampaignManager {
 
   /** Snapshot character data into the campaign's characters/ folder. */
   snapshotCharacters(
-    characters: Record<string, { static: unknown; dynamic: unknown }>
+    characters: Record<string, { static: unknown; dynamic: unknown }>,
+    userIds?: Record<string, string | undefined>,
   ): number {
     if (!this.activeDir) throw new Error("No campaign loaded");
     const charDir = path.join(this.activeDir, "characters");
@@ -275,9 +276,10 @@ export class CampaignManager {
       const slug = slugify(
         (charData.static as { name?: string })?.name || playerName
       );
+      const userId = userIds?.[playerName];
       fs.writeFileSync(
         path.join(charDir, `${slug}.json`),
-        JSON.stringify({ playerName, ...charData }, null, 2),
+        JSON.stringify({ playerName, ...(userId ? { userId } : {}), ...charData }, null, 2),
         "utf-8"
       );
       count++;
@@ -288,11 +290,20 @@ export class CampaignManager {
   /** Load character snapshots from campaign's characters/ folder.
    *  Returns a map of playerName → { static, dynamic } for restoring into game state. */
   loadCharacterSnapshots(): Record<string, { static: unknown; dynamic: unknown }> {
+    return this.loadCharacterSnapshotsWithIds().characters;
+  }
+
+  /** Load character snapshots with userId mappings for stable identity matching. */
+  loadCharacterSnapshotsWithIds(): {
+    characters: Record<string, { static: unknown; dynamic: unknown }>;
+    userIds: Record<string, string>;
+  } {
     if (!this.activeDir) throw new Error("No campaign loaded");
     const charDir = path.join(this.activeDir, "characters");
-    if (!fs.existsSync(charDir)) return {};
+    if (!fs.existsSync(charDir)) return { characters: {}, userIds: {} };
 
-    const result: Record<string, { static: unknown; dynamic: unknown }> = {};
+    const characters: Record<string, { static: unknown; dynamic: unknown }> = {};
+    const userIds: Record<string, string> = {};
     const charFiles = fs.readdirSync(charDir).filter((f) => f.endsWith(".json"));
 
     for (const file of charFiles) {
@@ -305,13 +316,17 @@ export class CampaignManager {
         // Use saved playerName, fall back to character name
         const key = playerName || charName || file.replace(".json", "");
         if (data.static && data.dynamic) {
-          result[key] = { static: data.static, dynamic: data.dynamic };
+          characters[key] = { static: data.static, dynamic: data.dynamic };
+        }
+        // Restore userId mapping if saved
+        if (data.userId && key) {
+          userIds[key] = data.userId as string;
         }
       } catch {
         // skip corrupt files
       }
     }
-    return result;
+    return { characters, userIds };
   }
 
   /**

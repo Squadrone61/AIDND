@@ -385,6 +385,7 @@ export class GameRoom extends DurableObject<Env> {
       dmWs.send(JSON.stringify({
         type: "server:player_action",
         playerName: session.playerName,
+        userId: session.userId,
         action: msg,
         requestId,
       }));
@@ -428,6 +429,7 @@ export class GameRoom extends DurableObject<Env> {
       dmWs.send(JSON.stringify({
         type: "server:player_action",
         playerName: session.playerName,
+        userId: session.userId,
         action: msg,
         requestId,
       }));
@@ -742,7 +744,15 @@ export class GameRoom extends DurableObject<Env> {
     await this.ctx.storage.put("activeCampaignName", msg.campaignName);
 
     if (msg.restoredCharacters) {
+      const userIdMap = msg.characterUserIds ?? {};
       for (const [playerName, charData] of Object.entries(msg.restoredCharacters)) {
+        // Try matching by stable userId first (survives name changes)
+        const savedUserId = userIdMap[playerName];
+        if (savedUserId && (this.allPlayerRecords.has(savedUserId) || this.approvedUserIds.has(savedUserId))) {
+          this.characters.set(savedUserId, charData);
+          continue;
+        }
+        // Fall back to matching by playerName
         for (const [userId, record] of this.allPlayerRecords.entries()) {
           if (record.name === playerName) {
             this.characters.set(userId, charData);

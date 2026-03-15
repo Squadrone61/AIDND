@@ -291,6 +291,7 @@ export const clientCampaignConfiguredAckSchema = z.object({
   encounterLength: encounterLengthSchema,
   systemPrompt: z.string().optional(),
   restoredCharacters: z.record(z.string(), characterDataSchema).optional(),
+  characterUserIds: z.record(z.string(), z.string()).optional(),
 });
 
 export const clientSetPasswordSchema = z.object({
@@ -607,6 +608,7 @@ export const serverCampaignConfiguredSchema = z.object({
 export const serverCharacterForCampaignSchema = z.object({
   type: z.literal("server:character_for_campaign"),
   playerName: z.string(),
+  userId: z.string().optional(),
   character: characterDataSchema,
 });
 
@@ -619,6 +621,7 @@ export const serverDMRollRequestSchema = z.object({
 export const serverPlayerActionSchema = z.object({
   type: z.literal("server:player_action"),
   playerName: z.string(),
+  userId: z.string().optional(),
   action: z.any(), // ClientMessage validated at runtime
   requestId: z.string(),
 });

@@ -216,6 +216,7 @@ export function buildCharacter(
     advantages: ids.advantages ?? [],
     traits: ids.traits ?? {},
     appearance: ids.appearance,
+    backstory: ids.backstory || undefined,
     importedAt: Date.now(),
     source: ids.source,
   };

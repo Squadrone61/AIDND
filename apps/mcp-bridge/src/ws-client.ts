@@ -33,6 +33,8 @@ export class WSClient {
   players: PlayerSummary[] = [];
   /** Latest character data keyed by player name */
   characters: Record<string, CharacterData> = {};
+  /** Mapping of playerName → userId for stable identity across sessions */
+  playerUserIds: Record<string, string> = {};
   /** Whether the DM config has been sent */
   private configSent = false;
 
@@ -253,10 +255,16 @@ export class WSClient {
   private handlePlayerAction(raw: {
     type: "server:player_action";
     playerName: string;
+    userId?: string;
     action: ClientMessage;
     requestId: string;
   }): void {
     console.error(`[ws-client] Player action from ${raw.playerName}: ${raw.action.type}`);
+
+    // Track playerName → userId mapping for campaign persistence
+    if (raw.userId) {
+      this.playerUserIds[raw.playerName] = raw.userId;
+    }
 
     // Special handling: set_campaign and configure_campaign are campaign manager operations
     if (raw.action.type === "client:set_campaign") {
@@ -385,9 +393,11 @@ export class WSClient {
         manifest = cm.loadCampaign(msg.existingCampaignSlug);
         console.error(`[ws-client] Loaded campaign: ${manifest.name} (${manifest.slug})`);
 
-        const chars = cm.loadCharacterSnapshots();
+        const { characters: chars, userIds } = cm.loadCharacterSnapshotsWithIds();
         if (Object.keys(chars).length > 0) {
           restoredCharacters = chars;
+          // Restore userId mappings from saved snapshots
+          Object.assign(this.playerUserIds, userIds);
           console.error(`[ws-client] Restored ${Object.keys(chars).length} character(s) from campaign`);
         }
       } else {
@@ -430,6 +440,7 @@ export class WSClient {
         encounterLength: msg.encounterLength,
         systemPrompt: msg.systemPrompt,
         restoredCharacters,
+        characterUserIds: Object.keys(this.playerUserIds).length > 0 ? this.playerUserIds : undefined,
       });
 
       const campaigns = cm.listCampaigns();
@@ -450,6 +461,7 @@ export class WSClient {
   /** Handle character data forwarded from worker for campaign persistence. */
   private handleCharacterForCampaign(msg: {
     playerName: string;
+    userId?: string;
     character: CharacterData;
   }): void {
     const cm = this.options.campaignManager;
@@ -458,8 +470,16 @@ export class WSClient {
     this.characters[msg.playerName] = msg.character;
     this.gameStateManager.characters[msg.playerName] = msg.character;
 
+    // Track userId for stable identity
+    if (msg.userId) {
+      this.playerUserIds[msg.playerName] = msg.userId;
+    }
+
     try {
-      cm.snapshotCharacters({ [msg.playerName]: msg.character });
+      cm.snapshotCharacters(
+        { [msg.playerName]: msg.character },
+        { [msg.playerName]: msg.userId || this.playerUserIds[msg.playerName] }
+      );
       console.error(`[ws-client] Saved character "${msg.character.static.name}" for ${msg.playerName}`);
     } catch (e) {
       console.error(`[ws-client] Character save error: ${e instanceof Error ? e.message : String(e)}`);
@@ -476,7 +496,7 @@ export class WSClient {
       this.gameStateManager.saveSessionStateToCampaign();
 
       if (Object.keys(this.characters).length > 0) {
-        const count = cm.snapshotCharacters(this.characters);
+        const count = cm.snapshotCharacters(this.characters, this.playerUserIds);
         console.error(
           `[ws-client] Auto-snapshot: saved ${count} character(s) to campaign`
         );

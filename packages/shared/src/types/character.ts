@@ -166,6 +166,7 @@ export interface CharacterStaticData {
   advantages: AdvantageEntry[];
   traits: CharacterTraits;
   appearance?: CharacterAppearance;
+  backstory?: string;
   importedAt: number; // timestamp
   source?: "builder"; // import source
 }

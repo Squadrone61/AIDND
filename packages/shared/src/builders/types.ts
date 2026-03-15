@@ -45,9 +45,10 @@ export interface CharacterIdentifiers {
   languages: string[];
   toolProficiencies?: string[];
 
-  // Traits & appearance
+  // Traits, appearance & backstory
   traits?: CharacterTraits;
   appearance?: CharacterAppearance;
+  backstory?: string;
   currency?: Currency;
   advantages?: AdvantageEntry[];
   senses?: string[]; // custom senses beyond DB defaults (e.g. DDB darkvision from traits)

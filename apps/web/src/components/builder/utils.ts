@@ -1383,6 +1383,7 @@ export function assembleIdentifiers(state: BuilderState): CharacterIdentifiers {
     traits: Object.keys(state.traits).length > 0 ? state.traits as any : undefined,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     appearance: Object.keys(state.appearance).length > 0 ? state.appearance as any : undefined,
+    backstory: state.backstory.trim() || undefined,
     currency,
     additionalFeatures: additionalFeatures.length > 0 ? additionalFeatures : undefined,
     source: "builder",
